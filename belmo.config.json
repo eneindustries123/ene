@@ -1,0 +1,28 @@
+{
+  "appName": "solix-renewable-energy",
+  "version": "1.0.0",
+  "environment": "production",
+  "runtime": "nodejs-20",
+  "buildCommand": "npm run build",
+  "startCommand": "npm run start",
+  "port": 3000,
+  "healthCheck": {
+    "path": "/api/health",
+    "intervalSeconds": 15,
+    "timeoutSeconds": 5
+  },
+  "backgroundWorkers": [
+    {
+      "name": "lead-sync-worker",
+      "command": "node ./dist/workers/leadSync.js",
+      "concurrency": 2
+    }
+  ],
+  "scheduledJobs": [
+    {
+      "name": "daily-sanity-revalidation",
+      "schedule": "0 0 * * *",
+      "command": "npm run revalidate-cache"
+    }
+  ]
+}

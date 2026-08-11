@@ -1,0 +1,43 @@
+import React from 'react';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+
+export const metadata = {
+  title: 'Privacy Policy | Solix Renewable Energy',
+};
+
+export default function PrivacyPolicyPage() {
+  return (
+    <main className="min-h-screen bg-solix-bg flex flex-col justify-between">
+      <Header />
+
+      <section className="pt-36 pb-20 px-4 sm:px-8 max-w-4xl mx-auto w-full">
+        <div className="bg-white rounded-3xl p-8 sm:p-12 border border-solix-border shadow-solix space-y-6 text-solix-dark">
+          <h1 className="text-3xl font-extrabold border-b pb-4">Privacy Policy</h1>
+          <p className="text-xs text-solix-muted">Last Updated: August 6, 2026</p>
+
+          <p className="text-sm leading-relaxed text-solix-muted">
+            Solix Energy ("Solix", "we", "our") respects your privacy and is committed to protecting your personal data. This privacy notice explains how we collect, process, and safeguard your information when you visit our website or submit inquiry forms.
+          </p>
+
+          <h3 className="text-lg font-bold">1. Information We Collect</h3>
+          <p className="text-xs text-solix-muted leading-relaxed">
+            We collect personal information that you voluntarily provide when requesting quotations, subscribing to newsletters, or contacting engineering support, including full name, business email address, telephone number, and facility energy requirements.
+          </p>
+
+          <h3 className="text-lg font-bold">2. How We Use Your Data</h3>
+          <p className="text-xs text-solix-muted leading-relaxed">
+            We process your information to deliver custom engineering project proposals, fulfill maintenance service level agreements, send technical industry updates, and comply with legal or regulatory reporting obligations.
+          </p>
+
+          <h3 className="text-lg font-bold">3. Data Security & Retention</h3>
+          <p className="text-xs text-solix-muted leading-relaxed">
+            All customer data is encrypted in transit and at rest using AES-256 standards in Supabase PostgreSQL databases enforced by strict Row Level Security (RLS) policies. We do not sell or lease your personal information to third parties.
+          </p>
+        </div>
+      </section>
+
+      <Footer />
+    </main>
+  );
+}
