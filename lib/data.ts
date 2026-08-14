@@ -35,6 +35,7 @@ export interface Project {
   mainImage: string;
   gallery: string[];
   isFeatured: boolean;
+  status?: 'published' | 'draft' | 'archived';
 }
 
 export interface Testimonial {

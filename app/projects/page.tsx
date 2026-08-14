@@ -3,15 +3,19 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { INITIAL_PROJECTS } from '@/lib/data';
-import { ArrowUpRight, MapPin, Zap, Calendar } from 'lucide-react';
+import { getPublishedProjects } from '@/lib/projects-store';
+import { ArrowUpRight, MapPin, Zap } from 'lucide-react';
 
 export const metadata = {
   title: 'Projects & Case Studies | Solix Renewable Energy',
   description: 'Explore utility-scale wind farms, desert solar microgrids, and commercial zero-carbon energy developments delivered worldwide.',
 };
 
-export default function ProjectsPage() {
+export const revalidate = 60; // ISR revalidate every 60 seconds
+
+export default async function ProjectsPage() {
+  const projects = await getPublishedProjects();
+
   return (
     <main className="min-h-screen bg-solix-bg flex flex-col justify-between">
       <Header />
@@ -34,7 +38,7 @@ export default function ProjectsPage() {
       {/* Projects Grid */}
       <section className="pb-24 px-4 sm:px-8 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {INITIAL_PROJECTS.map((project) => (
+          {projects.map((project) => (
             <div
               key={project.id}
               className="bg-white rounded-3xl p-6 border border-solix-border shadow-solix hover:shadow-solix-lg transition-all flex flex-col justify-between space-y-6 group"

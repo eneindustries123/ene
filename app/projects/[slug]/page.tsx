@@ -4,19 +4,25 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { INITIAL_PROJECTS } from '@/lib/data';
+import { getProjectBySlug, getPublishedProjects } from '@/lib/projects-store';
 import { ArrowUpRight, MapPin, Zap, Calendar, UserCheck } from 'lucide-react';
 
+export async function generateStaticParams() {
+  const projects = await getPublishedProjects();
+  return projects.map((p) => ({ slug: p.slug }));
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const project = INITIAL_PROJECTS.find((p) => p.slug === params.slug) || INITIAL_PROJECTS[0];
+  const project = await getProjectBySlug(params.slug);
+  if (!project) return { title: 'Project Not Found | Solix Renewable Energy' };
   return {
     title: `${project.title} | Case Study Solix`,
     description: project.summary,
   };
 }
 
-export default function ProjectDetailPage({ params }: { params: { slug: string } }) {
-  const project = INITIAL_PROJECTS.find((p) => p.slug === params.slug) || INITIAL_PROJECTS[0];
+export default async function ProjectDetailPage({ params }: { params: { slug: string } }) {
+  const project = await getProjectBySlug(params.slug);
   if (!project) return notFound();
 
   return (
@@ -34,7 +40,7 @@ export default function ProjectDetailPage({ params }: { params: { slug: string }
             className="object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-solix-dark/80 via-solix-dark/30 to-transparent" />
-          
+
           <div className="absolute bottom-8 left-8 right-8 text-white space-y-3">
             <div className="inline-block bg-solix-green text-white text-xs font-bold px-3.5 py-1 rounded-full uppercase tracking-wider">
               {project.category}
@@ -82,11 +88,25 @@ export default function ProjectDetailPage({ params }: { params: { slug: string }
             Project Overview & Engineering Scope
           </h2>
 
-          <p className="text-base text-solix-muted leading-relaxed">
+          <p className="text-base text-solix-muted leading-relaxed whitespace-pre-wrap">
             {project.fullStory}
           </p>
 
-          <div className="pt-4 border-t border-solix-border/50 flex justify-between items-center">
+          {/* Gallery display if present */}
+          {project.gallery && project.gallery.length > 0 && (
+            <div className="pt-6 border-t border-solix-border space-y-4">
+              <h3 className="text-lg font-bold text-solix-dark">Project Media Gallery</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {project.gallery.map((imgUrl, idx) => (
+                  <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-solix-border">
+                    <Image src={imgUrl} alt={`${project.title} gallery photo ${idx + 1}`} fill className="object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="pt-6 border-t border-solix-border/50 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-xs text-solix-muted">Interested in similar capacity deployments?</span>
             <Link
               href="/request-a-quote"
