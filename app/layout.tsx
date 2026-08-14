@@ -20,6 +20,15 @@ export const metadata: Metadata = {
   authors: [{ name: 'E&E' }],
   creator: 'E&E',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://eneindustries.com'),
+  icons: {
+    icon: [
+      { url: '/logos/symbol.png', type: 'image/png' },
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/logos/symbol.png',
+    apple: '/logos/symbol.png',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -29,9 +38,9 @@ export const metadata: Metadata = {
     siteName: 'E&E',
     images: [
       {
-        url: '/images/service-solar.jpg',
-        width: 1200,
-        height: 630,
+        url: '/logos/symbol.png',
+        width: 600,
+        height: 600,
         alt: 'E&E Engineering & Solar',
       },
     ],
@@ -40,7 +49,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'E&E | Engineering & Energy',
     description: 'Smarter energy and infrastructure solutions across solar, trading, and fabrication.',
-    images: ['/images/service-solar.jpg'],
+    images: ['/logos/symbol.png'],
   },
   robots: {
     index: true,
@@ -56,7 +65,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} scroll-smooth`}>
       <head>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" href="/logos/symbol.png" />
+        <link rel="apple-touch-icon" href="/logos/symbol.png" />
       </head>
       <body className="bg-solix-bg text-solix-text antialiased selection:bg-solix-green selection:text-white">
         {children}
