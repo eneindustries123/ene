@@ -2,35 +2,41 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface BrandLogoProps {
   variant?: 'full' | 'symbol';
   light?: boolean;
   className?: string;
+  height?: number;
 }
 
-export function BrandLogo({ variant = 'full', light = false, className }: BrandLogoProps) {
+export function BrandLogo({ variant = 'full', className, height = 36 }: BrandLogoProps) {
   if (variant === 'symbol') {
     return (
       <Link href="/" className={cn('inline-flex items-center group focus:outline-none', className)}>
-        <span className="text-2xl font-black tracking-tight text-white group-hover:scale-105 transition-transform">
-          E<span className="text-emerald-400">.</span>
-        </span>
+        <Image
+          src="/logos/symbol.png"
+          alt="E&E Symbol"
+          width={height}
+          height={height}
+          className="object-contain group-hover:scale-105 transition-transform duration-300"
+        />
       </Link>
     );
   }
 
   return (
     <Link href="/" className={cn('inline-flex items-center group focus:outline-none', className)}>
-      <span
-        className={cn(
-          'text-2xl sm:text-3xl font-extrabold tracking-tight transition-transform group-hover:scale-[1.02]',
-          light ? 'text-white' : 'text-solix-dark'
-        )}
-      >
-        E&E<span className="text-emerald-400">.</span>
-      </span>
+      <Image
+        src="/logos/logo-full.png"
+        alt="E&E Engineering & Energy"
+        width={160}
+        height={height}
+        priority
+        className="h-10 w-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
+      />
     </Link>
   );
 }

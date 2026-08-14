@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -10,7 +11,6 @@ import {
   Package,
   FileText,
   Settings,
-  SunMedium,
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -48,13 +48,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="w-full md:w-64 bg-slate-950 border-b md:border-b-0 md:border-r border-slate-800 p-6 flex flex-col justify-between shrink-0">
         <div className="space-y-8">
           <Link href="/admin" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-solix-green flex items-center justify-center text-white shadow-md">
-              <SunMedium className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight text-white">Solix Admin</span>
-              <div className="text-[10px] text-emerald-400 font-mono uppercase">Control Center</div>
-            </div>
+            <Image
+              src="/logos/logo-full.png"
+              alt="E&E Engineering & Energy"
+              width={140}
+              height={36}
+              className="h-9 w-auto object-contain"
+            />
           </Link>
 
           <nav className="flex md:flex-col overflow-x-auto md:overflow-x-visible gap-1.5 pb-2 md:pb-0">

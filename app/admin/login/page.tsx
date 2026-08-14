@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { SunMedium, Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -44,10 +45,16 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-8">
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-solix-green flex items-center justify-center text-white mx-auto shadow-lg">
-            <SunMedium className="w-6 h-6" />
+          <div className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto shadow-lg p-2">
+            <Image
+              src="/logos/symbol.png"
+              alt="E&E Symbol"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Solix Management Portal</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Project Management Portal</h1>
           <p className="text-xs text-slate-400">Authenticated private administrative access</p>
         </div>
 
@@ -71,7 +78,7 @@ export default function AdminLoginPage() {
                 type="email"
                 required
                 autoComplete="username"
-                placeholder="admin@solix-energy.com"
+                placeholder="admin@xyz.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-solix-green"
