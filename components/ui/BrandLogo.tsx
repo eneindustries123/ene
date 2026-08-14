@@ -9,19 +9,19 @@ interface BrandLogoProps {
   variant?: 'full' | 'symbol';
   light?: boolean;
   className?: string;
-  height?: number;
+  imgClassName?: string;
 }
 
-export function BrandLogo({ variant = 'full', className, height = 36 }: BrandLogoProps) {
+export function BrandLogo({ variant = 'full', className, imgClassName }: BrandLogoProps) {
   if (variant === 'symbol') {
     return (
       <Link href="/" className={cn('inline-flex items-center group focus:outline-none', className)}>
         <Image
           src="/logos/symbol.png"
           alt="E&E Symbol"
-          width={height}
-          height={height}
-          className="object-contain group-hover:scale-105 transition-transform duration-300"
+          width={60}
+          height={60}
+          className={cn('h-11 sm:h-14 w-auto object-contain group-hover:scale-105 transition-transform duration-300', imgClassName)}
         />
       </Link>
     );
@@ -32,10 +32,10 @@ export function BrandLogo({ variant = 'full', className, height = 36 }: BrandLog
       <Image
         src="/logos/logo-full.png"
         alt="E&E Engineering & Energy"
-        width={160}
-        height={height}
+        width={240}
+        height={76}
         priority
-        className="h-10 w-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
+        className={cn('h-12 sm:h-14 md:h-16 w-auto object-contain group-hover:scale-[1.02] transition-transform duration-300', imgClassName)}
       />
     </Link>
   );
