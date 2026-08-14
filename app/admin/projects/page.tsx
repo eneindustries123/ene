@@ -16,11 +16,8 @@ import {
   Zap,
   Calendar,
   UserCheck,
-  CheckCircle2,
   AlertTriangle,
-  FileText,
   Star,
-  Archive,
   RefreshCw,
   ArrowUpRight,
 } from 'lucide-react';
@@ -114,7 +111,6 @@ export default function AdminProjectsPage() {
     setFormData((prev) => ({
       ...prev,
       title,
-      // Auto update slug if creating new project or editing slug manually
       slug: editingProject ? prev.slug : generateSlug(title),
     }));
   };
@@ -170,7 +166,6 @@ export default function AdminProjectsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Instant local preview
     const localUrl = URL.createObjectURL(file);
     setMainImagePreview(localUrl);
     setUploadingMain(true);
@@ -339,16 +334,15 @@ export default function AdminProjectsPage() {
   return (
     <div className="space-y-8">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-solix-border pb-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-solix-green uppercase tracking-wider">
-            <FolderKanban className="w-4 h-4" />
-            <span>Project Portfolio Management</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
+          <span className="text-xs font-bold text-solix-green uppercase tracking-wider bg-white px-3 py-1 rounded-full border border-solix-border">
+            Project Portfolio CMS
+          </span>
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-solix-dark tracking-tight mt-2">
             Projects CMS
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-solix-muted mt-1">
             Manage clean energy project case studies, metadata, images, and homepage features.
           </p>
         </div>
@@ -356,7 +350,7 @@ export default function AdminProjectsPage() {
         <button
           type="button"
           onClick={openCreateModal}
-          className="inline-flex items-center justify-center gap-2 bg-solix-green hover:bg-emerald-600 text-white text-xs font-bold px-5 py-3 rounded-xl transition-all shadow-lg shrink-0"
+          className="inline-flex items-center justify-center gap-2 bg-solix-dark hover:bg-black text-white text-xs font-bold px-5 py-3 rounded-full transition-all shadow-md shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Create New Project</span>
@@ -367,13 +361,13 @@ export default function AdminProjectsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+          <Search className="w-4 h-4 text-solix-muted absolute left-4 top-3.5" />
           <input
             type="text"
             placeholder="Search by title, client, location, or category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-solix-green"
+            className="w-full bg-white border border-solix-border rounded-full pl-11 pr-4 py-3 text-xs text-solix-dark placeholder:text-solix-muted/60 focus:outline-none focus:border-solix-green shadow-sm"
           />
         </div>
 
@@ -384,10 +378,10 @@ export default function AdminProjectsPage() {
               key={tab}
               type="button"
               onClick={() => setStatusFilter(tab)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold capitalize transition-colors whitespace-nowrap ${
+              className={`px-4 py-2 rounded-full text-xs font-bold capitalize transition-all whitespace-nowrap ${
                 statusFilter === tab
-                  ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-solix-dark text-white shadow-md'
+                  : 'bg-white text-solix-muted border border-solix-border hover:text-solix-dark'
               }`}
             >
               {tab === 'all' ? 'All Projects' : tab}
@@ -397,7 +391,7 @@ export default function AdminProjectsPage() {
           <button
             type="button"
             onClick={fetchProjects}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-1"
+            className="p-2.5 rounded-full bg-white text-solix-muted border border-solix-border hover:text-solix-dark transition-colors ml-1"
             title="Refresh List"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -407,14 +401,14 @@ export default function AdminProjectsPage() {
 
       {/* Projects Grid / Table */}
       {loading ? (
-        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs">
+        <div className="bg-white border border-solix-border rounded-3xl p-12 text-center text-solix-muted text-xs shadow-solix">
           Loading project portfolio...
         </div>
       ) : filteredProjects.length === 0 ? (
-        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-12 text-center space-y-3">
-          <FolderKanban className="w-10 h-10 text-slate-600 mx-auto" />
-          <h3 className="text-base font-bold text-white">No projects found</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+        <div className="bg-white border border-solix-border rounded-3xl p-12 text-center space-y-3 shadow-solix">
+          <FolderKanban className="w-10 h-10 text-solix-muted mx-auto" />
+          <h3 className="text-base font-bold text-solix-dark">No projects found</h3>
+          <p className="text-xs text-solix-muted max-w-sm mx-auto">
             {searchQuery
               ? 'No projects match your current search query or filter criteria.'
               : 'Click "Create New Project" above to publish your first case study.'}
@@ -425,11 +419,11 @@ export default function AdminProjectsPage() {
           {filteredProjects.map((project) => (
             <div
               key={project.id}
-              className="bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden flex flex-col justify-between hover:border-slate-700 transition-all group"
+              className="bg-white border border-solix-border rounded-3xl p-6 shadow-solix hover:shadow-solix-lg transition-all flex flex-col justify-between space-y-4 group"
             >
               <div className="space-y-4">
                 {/* Image Preview & Badges */}
-                <div className="relative w-full aspect-[16/10] bg-slate-900 overflow-hidden">
+                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-solix-bg">
                   <Image
                     src={project.mainImage}
                     alt={project.title}
@@ -437,14 +431,14 @@ export default function AdminProjectsPage() {
                     className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                    <span className="bg-slate-900/90 backdrop-blur-md text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <span className="bg-solix-dark text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                       {project.category}
                     </span>
                   </div>
 
                   <div className="absolute top-3 right-3 flex items-center gap-1.5">
                     {project.isFeatured && (
-                      <span className="bg-amber-500 text-slate-950 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <span className="bg-amber-500 text-solix-dark text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
                         <Star className="w-3 h-3 fill-current" />
                         <span>Featured</span>
                       </span>
@@ -452,10 +446,10 @@ export default function AdminProjectsPage() {
                     <span
                       className={`text-[10px] font-bold px-2.5 py-1 rounded-full capitalize ${
                         project.status === 'published'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-solix-green text-white'
                           : project.status === 'draft'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                          : 'bg-rose-100 text-rose-800 border border-rose-300'
                       }`}
                     >
                       {project.status || 'published'}
@@ -464,44 +458,44 @@ export default function AdminProjectsPage() {
                 </div>
 
                 {/* Content */}
-                <div className="px-6 space-y-3">
-                  <div className="flex items-center justify-between text-[11px] font-medium text-slate-400 border-b border-slate-800 pb-2.5">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs font-medium text-solix-muted border-b border-solix-border/40 pb-3">
                     <div className="flex items-center gap-1 truncate max-w-[50%]">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <MapPin className="w-3.5 h-3.5 text-solix-green shrink-0" />
                       <span className="truncate">{project.location}</span>
                     </div>
                     <div className="flex items-center gap-1 truncate max-w-[45%]">
-                      <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       <span className="truncate">{project.capacity}</span>
                     </div>
                   </div>
 
-                  <h3 className="text-base font-bold text-white leading-snug line-clamp-1">
+                  <h3 className="text-lg font-bold text-solix-dark leading-snug line-clamp-1">
                     {project.title}
                   </h3>
 
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-solix-muted line-clamp-2 leading-relaxed">
                     {project.summary}
                   </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="p-6 pt-4 border-t border-slate-900 flex items-center justify-between gap-2 mt-4">
+              <div className="pt-4 border-t border-solix-border/60 flex items-center justify-between gap-2 mt-4">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => openEditModal(project)}
-                    className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors border border-slate-800"
+                    className="flex items-center gap-1.5 bg-solix-dark hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-full transition-colors"
                   >
-                    <Edit className="w-3.5 h-3.5 text-emerald-400" />
+                    <Edit className="w-3.5 h-3.5 text-solix-green" />
                     <span>Edit</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setPreviewProject(project)}
-                    className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl transition-colors border border-slate-800"
+                    className="flex items-center gap-1.5 bg-solix-bg hover:bg-white text-solix-dark text-xs font-bold px-3.5 py-2 rounded-full transition-colors border border-solix-border"
                     title="Live Preview"
                   >
                     <Eye className="w-3.5 h-3.5" />
@@ -512,7 +506,7 @@ export default function AdminProjectsPage() {
                 <Link
                   href={`/projects/${project.slug}`}
                   target="_blank"
-                  className="p-2 text-slate-400 hover:text-emerald-400 transition-colors"
+                  className="p-2 text-solix-muted hover:text-solix-green transition-colors"
                   title="View Public Page"
                 >
                   <ArrowUpRight className="w-4 h-4" />
@@ -525,21 +519,21 @@ export default function AdminProjectsPage() {
 
       {/* CREATE / EDIT PROJECT MODAL */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <div className="fixed inset-0 z-50 bg-solix-dark/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl bg-white border border-solix-border rounded-3xl shadow-2xl overflow-hidden my-8">
+            <div className="p-6 border-b border-solix-border flex items-center justify-between bg-solix-bg">
               <div>
-                <h2 className="text-lg font-bold text-white">
+                <h2 className="text-lg font-bold text-solix-dark">
                   {editingProject ? `Edit Project: ${editingProject.title}` : 'Create New Project Case Study'}
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-solix-muted">
                   Manage core metadata, content scope, main image, and gallery.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-900 transition-colors"
+                className="p-2 text-solix-muted hover:text-solix-dark rounded-full hover:bg-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -547,23 +541,23 @@ export default function AdminProjectsPage() {
 
             <form onSubmit={handleSaveProject} className="p-6 sm:p-8 space-y-6 max-h-[80vh] overflow-y-auto">
               {formError && (
-                <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-300 text-xs flex items-start gap-3">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-800 text-xs flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <span>{formError}</span>
                 </div>
               )}
 
               {/* CORE INFORMATION GRID */}
               <div className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 border-b border-slate-800 pb-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-solix-green border-b border-solix-border pb-2">
                   1. Core Information
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Title */}
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Project Title <span className="text-emerald-400">*</span>
+                    <label className="text-xs font-bold text-solix-dark">
+                      Project Title <span className="text-solix-green">*</span>
                     </label>
                     <input
                       type="text"
@@ -571,32 +565,32 @@ export default function AdminProjectsPage() {
                       placeholder="e.g. MNS University of Agriculture Multan"
                       value={formData.title}
                       onChange={handleTitleChange}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-solix-green"
+                      className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     />
                   </div>
 
                   {/* Slug */}
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-xs font-semibold text-slate-300">
-                      URL Slug <span className="text-emerald-400">*</span>
+                    <label className="text-xs font-bold text-solix-dark">
+                      URL Slug <span className="text-solix-green">*</span>
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-2.5 text-xs text-slate-500 font-mono">/projects/</span>
+                      <span className="absolute left-4 top-2.5 text-xs text-solix-muted font-mono">/projects/</span>
                       <input
                         type="text"
                         required
                         placeholder="mns-university-of-agriculture-multan"
                         value={formData.slug}
                         onChange={(e) => setFormData({ ...formData, slug: generateSlug(e.target.value) })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-24 pr-4 py-2.5 text-xs text-emerald-400 font-mono focus:outline-none focus:border-solix-green"
+                        className="w-full bg-solix-bg border border-solix-border rounded-2xl pl-24 pr-4 py-2.5 text-xs text-solix-dark font-mono focus:outline-none focus:border-solix-green focus:bg-white"
                       />
                     </div>
                   </div>
 
                   {/* Client */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Client / Organization <span className="text-emerald-400">*</span>
+                    <label className="text-xs font-bold text-solix-dark">
+                      Client / Organization <span className="text-solix-green">*</span>
                     </label>
                     <input
                       type="text"
@@ -604,14 +598,14 @@ export default function AdminProjectsPage() {
                       placeholder="e.g. MNS University Administration"
                       value={formData.client}
                       onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-solix-green"
+                      className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     />
                   </div>
 
                   {/* Location */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Location <span className="text-emerald-400">*</span>
+                    <label className="text-xs font-bold text-solix-dark">
+                      Location <span className="text-solix-green">*</span>
                     </label>
                     <input
                       type="text"
@@ -619,14 +613,14 @@ export default function AdminProjectsPage() {
                       placeholder="e.g. Multan, Punjab, Pakistan"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-solix-green"
+                      className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     />
                   </div>
 
                   {/* Capacity */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Capacity / Rating <span className="text-emerald-400">*</span>
+                    <label className="text-xs font-bold text-solix-dark">
+                      Capacity / Rating <span className="text-solix-green">*</span>
                     </label>
                     <input
                       type="text"
@@ -634,19 +628,19 @@ export default function AdminProjectsPage() {
                       placeholder="e.g. 25KW or High-Capacity On-Grid Array"
                       value={formData.capacity}
                       onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-solix-green"
+                      className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     />
                   </div>
 
                   {/* Category */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Category <span className="text-emerald-400">*</span>
+                    <label className="text-xs font-bold text-solix-dark">
+                      Category <span className="text-solix-green">*</span>
                     </label>
                     <select
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-solix-green"
+                      className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     >
                       {CATEGORY_OPTIONS.map((cat) => (
                         <option key={cat} value={cat}>
@@ -658,8 +652,8 @@ export default function AdminProjectsPage() {
 
                   {/* Completion Year */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Completion / Commission Year <span className="text-emerald-400">*</span>
+                    <label className="text-xs font-bold text-solix-dark">
+                      Completion / Commission Year <span className="text-solix-green">*</span>
                     </label>
                     <input
                       type="number"
@@ -668,19 +662,19 @@ export default function AdminProjectsPage() {
                       max={2035}
                       value={formData.completionYear}
                       onChange={(e) => setFormData({ ...formData, completionYear: parseInt(e.target.value) || 2024 })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-solix-green"
+                      className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     />
                   </div>
 
                   {/* Visibility Status */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Visibility Status</label>
+                    <label className="text-xs font-bold text-solix-dark">Visibility Status</label>
                     <select
                       value={formData.status}
                       onChange={(e) =>
                         setFormData({ ...formData, status: e.target.value as 'published' | 'draft' | 'archived' })
                       }
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-solix-green"
+                      className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     >
                       <option value="published">Published (Visible Publicly)</option>
                       <option value="draft">Draft (Admin Only)</option>
@@ -692,19 +686,19 @@ export default function AdminProjectsPage() {
 
               {/* PROJECT CONTENT */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 border-b border-slate-800 pb-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-solix-green border-b border-solix-border pb-2">
                   2. Project Narrative & Content
                 </h3>
 
                 {/* Summary */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <label className="font-semibold text-slate-300">
-                      Short Summary <span className="text-emerald-400">*</span> (Card Grid & Meta)
+                    <label className="font-bold text-solix-dark">
+                      Short Summary <span className="text-solix-green">*</span> (Card Grid & Meta)
                     </label>
                     <span
                       className={`font-mono ${
-                        formData.summary.length > 300 ? 'text-amber-400' : 'text-slate-500'
+                        formData.summary.length > 300 ? 'text-amber-600' : 'text-solix-muted'
                       }`}
                     >
                       {formData.summary.length}/300 chars
@@ -717,14 +711,14 @@ export default function AdminProjectsPage() {
                     placeholder="Turnkey solar energy installation powering campus academic blocks..."
                     value={formData.summary}
                     onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-solix-green leading-relaxed"
+                    className="w-full bg-solix-bg border border-solix-border rounded-2xl p-3 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white leading-relaxed"
                   />
                 </div>
 
                 {/* Full Story */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Full Story / Engineering Scope <span className="text-emerald-400">*</span>
+                  <label className="text-xs font-bold text-solix-dark">
+                    Full Story / Engineering Scope <span className="text-solix-green">*</span>
                   </label>
                   <textarea
                     required
@@ -732,26 +726,26 @@ export default function AdminProjectsPage() {
                     placeholder="E&E Industries engineered and commissioned a comprehensive solar power array at MNS University... Describe technical requirements, engineering challenges, execution, and outcomes."
                     value={formData.fullStory}
                     onChange={(e) => setFormData({ ...formData, fullStory: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-solix-green leading-relaxed font-sans"
+                    className="w-full bg-solix-bg border border-solix-border rounded-2xl p-3 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white leading-relaxed font-sans"
                   />
                 </div>
               </div>
 
               {/* MEDIA & UPLOADS */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 border-b border-slate-800 pb-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-solix-green border-b border-solix-border pb-2">
                   3. Media & Uploads
                 </h3>
 
                 {/* Main Image */}
                 <div className="space-y-3">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Main Project Image <span className="text-emerald-400">*</span>
+                  <label className="text-xs font-bold text-solix-dark">
+                    Main Project Image <span className="text-solix-green">*</span>
                   </label>
 
                   <div className="flex flex-col sm:flex-row gap-4 items-start">
                     {/* Image Preview Box */}
-                    <div className="relative w-full sm:w-48 aspect-[4/3] bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center">
+                    <div className="relative w-full sm:w-48 aspect-[4/3] bg-solix-bg border border-solix-border rounded-2xl overflow-hidden shrink-0 flex items-center justify-center">
                       {mainImagePreview || formData.mainImage ? (
                         <Image
                           src={mainImagePreview || formData.mainImage}
@@ -760,7 +754,7 @@ export default function AdminProjectsPage() {
                           className="object-cover"
                         />
                       ) : (
-                        <div className="text-center p-4 text-slate-600 text-xs">
+                        <div className="text-center p-4 text-solix-muted text-xs">
                           <Upload className="w-6 h-6 mx-auto mb-1 opacity-50" />
                           <span>No Image</span>
                         </div>
@@ -770,7 +764,7 @@ export default function AdminProjectsPage() {
                     {/* Upload Controls */}
                     <div className="space-y-3 flex-1 w-full">
                       <div className="flex items-center gap-3">
-                        <label className="inline-flex items-center gap-2 bg-solix-green hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-md">
+                        <label className="inline-flex items-center gap-2 bg-solix-dark hover:bg-black text-white text-xs font-bold px-4 py-2.5 rounded-full cursor-pointer transition-colors shadow-md">
                           <Upload className="w-4 h-4" />
                           <span>{uploadingMain ? 'Uploading...' : 'Upload Image File'}</span>
                           <input
@@ -781,11 +775,11 @@ export default function AdminProjectsPage() {
                             className="hidden"
                           />
                         </label>
-                        <span className="text-[11px] text-slate-500">Max 5MB (JPG, PNG, WEBP)</span>
+                        <span className="text-[11px] text-solix-muted">Max 5MB (JPG, PNG, WEBP)</span>
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-[11px] text-slate-400">Or enter image URL manually:</span>
+                        <span className="text-[11px] text-solix-muted">Or enter image URL manually:</span>
                         <input
                           type="url"
                           placeholder="https://images.unsplash.com/..."
@@ -794,7 +788,7 @@ export default function AdminProjectsPage() {
                             setFormData({ ...formData, mainImage: e.target.value });
                             setMainImagePreview(e.target.value);
                           }}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-solix-green"
+                          className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                         />
                       </div>
                     </div>
@@ -804,11 +798,11 @@ export default function AdminProjectsPage() {
                 {/* Gallery */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-300">
+                    <label className="text-xs font-bold text-solix-dark">
                       Project Gallery Images ({galleryPreviews.length} uploaded)
                     </label>
 
-                    <label className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-xl cursor-pointer transition-colors border border-slate-700">
+                    <label className="inline-flex items-center gap-1.5 bg-solix-bg hover:bg-white text-solix-dark text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-colors border border-solix-border">
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add Gallery Photos</span>
                       <input
@@ -825,7 +819,7 @@ export default function AdminProjectsPage() {
                   {galleryPreviews.length > 0 ? (
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 pt-1">
                       {galleryPreviews.map((url, idx) => (
-                        <div key={idx} className="relative aspect-square bg-slate-950 rounded-xl overflow-hidden group border border-slate-800">
+                        <div key={idx} className="relative aspect-square bg-solix-bg rounded-2xl overflow-hidden group border border-solix-border">
                           <Image src={url} alt={`Gallery ${idx}`} fill className="object-cover" />
                           <button
                             type="button"
@@ -839,14 +833,14 @@ export default function AdminProjectsPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-500 italic">No additional gallery photos added yet.</p>
+                    <p className="text-xs text-solix-muted italic">No additional gallery photos added yet.</p>
                   )}
                 </div>
               </div>
 
               {/* OPTIONS & DANGER ZONE */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 border-b border-slate-800 pb-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-solix-green border-b border-solix-border pb-2">
                   4. Options & Danger Zone
                 </h3>
 
@@ -856,21 +850,21 @@ export default function AdminProjectsPage() {
                     id="isFeatured"
                     checked={formData.isFeatured}
                     onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                    className="w-4 h-4 rounded text-solix-green focus:ring-emerald-500 bg-slate-950 border-slate-800"
+                    className="w-4 h-4 rounded text-solix-green focus:ring-emerald-500 bg-solix-bg border-solix-border"
                   />
-                  <label htmlFor="isFeatured" className="text-xs font-semibold text-white">
+                  <label htmlFor="isFeatured" className="text-xs font-bold text-solix-dark">
                     Feature on Homepage Showcase (Featured Project)
                   </label>
                 </div>
 
-                {/* DANGER ZONE (Only when editing existing project) */}
+                {/* DANGER ZONE */}
                 {editingProject && (
-                  <div className="mt-8 border border-rose-900/50 bg-rose-950/20 rounded-2xl p-5 space-y-3">
-                    <div className="flex items-center gap-2 text-rose-400 text-xs font-bold uppercase tracking-wider">
-                      <AlertTriangle className="w-4 h-4" />
+                  <div className="mt-8 border border-rose-200 bg-rose-50 rounded-2xl p-5 space-y-3">
+                    <div className="flex items-center gap-2 text-rose-800 text-xs font-bold uppercase tracking-wider">
+                      <AlertTriangle className="w-4 h-4 text-rose-600" />
                       <span>Danger Zone</span>
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-rose-700">
                       Permanently removing this project will delete it completely from the system and public website.
                     </p>
                     <button
@@ -881,7 +875,7 @@ export default function AdminProjectsPage() {
                         setDeleteTitleInput('');
                         setDeleteError('');
                       }}
-                      className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors inline-flex items-center gap-2"
+                      className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-full transition-colors inline-flex items-center gap-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Delete Project Permanently...</span>
@@ -891,18 +885,18 @@ export default function AdminProjectsPage() {
               </div>
 
               {/* SUBMIT BUTTONS */}
-              <div className="pt-6 border-t border-slate-800 flex items-center justify-end gap-3">
+              <div className="pt-6 border-t border-solix-border flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="px-5 py-2.5 rounded-full text-xs font-bold text-solix-muted hover:text-solix-dark transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving || uploadingMain || uploadingGallery}
-                  className="bg-solix-green hover:bg-emerald-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-colors shadow-lg disabled:opacity-50 flex items-center gap-2"
+                  className="bg-solix-dark hover:bg-black text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors shadow-md disabled:opacity-50 flex items-center gap-2"
                 >
                   {saving ? 'Saving Project...' : editingProject ? 'Update Project' : 'Publish Project'}
                 </button>
@@ -914,29 +908,29 @@ export default function AdminProjectsPage() {
 
       {/* LIVE PREVIEW MODAL */}
       {previewProject && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+        <div className="fixed inset-0 z-50 bg-solix-dark/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-3xl bg-white border border-solix-border rounded-3xl shadow-2xl overflow-hidden my-8">
+            <div className="p-6 border-b border-solix-border flex items-center justify-between bg-solix-bg">
+              <div className="flex items-center gap-2 text-xs font-bold text-solix-green">
                 <Eye className="w-4 h-4" />
                 <span>Live Project Public Preview</span>
               </div>
               <button
                 type="button"
                 onClick={() => setPreviewProject(null)}
-                className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-900 transition-colors"
+                className="p-2 text-solix-muted hover:text-solix-dark rounded-full hover:bg-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 sm:p-8 space-y-6 max-h-[80vh] overflow-y-auto bg-slate-950">
+            <div className="p-6 sm:p-8 space-y-6 max-h-[80vh] overflow-y-auto bg-solix-bg">
               {/* Card Preview */}
               <div className="space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-solix-muted uppercase tracking-wider">
                   Public Grid Card Display:
                 </span>
-                <div className="bg-white rounded-3xl p-6 border border-solix-border shadow-solix space-y-4 text-slate-900 max-w-sm mx-auto">
+                <div className="bg-white rounded-3xl p-6 border border-solix-border shadow-solix space-y-4 text-solix-dark max-w-sm mx-auto">
                   <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
                     <Image src={previewProject.mainImage} alt={previewProject.title} fill className="object-cover" />
                     <div className="absolute top-3 left-3 bg-solix-dark text-white text-xs font-bold px-3 py-1 rounded-full">
@@ -961,11 +955,11 @@ export default function AdminProjectsPage() {
               </div>
 
               {/* Case Study Detail Header Preview */}
-              <div className="space-y-2 pt-4 border-t border-slate-850">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="space-y-2 pt-4 border-t border-solix-border">
+                <span className="text-[11px] font-bold text-solix-muted uppercase tracking-wider">
                   Case Study Detail Overview:
                 </span>
-                <div className="bg-white rounded-3xl p-6 border border-solix-border shadow-solix space-y-4 text-slate-900">
+                <div className="bg-white rounded-3xl p-6 border border-solix-border shadow-solix space-y-4 text-solix-dark">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-solix-bg p-4 rounded-2xl border border-solix-border text-xs">
                     <div>
                       <div className="text-solix-muted font-bold flex items-center gap-1">
@@ -1008,23 +1002,23 @@ export default function AdminProjectsPage() {
 
       {/* DANGER ZONE CONFIRMATION DELETE MODAL */}
       {deleteConfirmProject && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-rose-900/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="fixed inset-0 z-50 bg-solix-dark/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white border border-rose-200 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
             <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
+              <div className="w-12 h-12 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 mx-auto">
                 <Trash2 className="w-6 h-6" />
               </div>
-              <h2 className="text-lg font-bold text-white">Delete Project Permanently?</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg font-bold text-solix-dark">Delete Project Permanently?</h2>
+              <p className="text-xs text-solix-muted">
                 This action is irreversible. To confirm deletion, type the exact project title below:
               </p>
-              <div className="bg-slate-950 p-2.5 rounded-xl text-xs font-mono font-bold text-rose-300 border border-slate-800">
+              <div className="bg-solix-bg p-2.5 rounded-xl text-xs font-mono font-bold text-rose-700 border border-solix-border">
                 "{deleteConfirmProject.title}"
               </div>
             </div>
 
             {deleteError && (
-              <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-rose-300 text-xs">
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-rose-800 text-xs">
                 {deleteError}
               </div>
             )}
@@ -1035,14 +1029,14 @@ export default function AdminProjectsPage() {
                 placeholder="Type exact title here..."
                 value={deleteTitleInput}
                 onChange={(e) => setDeleteTitleInput(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
+                className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-rose-500"
               />
 
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmProject(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-full text-xs font-bold text-solix-muted hover:text-solix-dark"
                 >
                   Cancel
                 </button>
@@ -1053,7 +1047,7 @@ export default function AdminProjectsPage() {
                     deleteTitleInput.trim() !== deleteConfirmProject.title.trim()
                   }
                   onClick={handleDeleteProject}
-                  className="bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold px-5 py-2 rounded-xl transition-colors shadow-lg"
+                  className="bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors shadow-md"
                 >
                   {deleting ? 'Deleting...' : 'Delete Permanently'}
                 </button>

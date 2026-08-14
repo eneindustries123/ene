@@ -42,36 +42,46 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-8">
-        <div className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto shadow-lg p-2">
+    <div className="min-h-screen bg-solix-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white border border-solix-border rounded-3xl p-8 sm:p-10 shadow-solix-lg space-y-8">
+        {/* Brand Header */}
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-solix-dark flex items-center justify-center mx-auto shadow-md p-3">
             <Image
               src="/logos/symbol.png"
               alt="E&E Symbol"
-              width={40}
-              height={40}
+              width={48}
+              height={48}
               className="object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Project Management Portal</h1>
-          <p className="text-xs text-slate-400">Authenticated private administrative access</p>
+          <div>
+            <span className="inline-block px-3 py-1 rounded-full border border-solix-border text-[11px] font-bold text-solix-green uppercase tracking-wider bg-solix-bg mb-2">
+              ADMIN CONTROL CENTER
+            </span>
+            <h1 className="text-2xl font-extrabold text-solix-dark tracking-tight">
+              Project Management Portal
+            </h1>
+            <p className="text-xs text-solix-muted mt-1 leading-relaxed">
+              Authenticated private access for E&E administrative staff
+            </p>
+          </div>
         </div>
 
         {errorMessage && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-300 text-xs flex items-start gap-3">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-800 text-xs flex items-start gap-3">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-5" autoComplete="on">
-          <div className="space-y-1.5">
-            <label htmlFor="admin-email" className="text-xs font-semibold text-slate-300">
+          <div className="space-y-2">
+            <label htmlFor="admin-email" className="text-xs font-bold text-solix-dark">
               Administrator Email
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+              <Mail className="w-4 h-4 text-solix-muted absolute left-4 top-3.5" />
               <input
                 id="admin-email"
                 name="username"
@@ -81,17 +91,17 @@ export default function AdminLoginPage() {
                 placeholder="admin@xyz.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-solix-green"
+                className="w-full bg-solix-bg border border-solix-border rounded-2xl pl-11 pr-4 py-3 text-xs text-solix-dark placeholder:text-solix-muted/60 focus:outline-none focus:border-solix-green focus:bg-white transition-all font-medium"
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="admin-password" className="text-xs font-semibold text-slate-300">
+          <div className="space-y-2">
+            <label htmlFor="admin-password" className="text-xs font-bold text-solix-dark">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
+              <Lock className="w-4 h-4 text-solix-muted absolute left-4 top-3.5" />
               <input
                 id="admin-password"
                 name="current-password"
@@ -101,12 +111,12 @@ export default function AdminLoginPage() {
                 placeholder="Enter admin password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-solix-green"
+                className="w-full bg-solix-bg border border-solix-border rounded-2xl pl-11 pr-11 py-3 text-xs text-solix-dark placeholder:text-solix-muted/60 focus:outline-none focus:border-solix-green focus:bg-white transition-all font-medium"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300 transition-colors p-0.5"
+                className="absolute right-3.5 top-3 text-solix-muted hover:text-solix-dark transition-colors p-1"
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -117,9 +127,9 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-solix-green hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold py-3.5 rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2"
+            className="w-full bg-solix-dark hover:bg-black disabled:opacity-50 text-white text-xs font-bold py-3.5 rounded-full transition-all shadow-md flex items-center justify-center gap-2 mt-2"
           >
-            {loading ? 'Authenticating...' : 'Sign In to Admin Panel'}
+            {loading ? 'Authenticating...' : 'Sign In to Admin Portal'}
           </button>
         </form>
       </div>

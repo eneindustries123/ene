@@ -6,15 +6,11 @@ import {
   CheckCircle,
   EyeOff,
   XCircle,
-  RotateCcw,
   Trash2,
   Filter,
   RefreshCw,
   Sparkles,
   Building2,
-  Mail,
-  User,
-  AlertCircle,
 } from 'lucide-react';
 import { Review } from '@/lib/reviews-store';
 
@@ -86,16 +82,15 @@ export default function AdminReviewsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-solix-border pb-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 uppercase tracking-wider">
-            <Star className="w-4 h-4 fill-current" />
-            <span>Customer Feedback & Moderation</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
+          <span className="text-xs font-bold text-solix-green uppercase tracking-wider bg-white px-3 py-1 rounded-full border border-solix-border">
+            Feedback Moderation
+          </span>
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-solix-dark tracking-tight mt-2">
             Customer Reviews Management
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-solix-muted mt-1">
             Moderate incoming client reviews, approve trustworthy feedback, and curate homepage featured reviews.
           </p>
         </div>
@@ -103,7 +98,7 @@ export default function AdminReviewsPage() {
         <button
           type="button"
           onClick={fetchReviews}
-          className="inline-flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all border border-slate-700 shrink-0"
+          className="inline-flex items-center justify-center gap-2 bg-white hover:bg-solix-bg text-solix-dark text-xs font-bold px-5 py-3 rounded-full transition-all border border-solix-border shadow-sm shrink-0"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Reviews</span>
@@ -111,17 +106,17 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/60">
-        <Filter className="w-4 h-4 text-slate-500 shrink-0 ml-1 mr-2" />
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-solix-border/60">
+        <Filter className="w-4 h-4 text-solix-muted shrink-0 ml-1 mr-2" />
         {(['all', 'pending', 'approved', 'hidden', 'rejected', 'featured'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setStatusFilter(tab)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold capitalize transition-all whitespace-nowrap ${
+            className={`px-4 py-2 rounded-full text-xs font-bold capitalize transition-all whitespace-nowrap ${
               statusFilter === tab
-                ? 'bg-solix-green text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-solix-dark text-white shadow-md'
+                : 'bg-white text-solix-muted border border-solix-border hover:text-solix-dark'
             }`}
           >
             {tab === 'all' ? 'All Reviews' : tab}
@@ -131,14 +126,14 @@ export default function AdminReviewsPage() {
 
       {/* Reviews List */}
       {loading ? (
-        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs">
+        <div className="bg-white border border-solix-border rounded-3xl p-12 text-center text-solix-muted text-xs shadow-solix">
           Loading customer reviews...
         </div>
       ) : reviews.length === 0 ? (
-        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-12 text-center space-y-3">
-          <Star className="w-10 h-10 text-slate-600 mx-auto" />
-          <h3 className="text-base font-bold text-white">No reviews found</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+        <div className="bg-white border border-solix-border rounded-3xl p-12 text-center space-y-3 shadow-solix">
+          <Star className="w-10 h-10 text-solix-muted mx-auto" />
+          <h3 className="text-base font-bold text-solix-dark">No reviews found</h3>
+          <p className="text-xs text-solix-muted max-w-sm mx-auto">
             No customer reviews match the selected filter category ({statusFilter}).
           </p>
         </div>
@@ -147,26 +142,26 @@ export default function AdminReviewsPage() {
           {reviews.map((review) => (
             <div
               key={review.id}
-              className="bg-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 hover:border-slate-700 transition-all"
+              className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 space-y-4 shadow-solix hover:shadow-solix-lg transition-all"
             >
               {/* Top Row: Meta info & Badges */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/60 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-solix-border/60 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-solix-green font-bold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-solix-dark text-white font-bold text-sm flex items-center justify-center shadow-sm">
                     {review.name.charAt(0)}
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white">{review.name}</span>
-                      <span className="text-xs text-slate-500 font-mono">({review.email})</span>
+                      <span className="text-base font-bold text-solix-dark">{review.name}</span>
+                      <span className="text-xs text-solix-muted font-mono">({review.email})</span>
                     </div>
 
-                    <div className="text-xs text-slate-400 font-medium flex items-center gap-2 mt-0.5">
+                    <div className="text-xs text-solix-muted font-medium flex items-center gap-2 mt-0.5">
                       {review.role && <span>{review.role}</span>}
                       {review.role && review.company && <span>•</span>}
                       {review.company && (
-                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                        <span className="text-solix-green font-bold flex items-center gap-1">
                           <Building2 className="w-3.5 h-3.5 inline" /> {review.company}
                         </span>
                       )}
@@ -176,8 +171,8 @@ export default function AdminReviewsPage() {
 
                 <div className="flex items-center gap-2">
                   {review.featured && (
-                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 fill-current" />
+                    <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                      <Sparkles className="w-3 h-3 fill-current text-amber-500" />
                       <span>Featured Homepage</span>
                     </span>
                   )}
@@ -185,12 +180,12 @@ export default function AdminReviewsPage() {
                   <span
                     className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
                       review.status === 'approved'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        ? 'bg-solix-green text-white'
                         : review.status === 'pending'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        ? 'bg-amber-500 text-solix-dark'
                         : review.status === 'hidden'
-                        ? 'bg-slate-800 text-slate-300 border border-slate-700'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        ? 'bg-solix-bg text-solix-muted border border-solix-border'
+                        : 'bg-rose-100 text-rose-800 border border-rose-300'
                     }`}
                   >
                     {review.status}
@@ -200,9 +195,9 @@ export default function AdminReviewsPage() {
 
               {/* Service Context & Star Rating */}
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="bg-slate-900 text-slate-300 px-3.5 py-1.5 rounded-xl font-medium border border-slate-800">
-                  <span className="text-slate-500 font-semibold">Service Scope: </span>
-                  <span className="text-white font-bold">{review.service}</span>
+                <div className="bg-solix-bg text-solix-dark px-3.5 py-1.5 rounded-full font-bold border border-solix-border">
+                  <span className="text-solix-muted font-semibold">Service Scope: </span>
+                  <span>{review.service}</span>
                 </div>
 
                 {/* Rating Stars */}
@@ -211,22 +206,22 @@ export default function AdminReviewsPage() {
                     <Star
                       key={star}
                       className={`w-4 h-4 ${
-                        star <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-700'
+                        star <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-300'
                       }`}
                     />
                   ))}
-                  <span className="text-xs font-bold text-slate-300 ml-1">{review.rating}/5</span>
+                  <span className="text-xs font-bold text-solix-dark ml-1">{review.rating}/5 Stars</span>
                 </div>
               </div>
 
               {/* Review Text Quote */}
-              <blockquote className="text-xs sm:text-sm text-slate-300 leading-relaxed italic bg-slate-900/50 p-4 rounded-2xl border border-slate-900">
+              <blockquote className="text-xs sm:text-sm text-solix-dark font-medium leading-relaxed italic bg-solix-bg/60 p-4 rounded-2xl border border-solix-border/60">
                 "{review.review}"
               </blockquote>
 
               {/* Action Toolbar */}
-              <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-900">
-                <span className="text-[11px] text-slate-500 font-mono">
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-solix-border/60">
+                <span className="text-[11px] text-solix-muted font-mono">
                   Submitted: {new Date(review.createdAt).toLocaleDateString()}
                 </span>
 
@@ -236,7 +231,7 @@ export default function AdminReviewsPage() {
                     <button
                       type="button"
                       onClick={() => handleUpdateStatus(review.id, 'approved', review.featured)}
-                      className="inline-flex items-center gap-1.5 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-bold px-3 py-1.5 rounded-xl transition-all"
+                      className="inline-flex items-center gap-1.5 bg-solix-green hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full transition-all shadow-sm"
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
                       <span>Approve</span>
@@ -248,9 +243,9 @@ export default function AdminReviewsPage() {
                     <button
                       type="button"
                       onClick={() => handleUpdateStatus(review.id, 'hidden', false)}
-                      className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border border-slate-700"
+                      className="inline-flex items-center gap-1.5 bg-solix-bg hover:bg-white text-solix-dark text-xs font-bold px-3.5 py-1.5 rounded-full transition-all border border-solix-border"
                     >
-                      <EyeOff className="w-3.5 h-3.5" />
+                      <EyeOff className="w-3.5 h-3.5 text-solix-muted" />
                       <span>Hide</span>
                     </button>
                   )}
@@ -260,22 +255,22 @@ export default function AdminReviewsPage() {
                     <button
                       type="button"
                       onClick={() => handleUpdateStatus(review.id, 'rejected', false)}
-                      className="inline-flex items-center gap-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border border-rose-900/50"
+                      className="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold px-3.5 py-1.5 rounded-full transition-all border border-rose-200"
                     >
                       <XCircle className="w-3.5 h-3.5" />
                       <span>Reject</span>
                     </button>
                   )}
 
-                  {/* Toggle Feature (Only when approved) */}
+                  {/* Toggle Feature */}
                   {review.status === 'approved' && (
                     <button
                       type="button"
                       onClick={() => handleUpdateStatus(review.id, 'approved', !review.featured)}
-                      className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl transition-all ${
+                      className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full transition-all ${
                         review.featured
-                          ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
-                          : 'bg-slate-800 text-amber-400 hover:bg-slate-700 border border-slate-700'
+                          ? 'bg-amber-500 text-solix-dark hover:bg-amber-400 shadow-sm'
+                          : 'bg-solix-bg text-amber-700 hover:bg-white border border-solix-border'
                       }`}
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -287,7 +282,7 @@ export default function AdminReviewsPage() {
                   <button
                     type="button"
                     onClick={() => setDeleteConfirmReview(review)}
-                    className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors ml-2"
+                    className="p-1.5 text-solix-muted hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors ml-2"
                     title="Delete permanently"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -301,15 +296,15 @@ export default function AdminReviewsPage() {
 
       {/* Delete Review Modal */}
       {deleteConfirmReview && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-rose-900/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="fixed inset-0 z-50 bg-solix-dark/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white border border-rose-200 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
             <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
+              <div className="w-12 h-12 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 mx-auto">
                 <Trash2 className="w-6 h-6" />
               </div>
-              <h2 className="text-lg font-bold text-white">Delete Customer Review?</h2>
-              <p className="text-xs text-slate-400">
-                Are you sure you want to permanently delete feedback from <strong className="text-white">{deleteConfirmReview.name}</strong>?
+              <h2 className="text-lg font-bold text-solix-dark">Delete Customer Review?</h2>
+              <p className="text-xs text-solix-muted">
+                Are you sure you want to permanently delete feedback from <strong className="text-solix-dark">{deleteConfirmReview.name}</strong>?
               </p>
             </div>
 
@@ -317,7 +312,7 @@ export default function AdminReviewsPage() {
               <button
                 type="button"
                 onClick={() => setDeleteConfirmReview(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-full text-xs font-bold text-solix-muted hover:text-solix-dark"
               >
                 Cancel
               </button>
@@ -325,7 +320,7 @@ export default function AdminReviewsPage() {
                 type="button"
                 disabled={deleting}
                 onClick={handleDeleteReview}
-                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2 rounded-xl transition-colors shadow-lg"
+                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors shadow-md"
               >
                 {deleting ? 'Deleting...' : 'Delete Permanently'}
               </button>
