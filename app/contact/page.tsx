@@ -63,7 +63,7 @@ export default function ContactPage() {
           <div className="lg:col-span-5 space-y-8">
             <div className="space-y-4">
               <div className="inline-block px-4 py-1 rounded-full border border-solix-border text-solix-muted text-xs font-semibold uppercase tracking-wider bg-white">
-                Connect With Electro
+                Connect With E&E
               </div>
               <h1 className="text-4xl sm:text-5xl font-extrabold text-solix-dark tracking-tight leading-tight">
                 Let's Discuss Your Next Project

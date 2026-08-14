@@ -38,13 +38,13 @@ export function WhyChooseUs() {
       {/* Section Header */}
       <div className="text-center max-w-2xl mx-auto mb-14 space-y-4">
         <span className="text-xs font-bold uppercase tracking-widest text-solix-green">
-          WHY ELECTRO
+          WHY E&E
         </span>
         <h2 className="text-3xl sm:text-5xl font-extrabold text-solix-dark tracking-tight leading-tight">
           Engineering Confidence From Concept to Completion.
         </h2>
         <p className="text-sm sm:text-base text-solix-muted leading-relaxed">
-          Electro combines technical expertise, reliable sourcing, disciplined execution, and continued project support to deliver engineering solutions designed around real operational requirements.
+          E&E combines technical expertise, reliable sourcing, disciplined execution, and continued project support to deliver engineering solutions designed around real operational requirements.
         </p>
       </div>
 
@@ -84,7 +84,7 @@ export function WhyChooseUs() {
       <div className="relative w-full h-[260px] sm:h-[360px] rounded-3xl sm:rounded-4xl overflow-hidden shadow-solix border border-solix-border">
         <Image
           src="/images/why-ee-panoramic.jpg"
-          alt="Electro Industrial Solar Infrastructure Panoramic Rooftop Array"
+          alt="E&E Industrial Solar Infrastructure Panoramic Rooftop Array"
           fill
           sizes="100vw"
           className="object-cover object-center"

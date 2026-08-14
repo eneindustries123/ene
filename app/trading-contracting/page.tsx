@@ -6,7 +6,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Briefcase, ArrowUpRight, CheckCircle2, ShieldCheck, Box, Zap } from 'lucide-react';
 
 export const metadata = {
-  title: 'Trading & Contracting | Electro',
+  title: 'Trading & Contracting | E&E',
   description: 'Technical procurement, material sourcing, electrical equipment supply, solar panels, inverters, cables, and industrial raw materials.',
 };
 
@@ -33,7 +33,7 @@ export default function TradingContractingPage() {
             Technical Procurement & Contracting You Can Rely On
           </h1>
           <p className="text-base sm:text-lg text-solix-muted leading-relaxed">
-            Electro provides structured technical sourcing, electrical equipment supply, industrial raw materials, and contracting support for enterprise projects.
+            E&E provides structured technical sourcing, electrical equipment supply, industrial raw materials, and contracting support for enterprise projects.
           </p>
         </div>
       </section>

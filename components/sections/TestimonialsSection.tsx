@@ -8,7 +8,7 @@ export function TestimonialsSection() {
   const testimonials = [
     {
       id: 't-1',
-      quote: 'Electro handled our commercial solar EPC project professionally from engineering design through installation and net metering commissioning. Their team delivered a structured, transparent, and high-yielding power system.',
+      quote: 'E&E handled our commercial solar EPC project professionally from engineering design through installation and net metering commissioning. Their team delivered a structured, transparent, and high-yielding power system.',
       authorName: 'Ahmed Raza',
       authorRole: 'Project Manager',
       company: 'Logistics Complex Multan',
@@ -16,7 +16,7 @@ export function TestimonialsSection() {
     },
     {
       id: 't-2',
-      quote: 'The technical procurement and structural steel fabrication standards provided by Electro exceeded our industrial requirements. Material sourcing was on-schedule and fully compliant with project specs.',
+      quote: 'The technical procurement and structural steel fabrication standards provided by E&E exceeded our industrial requirements. Material sourcing was on-schedule and fully compliant with project specs.',
       authorName: 'Usman Khalid',
       authorRole: 'Operations Director',
       company: 'Industrial Manufacturing Hub',
@@ -24,7 +24,7 @@ export function TestimonialsSection() {
     },
     {
       id: 't-3',
-      quote: 'From rooftop load calculations to elevated steel shed construction and grid sync, the Electro engineering team provided responsive technical support throughout our 40KW solar transition.',
+      quote: 'From rooftop load calculations to elevated steel shed construction and grid sync, the E&E engineering team provided responsive technical support throughout our 40KW solar transition.',
       authorName: 'Sara Ahmed',
       authorRole: 'Facilities Head',
       company: 'Retail Commercial Center',
@@ -60,7 +60,7 @@ export function TestimonialsSection() {
           </span>
 
           <h2 className="text-3xl sm:text-5xl font-extrabold text-solix-dark tracking-tight leading-tight text-balance">
-            What Our Clients Say About Working With Electro.
+            What Our Clients Say About Working With E&E.
           </h2>
 
           <p className="text-xs sm:text-sm text-solix-muted leading-relaxed">

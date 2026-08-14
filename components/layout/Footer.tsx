@@ -16,7 +16,7 @@ function TikTokIcon({ className }: { className?: string }) {
 
 export function Footer() {
   return (
-    <footer className="py-12 px-4 sm:px-8 max-w-7xl mx-auto">
+    <footer className="py-12 px-4 sm:px-8 max-w-7xl mx-auto w-full">
       <div className="bg-solix-dark text-white rounded-3xl sm:rounded-4xl p-8 sm:p-14 space-y-14 shadow-solix-dark border border-white/10">
         {/* Top Header Row: Brand & Business Consultation Action */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start justify-between border-b border-white/10 pb-12">
@@ -24,11 +24,11 @@ export function Footer() {
           <div className="lg:col-span-6 space-y-4">
             <BrandLogo light />
             <p className="text-xs sm:text-sm text-white/70 max-w-md leading-relaxed">
-              Electro provides integrated solar energy, trading and contracting, and fabrication and design solutions for residential, commercial, industrial, and infrastructure projects.
+              E&E provides integrated solar energy, trading and contracting, and fabrication and design solutions for residential, commercial, industrial, and infrastructure projects.
             </p>
           </div>
 
-          {/* Business Consultation Banner (Replaces Newsletter) */}
+          {/* Business Consultation Banner */}
           <div className="lg:col-span-6 bg-white/10 rounded-2xl p-6 border border-white/15 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-solix-green text-white flex items-center justify-center">
@@ -68,7 +68,7 @@ export function Footer() {
               <li><Link href="/solar-energy" className="hover:text-white transition-colors">Solar Energy</Link></li>
               <li><Link href="/trading-contracting" className="hover:text-white transition-colors">Trading & Contracting</Link></li>
               <li><Link href="/fabrication-design" className="hover:text-white transition-colors">Fabrication & Design</Link></li>
-              <li><Link href="/projects" className="hover:text-white transition-colors">Project Portfolio</Link></li>
+              <li><Link href="/projects" className="hover:text-white transition-colors">Projects</Link></li>
             </ul>
           </div>
 
@@ -96,8 +96,8 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Column 4: Contact */}
-          <div className="space-y-3">
+          {/* Column 4: Contact & Social Pages */}
+          <div className="space-y-4">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Contact</h4>
             <div className="space-y-2 text-white/80">
               <div className="flex items-center gap-2">
@@ -121,65 +121,69 @@ export function Footer() {
                 </a>
               </div>
             </div>
+
+            {/* Social Media Links under Contact Section */}
+            <div className="pt-2">
+              <span className="block text-[11px] font-semibold text-white/60 uppercase tracking-wider mb-2">Connect With Us</span>
+              <div className="flex items-center gap-2.5">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="E&E on Facebook"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-solix-green text-white flex items-center justify-center transition-all hover:scale-110"
+                >
+                  <Facebook className="w-3.5 h-3.5 fill-current" />
+                </a>
+
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="E&E on Instagram"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-solix-green text-white flex items-center justify-center transition-all hover:scale-110"
+                >
+                  <Instagram className="w-3.5 h-3.5" />
+                </a>
+
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="E&E on YouTube"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-solix-green text-white flex items-center justify-center transition-all hover:scale-110"
+                >
+                  <Youtube className="w-3.5 h-3.5" />
+                </a>
+
+                <a
+                  href="https://tiktok.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="E&E on TikTok"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-solix-green text-white flex items-center justify-center transition-all hover:scale-110"
+                >
+                  <TikTokIcon className="w-3.5 h-3.5" />
+                </a>
+
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="E&E on LinkedIn"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-solix-green text-white flex items-center justify-center transition-all hover:scale-110"
+                >
+                  <Linkedin className="w-3.5 h-3.5 fill-current" />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Social Media Bar & Legal Links */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-2 text-xs text-white/60">
-          {/* Social Media Links */}
-          <div className="flex items-center gap-3">
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Electro on Facebook"
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white text-white hover:text-solix-dark flex items-center justify-center transition-all hover:scale-110"
-            >
-              <Facebook className="w-4 h-4 fill-current" />
-            </a>
+        {/* Bottom Copyright & Legal Links */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
+          <p>© {new Date().getFullYear()} E&E. All rights reserved.</p>
 
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Electro on Instagram"
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white text-white hover:text-solix-dark flex items-center justify-center transition-all hover:scale-110"
-            >
-              <Instagram className="w-4 h-4" />
-            </a>
-
-            <a
-              href="https://youtube.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Electro on YouTube"
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white text-white hover:text-solix-dark flex items-center justify-center transition-all hover:scale-110"
-            >
-              <Youtube className="w-4 h-4" />
-            </a>
-
-            <a
-              href="https://tiktok.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Electro on TikTok"
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white text-white hover:text-solix-dark flex items-center justify-center transition-all hover:scale-110"
-            >
-              <TikTokIcon className="w-4 h-4" />
-            </a>
-
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Electro on LinkedIn"
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white text-white hover:text-solix-dark flex items-center justify-center transition-all hover:scale-110"
-            >
-              <Linkedin className="w-4 h-4 fill-current" />
-            </a>
-          </div>
-
-          {/* Legal Links */}
           <div className="flex items-center gap-6">
             <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms-and-conditions" className="hover:text-white transition-colors">Terms & Conditions</Link>

@@ -34,7 +34,7 @@ export function TechnologySpotlight() {
           </h2>
 
           <p className="text-xs sm:text-sm text-solix-muted leading-relaxed">
-            Electro delivers tailored solar energy solutions for residential, commercial, industrial, and agricultural projects—from assessment and system design to installation and commissioning.
+            E&E delivers tailored solar energy solutions for residential, commercial, industrial, and agricultural projects—from assessment and system design to installation and commissioning.
           </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -68,7 +68,7 @@ export function TechnologySpotlight() {
           <div className="relative w-64 sm:w-72 h-[380px] sm:h-[420px] rounded-full overflow-hidden shadow-solix-lg border-4 border-white">
             <Image
               src="/images/solar-engineer-tablet.jpg"
-              alt="Electro Commercial Solar Engineer with Digital Tablet"
+              alt="E&E Commercial Solar Engineer with Digital Tablet"
               fill
               sizes="(max-width: 1024px) 100vw, 33vw"
               className="object-cover object-center hover:scale-105 transition-transform duration-700"

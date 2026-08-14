@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Manrope } from 'next/font/google';
+import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
 import './globals.css';
 
 const manrope = Manrope({
@@ -11,33 +12,33 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Electro | Engineering, Solar Energy, Trading & Fabrication',
-    template: '%s | Electro',
+    default: 'E&E | Engineering, Solar Energy, Trading & Fabrication',
+    template: '%s | E&E',
   },
-  description: 'Electro is an integrated engineering, renewable energy, procurement, contracting, fabrication, and structural design organization.',
-  keywords: ['Electro', 'Solar Energy Pakistan', 'Trading & Contracting', 'Fabrication & Design', 'PEB Buildings', 'Solar Mounting Structures', 'Net Metering'],
-  authors: [{ name: 'Electro' }],
-  creator: 'Electro',
+  description: 'E&E is an integrated engineering, renewable energy, procurement, contracting, fabrication, and structural design organization.',
+  keywords: ['E&E', 'E&E Industries', 'Solar Energy Pakistan', 'Trading & Contracting', 'Fabrication & Design', 'PEB Buildings', 'Solar Mounting Structures', 'Net Metering'],
+  authors: [{ name: 'E&E' }],
+  creator: 'E&E',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://eneindustries.com'),
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://eneindustries.com',
-    title: 'Electro | Engineering, Solar Energy, Trading & Fabrication',
+    title: 'E&E | Engineering, Solar Energy, Trading & Fabrication',
     description: 'Integrated solar energy, trading and contracting, and fabrication and design solutions for residential, commercial, industrial, and infrastructure projects.',
-    siteName: 'Electro',
+    siteName: 'E&E',
     images: [
       {
         url: '/images/service-solar.jpg',
         width: 1200,
         height: 630,
-        alt: 'Electro Engineering & Solar',
+        alt: 'E&E Engineering & Solar',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Electro | Engineering & Energy',
+    title: 'E&E | Engineering & Energy',
     description: 'Smarter energy and infrastructure solutions across solar, trading, and fabrication.',
     images: ['/images/service-solar.jpg'],
   },
@@ -59,6 +60,7 @@ export default function RootLayout({
       </head>
       <body className="bg-solix-bg text-solix-text antialiased selection:bg-solix-green selection:text-white">
         {children}
+        <WhatsAppButton />
       </body>
     </html>
   );

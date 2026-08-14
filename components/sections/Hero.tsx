@@ -13,7 +13,7 @@ export function Hero() {
       <div className="absolute inset-0 z-0">
         <Image
           src="/images/ee-hero.jpg"
-          alt="Electro Industrial Rooftop Solar Infrastructure Engineering"
+          alt="E&E Industrial Rooftop Solar Infrastructure Engineering"
           fill
           priority
           sizes="100vw"
@@ -48,7 +48,7 @@ export function Hero() {
 
           {/* Description */}
           <p className="text-base sm:text-lg text-white/85 font-normal leading-relaxed max-w-2xl text-balance">
-            Electro delivers integrated solar energy, trading and contracting, and fabrication and design solutions for residential, commercial, industrial, and infrastructure projects.
+            E&E delivers integrated solar energy, trading and contracting, and fabrication and design solutions for residential, commercial, industrial, and infrastructure projects.
           </p>
 
           {/* Dual CTA Buttons */}

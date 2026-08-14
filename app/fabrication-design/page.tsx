@@ -6,7 +6,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Wrench, ArrowUpRight, ShieldCheck, Layers, Cpu } from 'lucide-react';
 
 export const metadata = {
-  title: 'Fabrication & Design | Electro',
+  title: 'Fabrication & Design | E&E',
   description: 'Precision structural steel design and fabrication for solar mounting structures, PEB buildings, street poles, parking shades, and cable trays.',
 };
 
@@ -34,7 +34,7 @@ export default function FabricationDesignPage() {
             Engineered Structures. Precision Fabrication.
           </h1>
           <p className="text-base sm:text-lg text-solix-muted leading-relaxed">
-            Electro combines structural design, stress calculations, precision steel fabrication, and on-site assembly for industrial and solar applications.
+            E&E combines structural design, stress calculations, precision steel fabrication, and on-site assembly for industrial and solar applications.
           </p>
         </div>
       </section>

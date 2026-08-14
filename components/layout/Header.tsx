@@ -34,10 +34,7 @@ export function Header() {
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 sm:px-8 py-3.5',
-        isScrolled
-          ? 'bg-solix-dark/90 backdrop-blur-xl border-b border-white/10 py-3 shadow-solix-dark'
-          : 'bg-transparent py-5'
+        'fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 sm:px-8 py-3 shadow-solix-dark bg-solix-dark/95 backdrop-blur-xl border-b border-white/10'
       )}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">

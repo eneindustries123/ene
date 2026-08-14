@@ -6,7 +6,7 @@ import { Footer } from '@/components/layout/Footer';
 import { ArrowUpRight, CheckCircle2, Sun, ShieldCheck, Zap, Layers } from 'lucide-react';
 
 export const metadata = {
-  title: 'Solar Energy Solutions | Electro',
+  title: 'Solar Energy Solutions | E&E',
   description: 'Solar energy solutions engineered for Pakistan. Residential, commercial, industrial, and agricultural solar EPC, net metering, and maintenance.',
 };
 
@@ -50,7 +50,7 @@ export default function SolarEnergyPage() {
             Solar Energy Solutions Engineered for Pakistan
           </h1>
           <p className="text-base sm:text-lg text-solix-muted leading-relaxed">
-            Electro provides complete solar engineering and project execution for residential, commercial, industrial, institutional, and agricultural applications.
+            E&E provides complete solar engineering and project execution for residential, commercial, industrial, institutional, and agricultural applications.
           </p>
         </div>
       </section>

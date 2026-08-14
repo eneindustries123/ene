@@ -17,7 +17,7 @@ export function ResidentialPackages() {
       {/* Section Header */}
       <div className="text-center max-w-2xl mx-auto mb-12 space-y-4">
         <div className="inline-block px-4 py-1 rounded-full border border-solix-border text-solix-muted text-xs font-semibold uppercase tracking-wider bg-white">
-          Electro Solar Packages
+          E&E Solar Packages
         </div>
         <h2 className="text-3xl sm:text-5xl font-extrabold text-solix-dark tracking-tight">
           Selectable Solar System Packages

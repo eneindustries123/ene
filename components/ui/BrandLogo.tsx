@@ -29,7 +29,7 @@ export function BrandLogo({ variant = 'full', light = false, className }: BrandL
           light ? 'text-white' : 'text-solix-dark'
         )}
       >
-        Electro<span className="text-emerald-400">.</span>
+        E&E<span className="text-emerald-400">.</span>
       </span>
     </Link>
   );

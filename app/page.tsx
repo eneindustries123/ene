@@ -4,6 +4,7 @@ import { Hero } from '@/components/sections/Hero';
 import { OverlappingMetrics } from '@/components/sections/OverlappingMetrics';
 import { CoreExpertise } from '@/components/sections/CoreExpertise';
 import { TechnologySpotlight } from '@/components/sections/TechnologySpotlight';
+import { PartnersShowcase } from '@/components/sections/PartnersShowcase';
 import { WhyChooseUs } from '@/components/sections/WhyChooseUs';
 import { FeaturedProjects } from '@/components/sections/FeaturedProjects';
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
@@ -28,13 +29,16 @@ export default function HomePage() {
       {/* 5. Solar Highlight Section */}
       <TechnologySpotlight />
 
-      {/* 6. Why Electro */}
+      {/* 6. Technology Partners Showcase */}
+      <PartnersShowcase />
+
+      {/* 7. Why E&E */}
       <WhyChooseUs />
 
-      {/* 7. Featured Projects */}
+      {/* 8. Featured Projects */}
       <FeaturedProjects />
 
-      {/* 8. Testimonials / Client Proof */}
+      {/* 9. Testimonials / Client Proof */}
       <TestimonialsSection />
 
       {/* 9. Short Contact / Lead Capture CTA */}

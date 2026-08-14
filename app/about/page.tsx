@@ -7,8 +7,8 @@ import { COMMITTEE_MEMBERS } from '@/lib/data';
 import { ShieldCheck, Award, Globe2, Users, ArrowUpRight, Cpu, Layers, CheckCircle2 } from 'lucide-react';
 
 export const metadata = {
-  title: 'About Us | Electro',
-  description: 'Learn about Electro, our Executive Management Committee (Asjed Mehnood & Malik Waqar Ahmed), 10-year engineering track record, and multi-service capabilities.',
+  title: 'About Us | E&E',
+  description: 'Learn about E&E, our Executive Management Committee (Asjed Mehnood & Malik Waqar Ahmed), 10-year engineering track record, and multi-service capabilities.',
 };
 
 export default function AboutPage() {
@@ -28,13 +28,13 @@ export default function AboutPage() {
       <section className="pt-36 pb-16 px-4 sm:px-8 max-w-7xl mx-auto w-full">
         <div className="text-center max-w-3xl mx-auto space-y-6">
           <div className="inline-block px-4 py-1 rounded-full border border-solix-border text-solix-muted text-xs font-semibold uppercase tracking-wider bg-white">
-            About Electro
+            About E&E
           </div>
           <h1 className="text-4xl sm:text-6xl font-extrabold text-solix-dark tracking-tight leading-tight">
             Engineering Solutions. Built on Experience.
           </h1>
           <p className="text-base sm:text-lg text-solix-muted leading-relaxed">
-            Electro brings together engineering, renewable energy, procurement, contracting, structural design, and fabrication expertise to deliver practical solutions for complex project requirements.
+            E&E brings together engineering, renewable energy, procurement, contracting, structural design, and fabrication expertise to deliver practical solutions for complex project requirements.
           </p>
         </div>
       </section>
@@ -58,7 +58,7 @@ export default function AboutPage() {
             Leadership
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-solix-dark tracking-tight">Executive Management Committee</h2>
-          <p className="text-xs text-solix-muted mt-2">Guiding Electro engineering precision and strategic project delivery.</p>
+          <p className="text-xs text-solix-muted mt-2">Guiding E&E engineering precision and strategic project delivery.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
