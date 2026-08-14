@@ -88,7 +88,7 @@ export function Footer() {
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-emerald-400" />
-              <span>Address :</span>
+              <span>Address</span>
             </h4>
             <p className="text-white/80 leading-relaxed font-medium">
               183B Iqbal Avenue 1<br />
