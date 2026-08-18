@@ -585,9 +585,9 @@ export default function SolarEnergyPage() {
 
       {/* 6. NET METERING & GRID INTEGRATION (ENGINEERING-FOCUSED SECTION) */}
       <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
           {/* Left: Net Metering Information */}
-          <div className="lg:col-span-7 space-y-8">
+          <div className="lg:col-span-7 space-y-8 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="inline-flex items-center px-4 py-1 rounded-full border border-solix-border text-solix-green text-xs font-bold uppercase tracking-widest bg-white">
                 GRID INTEGRATION
@@ -623,40 +623,42 @@ export default function SolarEnergyPage() {
             </div>
           </div>
 
-          {/* Right: Net Metering Visual Infographic Card */}
-          <div className="lg:col-span-5 flex flex-col">
-            <div className="bg-solix-dark text-white rounded-3xl p-8 sm:p-10 border border-white/10 shadow-solix-dark relative overflow-hidden space-y-8">
-              <div className="space-y-3">
-                <span className="inline-block px-3.5 py-1 rounded-full bg-white/10 border border-white/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-                  How Net Metering Works
-                </span>
-                <h3 className="text-2xl font-extrabold text-white tracking-tight">
-                  Bidirectional Energy Banking
-                </h3>
-                <p className="text-xs sm:text-sm text-white/75 leading-relaxed">
-                  During high-irradiance daytime hours, your solar system powers your facility and exports excess surplus units to the DISCO grid. At night or during cloudy periods, you draw grid power offset against your exported credits.
-                </p>
+          {/* Right: Net Metering Visual Infographic Card (Aligned to match left column height) */}
+          <div className="lg:col-span-5 flex flex-col h-full">
+            <div className="bg-solix-dark text-white rounded-3xl p-8 sm:p-10 border border-white/10 shadow-solix-dark relative overflow-hidden flex flex-col justify-between h-full space-y-8">
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <span className="inline-block px-3.5 py-1 rounded-full bg-white/10 border border-white/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                    How Net Metering Works
+                  </span>
+                  <h3 className="text-2xl font-extrabold text-white tracking-tight">
+                    Bidirectional Energy Banking
+                  </h3>
+                  <p className="text-xs sm:text-sm text-white/75 leading-relaxed">
+                    During high-irradiance daytime hours, your solar system powers your facility and exports excess surplus units to the DISCO grid. At night or during cloudy periods, you draw grid power offset against your exported credits.
+                  </p>
+                </div>
+
+                {/* Key Benefits Metric Rows */}
+                <div className="space-y-4 pt-4 border-t border-white/15">
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="text-xs font-bold text-white">Export Unit Value</div>
+                    <div className="text-xs font-extrabold text-emerald-400">1 : 1 Offsetting Credits</div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="text-xs font-bold text-white">Bill Reduction</div>
+                    <div className="text-xs font-extrabold text-emerald-400">Up to 90% – 100%</div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="text-xs font-bold text-white">Approval Turnaround</div>
+                    <div className="text-xs font-extrabold text-emerald-400">Full E&E Handling</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Key Benefits Metric Rows */}
-              <div className="space-y-4 pt-4 border-t border-white/15">
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="text-xs font-bold text-white">Export Unit Value</div>
-                  <div className="text-xs font-extrabold text-emerald-400">1 : 1 Offsetting Credits</div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="text-xs font-bold text-white">Bill Reduction</div>
-                  <div className="text-xs font-extrabold text-emerald-400">Up to 90% – 100%</div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="text-xs font-bold text-white">Approval Turnaround</div>
-                  <div className="text-xs font-extrabold text-emerald-400">Full E&E Handling</div>
-                </div>
-              </div>
-
-              <div className="pt-2">
+              <div className="pt-4">
                 <Link
                   href="/request-a-quote"
                   className="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-100 text-solix-dark text-xs font-bold py-3.5 rounded-full transition-colors shadow-md"
