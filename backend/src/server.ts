@@ -16,7 +16,7 @@ import { uploadsRouter } from './routes/uploads.routes';
 import { errorHandler } from './middleware/error';
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || FRONTEND_URL;
 
@@ -78,9 +78,9 @@ app.use(errorHandler);
 
 // Start Server
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`⚡ E&E Industries API Server running on port ${PORT}`);
-    console.log(`🔗 Allowed Frontend Origin: ${FRONTEND_URL}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`E&E Industries API running on port ${PORT}`);
+    console.log(`Allowed Frontend Origin: ${FRONTEND_URL}`);
   });
 }
 
