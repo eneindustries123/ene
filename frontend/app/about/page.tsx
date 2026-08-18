@@ -246,13 +246,20 @@ export default function AboutPage() {
         </div>
 
         {/* Capabilities Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {CORE_CAPABILITIES.map((cap) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 max-w-7xl mx-auto">
+          {CORE_CAPABILITIES.map((cap, index) => {
             const Icon = cap.icon;
+            const gridPositionClass =
+              index === 3
+                ? 'col-span-1 md:col-span-1 lg:col-span-2 lg:col-start-2'
+                : index === 4
+                ? 'col-span-1 md:col-span-2 md:max-w-md md:mx-auto md:w-full lg:max-w-none lg:col-span-2 lg:col-start-4'
+                : 'col-span-1 md:col-span-1 lg:col-span-2';
+
             return (
               <div
                 key={cap.id}
-                className="bg-white rounded-3xl p-8 border border-solix-border/80 shadow-solix hover:shadow-solix-lg hover:border-solix-green/30 transition-all duration-300 flex flex-col justify-between space-y-6 group"
+                className={`${gridPositionClass} bg-white rounded-3xl p-8 border border-solix-border/80 shadow-solix hover:shadow-solix-lg hover:border-solix-green/30 transition-all duration-300 flex flex-col justify-between space-y-6 group`}
               >
                 <div className="space-y-4">
                   {/* Top Bar */}
