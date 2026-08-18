@@ -605,13 +605,13 @@ export default function SolarEnergyPage() {
               {NET_METERING_POINTS.map((point) => (
                 <div
                   key={point.title}
-                  className="bg-white rounded-2xl p-4.5 border border-solix-border/80 shadow-sm flex items-start gap-4"
+                  className="bg-white rounded-2xl p-5 border border-solix-border/80 shadow-sm flex items-start gap-4 hover:border-solix-green/30 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 text-solix-green flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-100 text-solix-green flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle className="w-4.5 h-4.5 text-solix-green" />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-solix-dark">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-solix-dark leading-snug">
                       {point.title}
                     </h3>
                     <p className="text-xs text-solix-muted leading-relaxed">
