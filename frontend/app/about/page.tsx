@@ -454,47 +454,46 @@ export default function AboutPage() {
 
       {/* 6. WHY CLIENTS TRUST E&E */}
       <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left: Trust Content */}
-          <div className="lg:col-span-7 space-y-8">
-            <div className="space-y-4">
-              <div className="inline-flex items-center px-4 py-1 rounded-full border border-solix-border text-solix-green text-xs font-bold uppercase tracking-widest bg-white">
-                WHY CHOOSE E&E
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-solix-dark tracking-tight leading-tight">
-                Built on Integrity, Engineered for Performance
-              </h2>
-              <p className="text-sm sm:text-base text-solix-muted leading-relaxed">
-                Why industrial leaders, commercial enterprises, and institutions trust E&E for their mission-critical infrastructure.
-              </p>
-            </div>
+        {/* Section Header */}
+        <div className="space-y-4 mb-10 max-w-3xl">
+          <div className="inline-flex items-center px-4 py-1 rounded-full border border-solix-border text-solix-green text-xs font-bold uppercase tracking-widest bg-white">
+            WHY CHOOSE E&E
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-solix-dark tracking-tight leading-tight">
+            Built on Integrity, Engineered for Performance
+          </h2>
+          <p className="text-sm sm:text-base text-solix-muted leading-relaxed">
+            Why industrial leaders, commercial enterprises, and institutions trust E&E for their mission-critical infrastructure.
+          </p>
+        </div>
 
-            {/* 5 Key Pillars */}
-            <div className="space-y-4">
-              {TRUST_PILLARS.map((pillar) => (
-                <div
-                  key={pillar.title}
-                  className="bg-white rounded-2xl p-5 border border-solix-border/80 shadow-sm flex items-start gap-4"
-                >
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 text-solix-green flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle className="w-4 h-4" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-solix-dark">
-                      {pillar.title}
-                    </h3>
-                    <p className="text-xs text-solix-muted leading-relaxed">
-                      {pillar.description}
-                    </p>
-                  </div>
+        {/* 2-Column Grid: 5 Cards on Left, Full-Height Image on Right aligned with Card 1 Top and Card 5 Bottom */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
+          {/* Left: 5 Key Pillars */}
+          <div className="lg:col-span-7 space-y-4 flex flex-col justify-between">
+            {TRUST_PILLARS.map((pillar) => (
+              <div
+                key={pillar.title}
+                className="bg-white rounded-2xl p-5 border border-solix-border/80 shadow-sm flex items-start gap-4"
+              >
+                <div className="w-8 h-8 rounded-full bg-emerald-50 text-solix-green flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle className="w-4 h-4" />
                 </div>
-              ))}
-            </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-solix-dark">
+                    {pillar.title}
+                  </h3>
+                  <p className="text-xs text-solix-muted leading-relaxed">
+                    {pillar.description}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Right: Clean Supporting Image Frame */}
-          <div className="lg:col-span-5">
-            <div className="relative rounded-3xl overflow-hidden shadow-solix-lg border border-solix-border aspect-[4/5]">
+          {/* Right: Full-Height Image Frame Aligned from Card 1 Top to Card 5 Bottom */}
+          <div className="lg:col-span-5 flex flex-col">
+            <div className="relative w-full h-full min-h-[380px] rounded-3xl overflow-hidden shadow-solix-lg border border-solix-border bg-solix-bg">
               <Image
                 src="/images/why-ee-panoramic.jpg"
                 alt="E&E Solar Installation Infrastructure"
@@ -502,7 +501,7 @@ export default function AboutPage() {
                 sizes="(max-width: 1024px) 100vw, 40vw"
                 className="object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-solix-dark/85 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-solix-dark/85 via-solix-dark/20 to-transparent" />
               
               <div className="absolute bottom-6 left-6 right-6 text-white space-y-4">
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 space-y-2">
