@@ -48,22 +48,6 @@ export interface Testimonial {
   rating: number;
 }
 
-export interface BlogPost {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  publishDate: string;
-  author: {
-    name: string;
-    role: string;
-    avatar: string;
-  };
-  category: string;
-  featuredImage: string;
-  readTime: string;
-  content: string;
-}
 
 export interface FAQ {
   id: string;
@@ -405,57 +389,6 @@ export const INITIAL_TESTIMONIALS: Testimonial[] = [
     company: 'Northern Engineering Alliance',
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop',
     rating: 5,
-  },
-];
-
-export const INITIAL_BLOG_POSTS: BlogPost[] = [
-  {
-    id: 'post-1',
-    title: 'Solar System in Pakistan – Complete Guide 2026',
-    slug: 'solar-system-in-pakistan-complete-guide-2026',
-    excerpt: 'Explore current net metering regulations, on-grid vs. hybrid setups, peak-hour load shaving economics, and recommended solar panel selection for Pakistan.',
-    publishDate: 'August 7, 2026',
-    author: {
-      name: 'Asjed Mehnood',
-      role: 'Executive Committee Member',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
-    },
-    category: 'Solar Energy',
-    featuredImage: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?q=80&w=1200&auto=format&fit=crop',
-    readTime: '8 min read',
-    content: 'Solar energy adoption across Pakistan has accelerated due to rising grid tariffs...',
-  },
-  {
-    id: 'post-2',
-    title: 'Understanding Structural Design in Pre-Engineered Buildings (PEB)',
-    slug: 'understanding-structural-design-in-peb-buildings',
-    excerpt: 'How precision steel fabrication, clear-span engineering, and quality galvanization improve long-term durability for industrial warehouses.',
-    publishDate: 'August 5, 2026',
-    author: {
-      name: 'Malik Waqar Ahmed',
-      role: 'Executive Committee Member',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop',
-    },
-    category: 'Engineering',
-    featuredImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200&auto=format&fit=crop',
-    readTime: '6 min read',
-    content: 'Pre-engineered buildings provide structural flexibility and rapid construction cycles...',
-  },
-  {
-    id: 'post-3',
-    title: 'Technical Procurement Checklist for Commercial Solar EPC Projects',
-    slug: 'technical-procurement-checklist-for-commercial-solar-epc-projects',
-    excerpt: 'Key technical criteria for evaluating solar inverters, DC cable gauges, circuit protection breakers, and net metering documentation.',
-    publishDate: 'August 3, 2026',
-    author: {
-      name: 'Asjed Mehnood',
-      role: 'Executive Committee Member',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
-    },
-    category: 'Trading & Contracting',
-    featuredImage: 'https://images.unsplash.com/photo-1542336391-ae2936d8eff4?q=80&w=1200&auto=format&fit=crop',
-    readTime: '5 min read',
-    content: 'Quality procurement dictates system performance over a 25-year lifecycle...',
   },
 ];
 

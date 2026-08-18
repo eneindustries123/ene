@@ -186,13 +186,6 @@ export function Header() {
           </Link>
 
           <Link
-            href="/blog"
-            className={cn('transition-colors hover:text-white', pathname === '/blog' ? 'text-white font-bold' : 'text-white/80')}
-          >
-            Blog
-          </Link>
-
-          <Link
             href="/contact"
             className={cn('transition-colors hover:text-white', pathname === '/contact' ? 'text-white font-bold' : 'text-white/80')}
           >
@@ -247,7 +240,6 @@ export function Header() {
 
             <div className="pt-2 border-t border-white/10 space-y-3">
               <Link href="/projects" onClick={() => setMobileMenuOpen(false)} className="block text-xl font-bold text-white hover:text-emerald-400">Projects</Link>
-              <Link href="/blog" onClick={() => setMobileMenuOpen(false)} className="block text-xl font-bold text-white hover:text-emerald-400">Blog</Link>
               <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="block text-xl font-bold text-white hover:text-emerald-400">Contact</Link>
             </div>
           </div>
