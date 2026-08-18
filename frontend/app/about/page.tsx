@@ -205,22 +205,23 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Right: Supporting Image */}
+          {/* Right: Supporting Image with Natural Uncropped Framing */}
           <div className="lg:col-span-5">
-            <div className="relative rounded-3xl overflow-hidden shadow-solix-lg border border-solix-border aspect-[4/3] sm:aspect-[4/3] lg:aspect-[5/4]">
+            <div className="relative rounded-3xl overflow-hidden shadow-solix-lg border border-solix-border aspect-[4/3] sm:aspect-[4/3] lg:aspect-[5/4] bg-solix-bg">
               <Image
                 src="/images/solar-engineer-tablet.jpg"
                 alt="E&E Engineering Specialist on Site"
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"
-                className="object-cover object-center"
+                className="object-cover object-[center_20%] transition-transform duration-500"
+                priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-solix-dark/80 via-transparent to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6 text-white space-y-1">
+              <div className="absolute inset-0 bg-gradient-to-t from-solix-dark/75 via-solix-dark/10 to-transparent" />
+              <div className="absolute bottom-5 left-5 right-5 text-white space-y-1">
                 <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
                   On-Site Execution
                 </div>
-                <div className="text-sm font-bold">
+                <div className="text-xs sm:text-sm font-bold leading-snug">
                   Certified Engineers Ensuring Strict Quality & Safety Standards
                 </div>
               </div>
@@ -385,25 +386,25 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* Two Large Horizontal Member Cards */}
+        {/* Two Large Horizontal Member Cards with Natural Portrait Framing */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           {LEADERSHIP_MEMBERS.map((member) => (
             <div
               key={member.name}
               className="bg-white rounded-3xl p-5 sm:p-7 border border-solix-border shadow-solix hover:shadow-solix-lg hover:border-solix-green/30 transition-all duration-300 flex flex-col sm:flex-row gap-6 group"
             >
-              {/* Photo Container: ~40-45% width */}
-              <div className="relative w-full sm:w-[42%] lg:w-[44%] min-h-[280px] sm:min-h-[340px] rounded-2xl overflow-hidden shrink-0 bg-solix-bg border border-solix-border/60">
+              {/* Photo Container: ~40-44% width, natural portrait aspect ratio */}
+              <div className="relative w-full sm:w-[42%] lg:w-[44%] aspect-square sm:aspect-[4/5] rounded-2xl overflow-hidden shrink-0 bg-slate-100/70 border border-solix-border/60">
                 <Image
                   src={member.imageUrl}
                   alt={member.name}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-500"
+                  className="object-cover object-[center_12%] group-hover:scale-[1.02] transition-transform duration-500"
                 />
               </div>
 
-              {/* Information Panel: ~55-60% width */}
+              {/* Information Panel: ~56-60% width */}
               <div className="w-full sm:w-[58%] lg:w-[56%] flex flex-col justify-between py-1 sm:py-2 space-y-5">
                 <div className="space-y-3">
                   {/* Name & Designation */}
