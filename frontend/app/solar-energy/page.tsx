@@ -440,13 +440,13 @@ export default function SolarEnergyPage() {
         </div>
 
         {/* 3 Configuration Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           {SYSTEM_CONFIGURATIONS.map((config) => (
             <div
               key={config.id}
-              className="bg-white rounded-3xl p-8 border border-solix-border/80 shadow-solix hover:shadow-solix-lg hover:border-solix-green/30 transition-all duration-300 flex flex-col justify-between space-y-6 group"
+              className="bg-white rounded-3xl p-8 border border-solix-border/80 shadow-solix hover:shadow-solix-lg hover:border-solix-green/30 transition-all duration-300 flex flex-col justify-between space-y-6 group h-full"
             >
-              <div className="space-y-5">
+              <div className="space-y-5 flex-1 flex flex-col justify-start">
                 {/* Header Badge & Title */}
                 <div className="space-y-2">
                   <span className="inline-block px-3 py-1 rounded-full bg-solix-bg border border-solix-border text-[11px] font-bold text-solix-green uppercase tracking-wider">
@@ -480,8 +480,8 @@ export default function SolarEnergyPage() {
                 </div>
               </div>
 
-              {/* Key Advantage Box */}
-              <div className="bg-solix-bg rounded-2xl p-4 border border-solix-border/80 space-y-1">
+              {/* Key Advantage Box (Equal height on desktop) */}
+              <div className="bg-solix-bg rounded-2xl p-4 border border-solix-border/80 space-y-1 w-full lg:min-h-[132px] flex flex-col justify-start">
                 <div className="text-[11px] font-extrabold text-solix-green uppercase tracking-wider">
                   Key Advantage
                 </div>
