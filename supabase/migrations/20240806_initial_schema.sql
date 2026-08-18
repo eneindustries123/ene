@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Products Table
 CREATE TABLE IF NOT EXISTS public.products (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   title TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   category TEXT NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.products (
 
 -- Services Table
 CREATE TABLE IF NOT EXISTS public.services (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   title TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   short_description TEXT NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.services (
 
 -- Maintenance Plans
 CREATE TABLE IF NOT EXISTS public.maintenance_plans (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   name TEXT NOT NULL,
   tier TEXT NOT NULL,
   price_monthly NUMERIC(10, 2),
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS public.maintenance_plans (
 
 -- Projects Table
 CREATE TABLE IF NOT EXISTS public.projects (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   title TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   client TEXT NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
 
 -- Testimonials Table
 CREATE TABLE IF NOT EXISTS public.testimonials (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   quote TEXT NOT NULL,
   author_name TEXT NOT NULL,
   author_role TEXT NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS public.testimonials (
 
 -- Partners Table
 CREATE TABLE IF NOT EXISTS public.partners (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   name TEXT NOT NULL,
   logo_url TEXT NOT NULL,
   website_url TEXT,
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS public.partners (
 
 -- Team Members
 CREATE TABLE IF NOT EXISTS public.team_members (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   name TEXT NOT NULL,
   role TEXT NOT NULL,
   bio TEXT NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS public.team_members (
 
 -- Certifications Table
 CREATE TABLE IF NOT EXISTS public.certifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   title TEXT NOT NULL,
   issuing_body TEXT NOT NULL,
   badge_url TEXT NOT NULL,
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS public.certifications (
 
 -- FAQs Table
 CREATE TABLE IF NOT EXISTS public.faqs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
   category TEXT DEFAULT 'General',
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS public.faqs (
 
 -- Enquiries Table (Leads)
 CREATE TABLE IF NOT EXISTS public.enquiries (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL,
   phone TEXT,
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS public.enquiries (
 
 -- Quote Requests Table
 CREATE TABLE IF NOT EXISTS public.quote_requests (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL,
   phone TEXT NOT NULL,
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS public.quote_requests (
 
 -- Newsletter Subscribers Table
 CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   email TEXT UNIQUE NOT NULL,
   status TEXT DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
 
 -- Redirects Table
 CREATE TABLE IF NOT EXISTS public.redirects (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   source_path TEXT UNIQUE NOT NULL,
   target_path TEXT NOT NULL,
   status_code INTEGER DEFAULT 301,
@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS public.redirects (
 
 -- Audit Logs Table
 CREATE TABLE IF NOT EXISTS public.audit_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   actor_email TEXT NOT NULL,
   action TEXT NOT NULL,
   entity TEXT NOT NULL,

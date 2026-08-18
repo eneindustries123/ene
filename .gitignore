@@ -1,17 +1,23 @@
 # dependencies
 /node_modules
+*/node_modules
 /.pnp
 .pnp.js
 
 # testing
 /coverage
+*/coverage
 
 # next.js
 /.next/
+frontend/.next/
 /out/
+frontend/out/
 
 # production
 /build
+frontend/build
+backend/dist
 
 # debug
 npm-debug.log*
@@ -21,13 +27,21 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+*.env
+backend/.env
+frontend/.env.local
+!.env.example
+!**/.env.example
 
-# vercel
+# vercel & belmo & supabase
 .vercel
+.temp/
+supabase/.temp/
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+frontend/next-env.d.ts
 
 # OS / Editor files
 .DS_Store

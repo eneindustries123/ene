@@ -3,7 +3,7 @@
 
 -- 1. Ensure Projects table exists and support status field ('published', 'draft', 'archived')
 CREATE TABLE IF NOT EXISTS public.projects (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   title TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   client TEXT NOT NULL,
@@ -36,7 +36,7 @@ END $$;
 
 -- 2. Create Reviews Table for Customer Reviews & Moderation Workflow
 CREATE TABLE IF NOT EXISTS public.reviews (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   company TEXT,
