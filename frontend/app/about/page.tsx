@@ -9,15 +9,11 @@ import {
   Hammer,
   Building2,
   Zap,
-  ShieldCheck,
   Award,
   CheckCircle2,
   ArrowUpRight,
   Target,
   Compass,
-  Linkedin,
-  Layers,
-  Wrench,
   CheckCircle,
 } from 'lucide-react';
 
@@ -30,45 +26,27 @@ export const metadata = {
 interface LeadershipMember {
   name: string;
   designation: string;
-  roleBadge: string;
   summary: string;
   imageUrl: string;
   expertise: string[];
-  linkedinUrl?: string;
 }
 
 const LEADERSHIP_MEMBERS: LeadershipMember[] = [
   {
     name: 'Asjed Mehnood',
-    designation: 'Chief Executive Officer (CEO)',
-    roleBadge: 'Executive Leadership',
+    designation: 'CEO',
     summary:
-      'Steers corporate vision, strategic investment, EPC contracting, and enterprise engineering operations across solar power, procurement, and industrial infrastructure deployments.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600&auto=format&fit=crop',
-    expertise: [
-      'Strategic Leadership',
-      'EPC Project Management',
-      'Renewable Energy Policy',
-      'Enterprise Procurement',
-    ],
-    linkedinUrl: 'https://linkedin.com',
+      'Steers corporate vision, strategic growth, and multi-divisional engineering execution across solar energy, procurement, and industrial contracting with a steadfast focus on quality delivery and long-term client relationships.',
+    imageUrl: '/images/asjed-mehnood.jpg',
+    expertise: ['Leadership', 'Engineering', 'Strategy', 'Project Execution'],
   },
   {
     name: 'Malik Waqar Ahmed',
     designation: 'Managing Director',
-    roleBadge: 'Operations & Engineering',
     summary:
-      'Directs engineering design standards, structural fabrication divisions, Pre-Engineered Building (PEB) solutions, and technical quality assurance across all client deployments.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
-    expertise: [
-      'Structural Engineering',
-      'PEB & Steel Fabrication',
-      'Industrial Operations',
-      'Quality Assurance',
-    ],
-    linkedinUrl: 'https://linkedin.com',
+      'Leads technical operations, project management, and business development across structural fabrication, PEB infrastructure, and client delivery, ensuring rigorous standards and operational excellence.',
+    imageUrl: '/images/malik-waqar.jpg',
+    expertise: ['Operations', 'Project Management', 'Business Growth', 'Client Relations'],
   },
 ];
 
@@ -400,84 +378,67 @@ export default function AboutPage() {
             LEADERSHIP & GOVERNANCE
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-solix-dark tracking-tight">
-            Management Committee
+            Management Committee Members
           </h2>
           <p className="text-sm sm:text-base text-solix-muted">
-            Guiding E&E Industries with decades of combined engineering, structural, and executive operational leadership.
+            Guiding E&E Industries with experienced leadership, engineering excellence, and strategic project execution.
           </p>
         </div>
 
-        {/* Member Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        {/* Two Large Horizontal Member Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           {LEADERSHIP_MEMBERS.map((member) => (
             <div
               key={member.name}
-              className="bg-white rounded-3xl p-8 sm:p-10 border border-solix-border/80 shadow-solix hover:shadow-solix-lg transition-all duration-300 flex flex-col justify-between space-y-8 group"
+              className="bg-white rounded-3xl p-5 sm:p-7 border border-solix-border shadow-solix hover:shadow-solix-lg hover:border-solix-green/30 transition-all duration-300 flex flex-col sm:flex-row gap-6 group"
             >
-              {/* Profile Top Block */}
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                {/* Portrait Photo */}
-                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shrink-0 shadow-md border border-solix-border/80">
-                  <Image
-                    src={member.imageUrl}
-                    alt={member.name}
-                    fill
-                    sizes="128px"
-                    className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                  />
+              {/* Photo Container: ~40-45% width */}
+              <div className="relative w-full sm:w-[42%] lg:w-[44%] min-h-[280px] sm:min-h-[340px] rounded-2xl overflow-hidden shrink-0 bg-solix-bg border border-solix-border/60">
+                <Image
+                  src={member.imageUrl}
+                  alt={member.name}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-cover object-center group-hover:scale-[1.02] transition-transform duration-500"
+                />
+              </div>
+
+              {/* Information Panel: ~55-60% width */}
+              <div className="w-full sm:w-[58%] lg:w-[56%] flex flex-col justify-between py-1 sm:py-2 space-y-5">
+                <div className="space-y-3">
+                  {/* Name & Designation */}
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-extrabold text-solix-dark tracking-tight leading-tight">
+                      {member.name}
+                    </h3>
+                    <div className="text-xs sm:text-sm font-bold text-solix-green tracking-wider uppercase mt-1">
+                      {member.designation}
+                    </div>
+                  </div>
+
+                  {/* Professional Summary */}
+                  <p className="text-xs sm:text-sm text-solix-muted leading-relaxed">
+                    {member.summary}
+                  </p>
                 </div>
 
-                {/* Name, Role & Details */}
-                <div className="space-y-2 text-center sm:text-left flex-1 min-w-0">
-                  <div className="inline-flex items-center px-3 py-0.5 rounded-full bg-solix-bg border border-solix-border text-[11px] font-bold text-solix-green uppercase tracking-wider">
-                    {member.roleBadge}
+                {/* Expertise Tags */}
+                <div className="space-y-2.5 pt-4 border-t border-solix-border/60">
+                  <div className="text-[11px] font-bold text-solix-dark uppercase tracking-wider">
+                    Core Expertise
                   </div>
-                  <h3 className="text-2xl font-extrabold text-solix-dark tracking-tight">
-                    {member.name}
-                  </h3>
-                  <div className="text-xs font-bold text-solix-muted">
-                    {member.designation}
+                  <div className="flex flex-wrap gap-2">
+                    {member.expertise.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-block px-3 py-1 rounded-full bg-solix-bg border border-solix-border text-[11px] font-semibold text-solix-dark"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
-
-              {/* Summary */}
-              <p className="text-xs sm:text-sm text-solix-muted leading-relaxed">
-                {member.summary}
-              </p>
-
-              {/* Expertise Tags */}
-              <div className="space-y-3 pt-4 border-t border-solix-border/50">
-                <div className="text-[11px] font-bold text-solix-dark uppercase tracking-wider">
-                  Core Expertise
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {member.expertise.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-block px-3 py-1 rounded-full bg-solix-bg border border-solix-border/80 text-[11px] font-semibold text-solix-dark"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Optional LinkedIn Button */}
-              {member.linkedinUrl && (
-                <div className="pt-2 flex justify-end">
-                  <a
-                    href={member.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-xs font-bold text-solix-muted hover:text-[#0A66C2] transition-colors"
-                    aria-label={`${member.name} LinkedIn Profile`}
-                  >
-                    <Linkedin className="w-4 h-4" />
-                    <span>LinkedIn Profile</span>
-                  </a>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -502,7 +463,7 @@ export default function AboutPage() {
 
             {/* 5 Key Pillars */}
             <div className="space-y-4">
-              {TRUST_PILLARS.map((pillar, idx) => (
+              {TRUST_PILLARS.map((pillar) => (
                 <div
                   key={pillar.title}
                   className="bg-white rounded-2xl p-5 border border-solix-border/80 shadow-sm flex items-start gap-4"

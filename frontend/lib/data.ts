@@ -156,15 +156,15 @@ export const RESIDENTIAL_PACKAGES: SolarPackage[] = [
 export const COMMITTEE_MEMBERS: CommitteeMember[] = [
   {
     name: 'Asjed Mehnood',
-    role: 'Executive Committee Member',
-    bio: 'Leads strategic engineering operations, procurement contracts, and multi-divisional project execution across E&E Industrial Corporation.',
-    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
+    role: 'CEO',
+    bio: 'Steers corporate vision, strategic growth, and multi-divisional engineering execution across solar energy, procurement, and industrial contracting with a steadfast focus on quality delivery and long-term client relationships.',
+    imageUrl: '/images/asjed-mehnood.jpg',
   },
   {
     name: 'Malik Waqar Ahmed',
-    role: 'Executive Committee Member',
-    bio: 'Oversees structural design, PEB fabrication standards, technical supply chain management, and client relationships.',
-    imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop',
+    role: 'Managing Director',
+    bio: 'Leads technical operations, project management, and business development across structural fabrication, PEB infrastructure, and client delivery, ensuring rigorous standards and operational excellence.',
+    imageUrl: '/images/malik-waqar.jpg',
   },
 ];
 
