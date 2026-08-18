@@ -378,14 +378,12 @@ export default function SolarEnergyPage() {
           <div className="hidden lg:grid lg:grid-cols-7 gap-3 relative">
             {EPC_STEPS.map((step, idx) => (
               <div key={step.number} className="relative flex flex-col justify-between space-y-4 group">
-                {/* Step Pill */}
+                {/* Step Pill & Connector Line */}
                 <div className="flex items-center gap-2">
                   <span className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center text-xs font-extrabold shrink-0">
                     {step.number}
                   </span>
-                  {idx < EPC_STEPS.length - 1 && (
-                    <div className="h-[2px] w-full bg-white/15" />
-                  )}
+                  <div className="h-[2px] w-full bg-white/15" />
                 </div>
 
                 {/* Step Card Content */}
