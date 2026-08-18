@@ -23,7 +23,7 @@ export async function getAllProjects(): Promise<Project[]> {
         return data;
       }
     }
-  } catch (err) {
+  } catch {
     // Local development fallback
   }
 
@@ -61,14 +61,16 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
       next: { revalidate: 60 },
     });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      if (data && data.slug) {
+        return data;
+      }
     }
   } catch {
     // Local fallback
   }
 
-  const all = await getAllProjects();
-  const found = all.find((p) => p.slug === slug);
+  const found = inMemoryProjects.find((p) => p.slug === slug);
   return found || null;
 }
 
@@ -82,14 +84,16 @@ export async function getProjectById(id: string): Promise<Project | null> {
       credentials: 'include',
     });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      if (data && data.id) {
+        return data;
+      }
     }
   } catch {
     // Local fallback
   }
 
-  const all = await getAllProjects();
-  const found = all.find((p) => p.id === id);
+  const found = inMemoryProjects.find((p) => p.id === id);
   return found || null;
 }
 
@@ -110,8 +114,8 @@ export async function createProject(projectData: Omit<Project, 'id'>): Promise<P
       inMemoryProjects = [created, ...inMemoryProjects.filter((p) => p.id !== created.id)];
       return created;
     }
-  } catch (err) {
-    console.error('Failed to create project via backend API:', err);
+  } catch {
+    // Fallback
   }
 
   const fallbackId = `proj-${Date.now()}`;
@@ -144,8 +148,8 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
       else inMemoryProjects.push(updated);
       return updated;
     }
-  } catch (err) {
-    console.error('Failed to update project via backend API:', err);
+  } catch {
+    // Fallback
   }
 
   const currentIdx = inMemoryProjects.findIndex((p) => p.id === id);
@@ -169,8 +173,8 @@ export async function deleteProject(id: string): Promise<boolean> {
       inMemoryProjects = inMemoryProjects.filter((p) => p.id !== id);
       return true;
     }
-  } catch (err) {
-    console.error('Failed to delete project via backend API:', err);
+  } catch {
+    // Fallback
   }
 
   inMemoryProjects = inMemoryProjects.filter((p) => p.id !== id);

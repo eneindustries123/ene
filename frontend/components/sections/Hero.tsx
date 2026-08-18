@@ -8,7 +8,7 @@ import { ArrowUpRight, ArrowLeft, ArrowRight, ShieldCheck, Award, Zap } from 'lu
 
 interface HeroSlide {
   id: string;
-  headline: string;
+  serviceTitle: string;
   description: string;
   image: string;
   label: string;
@@ -17,7 +17,7 @@ interface HeroSlide {
 const HERO_SLIDES: HeroSlide[] = [
   {
     id: 'solar',
-    headline: 'E&E Solar Energy',
+    serviceTitle: 'Solar Energy',
     description:
       'Full-lifecycle engineering, procurement, and construction (EPC) of high-yield commercial, industrial, and residential solar power systems with turnkey net metering.',
     image: '/hero/solar-hero.jpg',
@@ -25,7 +25,7 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: 'trading',
-    headline: 'E&E Trading & Contracting',
+    serviceTitle: 'Trading & Contracting',
     description:
       'Reliable industrial procurement, global supply chain sourcing, electrical hardware supply, and turnkey contracting for enterprise developments.',
     image: '/hero/trading-hero.jpg',
@@ -33,7 +33,7 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: 'fabrication',
-    headline: 'E&E Fabrication & Design',
+    serviceTitle: 'Fabrication & Design',
     description:
       'Precision structural steel fabrication, custom solar mounting systems, pre-engineered buildings (PEB), high-mast poles, and industrial cable trays.',
     image: '/hero/fabrication-hero.jpg',
@@ -101,7 +101,7 @@ export function Hero() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Background Image Crossfade & Cinematic Scale */}
+      {/* Background Image Crossfade & Cinematic Scale (Animated) */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-solix-dark">
         <AnimatePresence mode="sync">
           <motion.div
@@ -117,7 +117,7 @@ export function Hero() {
           >
             <Image
               src={currentSlide.image}
-              alt={currentSlide.headline}
+              alt={`E&E ${currentSlide.serviceTitle}`}
               fill
               priority
               sizes="100vw"
@@ -134,59 +134,87 @@ export function Hero() {
       {/* Hero Main Content */}
       <div className="relative z-20 max-w-7xl mx-auto w-full pt-2 sm:pt-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-          {/* Left Column: Animated Text & CTAs */}
+          {/* Left Column: Headings, Descriptions & CTAs */}
           <div className="lg:col-span-9 max-w-3xl space-y-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentSlide.id}
-                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -12 }}
-                transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
-                className="space-y-6"
-              >
-                {/* Eyebrow Badge (No Numbering) */}
-                <div>
+            
+            {/* 1. Animated Eyebrow Category Pill */}
+            <div className="min-h-[32px] flex items-center">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={currentSlide.id}
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -6 }}
+                  transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+                >
                   <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-xs font-extrabold tracking-widest uppercase">
                     <span>{currentSlide.label}</span>
                   </span>
-                </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
-                {/* Headline */}
-                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.08] text-balance">
-                  {currentSlide.headline}
-                </h1>
+            {/* 2. Headline: Static "E&E" on Line 1, Animated Service Title on Line 2 */}
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.08]">
+              {/* Static Line 1: Completely permanent */}
+              <span className="block text-white">E&E</span>
+              
+              {/* Dynamic Line 2: Service-specific name with smooth transition */}
+              <span className="block mt-1">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={currentSlide.id}
+                    initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -8 }}
+                    transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="block"
+                  >
+                    {currentSlide.serviceTitle}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
+            </h1>
 
-                {/* Description */}
-                <p className="text-base sm:text-lg text-white/85 font-normal leading-relaxed max-w-2xl text-balance">
+            {/* 3. Animated Service Description */}
+            <div className="min-h-[72px] sm:min-h-[84px] flex items-start">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.p
+                  key={currentSlide.id}
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -8 }}
+                  transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="text-base sm:text-lg text-white/85 font-normal leading-relaxed max-w-2xl text-balance"
+                >
                   {currentSlide.description}
-                </p>
+                </motion.p>
+              </AnimatePresence>
+            </div>
 
-                {/* Hero CTAs */}
-                <div className="flex flex-wrap items-center gap-4 pt-1">
-                  {/* Primary CTA -> Scroll to Services */}
-                  <Link
-                    href="#services"
-                    className="group flex items-center gap-3 bg-white hover:bg-slate-100 text-solix-dark font-semibold text-sm px-6 py-3.5 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl"
-                  >
-                    <span>Explore Our Services</span>
-                    <div className="w-7 h-7 rounded-full bg-solix-dark text-white flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                      <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-                    </div>
-                  </Link>
-
-                  {/* Secondary CTA -> Scroll to Mission & Vision */}
-                  <Link
-                    href="#mission-vision"
-                    className="text-white/90 hover:text-white text-sm font-semibold px-6 py-3.5 rounded-full bg-black/30 hover:bg-black/40 backdrop-blur border border-white/20 transition-all"
-                  >
-                    Mission & Vision
-                  </Link>
+            {/* 4. Completely Static CTAs (Never remount or fade) */}
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              {/* Primary CTA -> Scroll to Services */}
+              <Link
+                href="#services"
+                className="group flex items-center gap-3 bg-white hover:bg-slate-100 text-solix-dark font-semibold text-sm px-6 py-3.5 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                <span>Explore Our Services</span>
+                <div className="w-7 h-7 rounded-full bg-solix-dark text-white flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+                  <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
                 </div>
-              </motion.div>
-            </AnimatePresence>
+              </Link>
 
-            {/* Trust / Qualifier Row */}
+              {/* Secondary CTA -> Scroll to Mission & Vision */}
+              <Link
+                href="#mission-vision"
+                className="text-white/90 hover:text-white text-sm font-semibold px-6 py-3.5 rounded-full bg-black/30 hover:bg-black/40 backdrop-blur border border-white/20 transition-all"
+              >
+                Mission & Vision
+              </Link>
+            </div>
+
+            {/* 5. Completely Static Trust / Qualifier Row */}
             <div className="pt-4 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs font-medium text-white/80">
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -203,7 +231,7 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right Column: Arrow Navigation Controls Only (No Numeric Indicators) */}
+          {/* Right Column: Completely Static Arrow Controls (Never remount or fade) */}
           <div className="lg:col-span-3 flex items-center justify-start lg:justify-end pt-4 lg:pt-0">
             <div className="flex items-center gap-2.5">
               <button
