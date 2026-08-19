@@ -25,17 +25,14 @@ export function WhatsAppButton() {
       href="https://wa.me/923063999363"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Chat with E&E Industries Engineering on WhatsApp"
-      className="fixed z-40 bg-[#16A34A] hover:bg-[#15803d] text-white p-3 sm:p-3.5 rounded-full border border-white/20 shadow-[0_10px_25px_rgba(22,163,74,0.30)] hover:shadow-[0_14px_32px_rgba(22,163,74,0.42)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
+      aria-label="Chat with E&E Industries on WhatsApp"
+      className="fixed z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#111714] text-[#22C76A] hover:bg-[#22C76A] hover:text-white border border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.22)] hover:shadow-[0_16px_36px_rgba(34,199,106,0.30)] hover:scale-[1.04] active:scale-95 transition-all duration-200 ease-out flex items-center justify-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22C76A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111714]"
       style={{
         bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
         right: 'calc(1.25rem + env(safe-area-inset-right, 0px))',
       }}
     >
-      <WhatsAppIcon className="w-6 h-6 shrink-0 text-white" />
-      <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out text-xs font-bold pl-0 group-hover:pl-2.5">
-        Chat with us
-      </span>
+      <WhatsAppIcon className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 transition-colors duration-200" />
     </a>
   );
 }
