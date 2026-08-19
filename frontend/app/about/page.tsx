@@ -15,6 +15,8 @@ import {
   Target,
   Compass,
   CheckCircle,
+  FileText,
+  Download,
 } from 'lucide-react';
 
 export const metadata = {
@@ -226,6 +228,47 @@ export default function AboutPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2.5. COMPANY PROFILE CTA CARD */}
+      <section className="py-6 px-4 sm:px-8 max-w-7xl mx-auto w-full">
+        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-solix-border/80 shadow-solix hover:shadow-solix-lg transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex items-start gap-4 sm:gap-6">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-50 text-solix-green flex items-center justify-center shrink-0 border border-emerald-100">
+              <FileText className="w-6 h-6 sm:w-7 sm:h-7" />
+            </div>
+            <div className="space-y-2">
+              <div className="inline-flex items-center px-3 py-0.5 rounded-full border border-solix-border text-solix-green text-[11px] font-extrabold uppercase tracking-widest bg-solix-bg">
+                COMPANY PROFILE
+              </div>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-solix-dark tracking-tight">
+                Discover E&amp;E Industries
+              </h3>
+              <p className="text-xs sm:text-sm text-solix-muted max-w-2xl leading-relaxed">
+                Explore our engineering capabilities, service portfolio, technical expertise, and project experience in our official company profile.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-start md:justify-end shrink-0">
+            <Link
+              href="/company-profile"
+              className="inline-flex items-center justify-center gap-2 bg-solix-dark hover:bg-black text-white text-xs font-bold px-6 py-3.5 rounded-full transition-all shadow-md active:scale-95"
+            >
+              <span>View Company Profile</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+
+            <a
+              href="/documents/ee-industries-company-profile.pdf"
+              download="ee-industries-company-profile.pdf"
+              className="inline-flex items-center justify-center gap-2 bg-solix-bg hover:bg-slate-200 text-solix-dark text-xs font-bold px-5 py-3.5 rounded-full border border-solix-border/80 transition-all active:scale-95"
+            >
+              <Download className="w-3.5 h-3.5 text-solix-green" />
+              <span>Download PDF</span>
+            </a>
           </div>
         </div>
       </section>
