@@ -59,7 +59,7 @@ export function Hero() {
   const currentSlide = HERO_SLIDES[activeIndex];
 
   return (
-    <section className="relative w-full min-h-0 md:min-h-[85vh] lg:min-h-[92vh] flex flex-col justify-between pt-24 sm:pt-28 pb-10 md:pb-16 px-4 sm:px-8 overflow-hidden select-none">
+    <section className="relative w-full min-h-screen min-h-[100svh] xl:min-h-[92vh] flex flex-col pt-24 sm:pt-28 md:pt-28 pt-[calc(4.5rem+clamp(1.5rem,4svh,2.5rem))] sm:pt-[calc(5rem+clamp(1.5rem,4svh,2.5rem))] md:pt-[calc(5.5rem+clamp(1.5rem,4svh,2.5rem))] xl:pt-32 pb-10 md:pb-16 px-4 sm:px-8 overflow-hidden select-none">
       {/* Background Image Crossfade & Cinematic Scale (Animated) */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-solix-dark">
         <AnimatePresence mode="sync">
@@ -91,8 +91,8 @@ export function Hero() {
       </div>
 
       {/* Hero Main Content Shell (Mounted & Fixed Framework) */}
-      <div className="relative z-20 max-w-7xl mx-auto w-full pt-2 sm:pt-4">
-        <div className="max-w-3xl flex flex-col space-y-6">
+      <div className="relative z-20 max-w-7xl mx-auto w-full flex-1 flex flex-col">
+        <div className="max-w-3xl w-full flex-1 flex flex-col gap-6">
           {/* 1. Animated Eyebrow Category Pill (Fixed Height Row) */}
           <div className="h-8 sm:h-9 flex items-center shrink-0">
             <AnimatePresence mode="wait" initial={false}>
@@ -150,7 +150,7 @@ export function Hero() {
           </div>
 
           {/* 4. Completely Static CTAs (Never remount or fade) */}
-          <div className="flex flex-wrap items-center gap-4 pt-1 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 pt-1 shrink-0">
             {/* Primary CTA -> Scroll to Services */}
             <Link
               href="#services"
@@ -172,7 +172,7 @@ export function Hero() {
           </div>
 
           {/* 5. Completely Static Trust / Qualifier Row */}
-          <div className="pt-4 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs font-medium text-white/80 shrink-0">
+          <div className="mt-auto xl:mt-0 pt-4 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs font-medium text-white/80 shrink-0">
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>10+ Years Engineering Track Record</span>
