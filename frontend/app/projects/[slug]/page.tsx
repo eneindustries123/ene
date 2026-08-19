@@ -14,9 +14,9 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const project = await getProjectBySlug(params.slug);
-  if (!project) return { title: 'Project Not Found | Solix Renewable Energy' };
+  if (!project) return { title: 'Project Not Found | E&E Industries' };
   return {
-    title: `${project.title} | Case Study Solix`,
+    title: `${project.title} | Case Study | E&E Industries`,
     description: project.summary,
   };
 }
