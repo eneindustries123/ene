@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ArrowUpRight, ChevronDown, MessageSquare, Phone, Mail, MapPin } from 'lucide-react';
+import { Menu, X, ArrowUpRight, ChevronDown } from 'lucide-react';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { cn } from '@/lib/utils';
 
@@ -406,60 +406,6 @@ export function Header() {
                   <span>Contact</span>
                 </Link>
               </nav>
-
-              {/* 3. Engineering Consultation CTA Card */}
-              <div className="bg-white/10 rounded-2xl p-5 border border-white/15 space-y-3.5">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-solix-green text-white flex items-center justify-center shrink-0">
-                    <MessageSquare className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">Talk to Our Engineering Team</h4>
-                    <p className="text-[11px] text-white/70">
-                      Technical evaluation &amp; custom project estimate.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-1">
-                  <Link
-                    href="/request-a-quote"
-                    onClick={closeMobile}
-                    className="w-full flex items-center justify-center gap-2 bg-white text-solix-dark hover:bg-slate-100 text-xs font-bold py-3 px-4 rounded-full transition-all shadow-md text-center"
-                  >
-                    <span>Request a Project Estimate</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
-                  </Link>
-
-                  <Link
-                    href="/contact"
-                    onClick={closeMobile}
-                    className="block text-center text-[11px] text-white/80 hover:text-white font-medium underline underline-offset-4 py-1"
-                  >
-                    Contact Technical Support
-                  </Link>
-                </div>
-              </div>
-
-              {/* 4. Quick Contact Info */}
-              <div className="pt-2 border-t border-white/10 space-y-2 text-xs text-white/70">
-                <div className="flex items-center gap-2.5">
-                  <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <a href="tel:+923063999363" className="hover:text-white font-semibold">
-                    +92 306 3999363
-                  </a>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Mail className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <a href="mailto:sales@eneindustries.com" className="hover:text-white truncate">
-                    sales@eneindustries.com
-                  </a>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-[11px] leading-snug">183B Iqbal Avenue 1, Lahore, Pakistan</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
