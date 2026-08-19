@@ -93,7 +93,7 @@ describe('E&E Industries Backend API Endpoints', () => {
       expect(res.status).toBe(401);
     });
 
-    it('POST /api/projects creates a new project when authenticated', async () => {
+    it('POST /api/projects creates a new project when authenticated (with optional fullStory)', async () => {
       const uniqueSlug = `test-solar-${Date.now()}`;
       const res = await request(app)
         .post('/api/projects')
@@ -105,12 +105,12 @@ describe('E&E Industries Backend API Endpoints', () => {
           location: 'Lahore, Pakistan',
           capacity: '500 kW',
           category: 'Commercial Solar',
-          completionYear: '2026',
+          completionYear: 2026,
           summary: 'High performance industrial rooftop photovoltaic array installation.',
-          fullStory: 'Comprehensive engineering, procurement, and construction of 500kW rooftop installation.',
+          fullStory: '', // optional empty fullStory
           mainImage: '/images/test-project.jpg',
-          gallery: ['/images/test-project.jpg'],
-          isFeatured: true,
+          gallery: ['/images/test-supporting-1.jpg', '/images/test-supporting-video.mp4'], // 1 image + 1 video (valid)
+          isFeatured: false,
           status: 'published',
         });
 
@@ -118,6 +118,71 @@ describe('E&E Industries Backend API Endpoints', () => {
       expect(res.body.id).toBeDefined();
       expect(res.body.slug).toBe(uniqueSlug);
       createdProjectId = res.body.id;
+    });
+
+    it('POST /api/projects rejects creation when required fields or gallery are missing', async () => {
+      const res = await request(app)
+        .post('/api/projects')
+        .set('Cookie', [adminCookie])
+        .send({
+          title: 'Incomplete Project',
+          slug: `incomplete-${Date.now()}`,
+          client: 'Incomplete Enterprise',
+          // missing location, capacity, mainImage, gallery
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Validation failed');
+    });
+
+    it('POST /api/projects rejects creation when gallery has more than 3 items', async () => {
+      const res = await request(app)
+        .post('/api/projects')
+        .set('Cookie', [adminCookie])
+        .send({
+          title: 'Too Many Media Items',
+          slug: `too-many-media-${Date.now()}`,
+          client: 'Test Enterprise',
+          location: 'Lahore, Pakistan',
+          capacity: '500 kW',
+          category: 'Commercial Solar',
+          completionYear: 2024,
+          summary: 'High performance industrial rooftop photovoltaic array installation.',
+          mainImage: '/images/test-project.jpg',
+          gallery: [
+            '/images/1.jpg',
+            '/images/2.jpg',
+            '/images/3.jpg',
+            '/images/4.jpg', // 4 items (invalid)
+          ],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Validation failed');
+    });
+
+    it('POST /api/projects rejects creation when gallery contains 2 or more videos', async () => {
+      const res = await request(app)
+        .post('/api/projects')
+        .set('Cookie', [adminCookie])
+        .send({
+          title: 'Multiple Videos Project',
+          slug: `multiple-videos-${Date.now()}`,
+          client: 'Test Enterprise',
+          location: 'Lahore, Pakistan',
+          capacity: '500 kW',
+          category: 'Commercial Solar',
+          completionYear: 2024,
+          summary: 'High performance industrial rooftop photovoltaic array installation.',
+          mainImage: '/images/test-project.jpg',
+          gallery: [
+            '/images/video-1.mp4',
+            '/images/video-2.webm', // 2 videos (invalid)
+          ],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Validation failed');
     });
 
     it('PUT /api/projects/:id updates an existing project', async () => {

@@ -31,7 +31,7 @@ export interface Project {
   category: string;
   completionYear: number;
   summary: string;
-  fullStory: string;
+  fullStory?: string;
   mainImage: string;
   gallery: string[];
   isFeatured: boolean;

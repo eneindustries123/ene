@@ -20,6 +20,8 @@ import {
   Star,
   RefreshCw,
   ArrowUpRight,
+  Video,
+  ImageIcon,
 } from 'lucide-react';
 import { Project } from '@/lib/data';
 import { getApiUrl } from '@/lib/api-client';
@@ -32,7 +34,22 @@ const CATEGORY_OPTIONS = [
   'Solar Infrastructure',
   'Residential Solar',
   'Electrical Infrastructure',
+  'Fabrication & Solar',
+  'Trading & Contracting',
 ];
+
+const isVideoMedia = (url: string): boolean => {
+  if (!url || typeof url !== 'string') return false;
+  const clean = url.split('?')[0].toLowerCase();
+  return (
+    clean.endsWith('.mp4') ||
+    clean.endsWith('.webm') ||
+    clean.endsWith('.mov') ||
+    clean.endsWith('.ogg') ||
+    clean.endsWith('.mkv') ||
+    url.startsWith('data:video/')
+  );
+};
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -150,12 +167,12 @@ export default function AdminProjectsPage() {
       location: project.location,
       capacity: project.capacity,
       category: project.category,
-      completionYear: project.completionYear,
+      completionYear: Number(project.completionYear) || new Date().getFullYear(),
       summary: project.summary,
-      fullStory: project.fullStory,
+      fullStory: project.fullStory || '',
       mainImage: project.mainImage,
       gallery: project.gallery || [],
-      isFeatured: project.isFeatured,
+      isFeatured: Boolean(project.isFeatured),
       status: project.status || 'published',
     });
     setMainImagePreview(project.mainImage);
@@ -164,14 +181,25 @@ export default function AdminProjectsPage() {
     setIsFormOpen(true);
   };
 
-  // Main Image Upload Handler
+  // Main Image Upload Handler (Strictly File Upload Only)
   const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith('image/')) {
+      setFormError('Main project image must be an image file (JPEG, PNG, WEBP, SVG).');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setFormError('Main project image exceeds 10MB limit.');
+      return;
+    }
+
     const localUrl = URL.createObjectURL(file);
     setMainImagePreview(localUrl);
     setUploadingMain(true);
+    setFormError('');
 
     const body = new FormData();
     body.append('file', file);
@@ -197,19 +225,45 @@ export default function AdminProjectsPage() {
     }
   };
 
-  // Gallery Upload Handler
+  // Gallery Supporting Media Upload Handler (Max 3 Media Total, Max 1 Video)
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    setFormError('');
+
+    const newFiles = Array.from(fileList);
+    const currentTotal = formData.gallery.length;
+    const currentVideos = formData.gallery.filter(isVideoMedia).length;
+
+    const newVideosCount = newFiles.filter(
+      (f) => f.type.startsWith('video/') || /\.(mp4|webm|mov|ogg|mkv)$/i.test(f.name)
+    ).length;
+
+    // Rule 1: Maximum 3 supporting media files in total
+    if (currentTotal + newFiles.length > 3) {
+      setFormError(
+        `Maximum 3 supporting media files allowed per project. You currently have ${currentTotal} and tried to add ${newFiles.length}.`
+      );
+      e.target.value = '';
+      return;
+    }
+
+    // Rule 2: Maximum 1 video file in total
+    if (currentVideos + newVideosCount > 1) {
+      setFormError(
+        'A maximum of 1 video file is allowed across all supporting media. Please select only 1 video.'
+      );
+      e.target.value = '';
+      return;
+    }
 
     setUploadingGallery(true);
-    const newGalleryUrls = [...formData.gallery];
-    const newPreviews = [...galleryPreviews];
+    const updatedGallery = [...formData.gallery];
+    const updatedPreviews = [...galleryPreviews];
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (const file of newFiles) {
       const localUrl = URL.createObjectURL(file);
-      newPreviews.push(localUrl);
+      updatedPreviews.push(localUrl);
 
       const body = new FormData();
       body.append('file', file);
@@ -222,19 +276,22 @@ export default function AdminProjectsPage() {
         });
         const data = await res.json();
         if (res.ok && data.url) {
-          newGalleryUrls.push(data.url);
+          updatedGallery.push(data.url);
+        } else {
+          setFormError(data.error || `Failed to upload ${file.name}`);
         }
       } catch {
-        // Skip failed
+        setFormError(`Failed to upload ${file.name} due to network error`);
       }
     }
 
-    setFormData((prev) => ({ ...prev, gallery: newGalleryUrls }));
-    setGalleryPreviews(newGalleryUrls);
+    setFormData((prev) => ({ ...prev, gallery: updatedGallery }));
+    setGalleryPreviews(updatedGallery);
     setUploadingGallery(false);
+    e.target.value = '';
   };
 
-  const removeGalleryImage = (index: number) => {
+  const removeGalleryMedia = (index: number) => {
     setFormData((prev) => ({
       ...prev,
       gallery: prev.gallery.filter((_, i) => i !== index),
@@ -242,22 +299,58 @@ export default function AdminProjectsPage() {
     setGalleryPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Save Project Handler
+  // Save Project Handler (Compulsory fields enforced consistently)
   const handleSaveProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
-    if (!formData.mainImage && !mainImagePreview) {
-      setFormError('Please select or enter a main image for the project');
+    // Main Image validation
+    const mainImg = formData.mainImage || mainImagePreview;
+    if (!mainImg) {
+      setFormError('Please upload a main project image (compulsory).');
+      return;
+    }
+
+    // Summary validation (10 - 400 chars)
+    if (formData.summary.trim().length < 10) {
+      setFormError('Short summary must be at least 10 characters.');
+      return;
+    }
+    if (formData.summary.trim().length > 400) {
+      setFormError('Short summary must not exceed 400 characters.');
+      return;
+    }
+
+    // Gallery Supporting Media validation (1 to 3 items, max 1 video)
+    if (formData.gallery.length === 0) {
+      setFormError('At least 1 supporting media file (image or video) is required (max 3 allowed).');
+      return;
+    }
+    if (formData.gallery.length > 3) {
+      setFormError('Maximum 3 supporting media files allowed.');
+      return;
+    }
+    if (formData.gallery.filter(isVideoMedia).length > 1) {
+      setFormError('Maximum 1 video file allowed in supporting media.');
       return;
     }
 
     setSaving(true);
 
     const payload = {
-      ...formData,
-      mainImage: formData.mainImage || mainImagePreview,
-      completionYear: String(formData.completionYear),
+      title: formData.title.trim(),
+      slug: formData.slug.trim(),
+      client: formData.client.trim(),
+      location: formData.location.trim(),
+      capacity: formData.capacity.trim(),
+      category: formData.category,
+      completionYear: Number(formData.completionYear) || new Date().getFullYear(),
+      summary: formData.summary.trim(),
+      fullStory: formData.fullStory ? formData.fullStory.trim() : '',
+      mainImage: mainImg,
+      gallery: formData.gallery,
+      isFeatured: Boolean(formData.isFeatured),
+      status: formData.status,
     };
 
     try {
@@ -276,7 +369,12 @@ export default function AdminProjectsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setFormError(data.error || 'Failed to save project');
+        if (data.details) {
+          const firstErrorMsg = Object.values(data.details).flat()[0];
+          setFormError(String(firstErrorMsg) || data.error || 'Validation failed');
+        } else {
+          setFormError(data.error || 'Failed to save project');
+        }
         setSaving(false);
         return;
       }
@@ -352,7 +450,7 @@ export default function AdminProjectsPage() {
             Projects CMS
           </h1>
           <p className="text-xs text-solix-muted mt-1">
-            Manage clean energy project case studies, metadata, images, and homepage features.
+            Manage engineering project case studies, metadata, supporting media, and portfolio showcase.
           </p>
         </div>
 
@@ -408,7 +506,7 @@ export default function AdminProjectsPage() {
         </div>
       </div>
 
-      {/* Projects Grid / Table */}
+      {/* Projects Grid */}
       {loading ? (
         <div className="bg-white border border-solix-border rounded-3xl p-12 text-center text-solix-muted text-xs shadow-solix">
           Loading project portfolio...
@@ -431,34 +529,43 @@ export default function AdminProjectsPage() {
               className="bg-white border border-solix-border rounded-3xl p-6 shadow-solix hover:shadow-solix-lg transition-all flex flex-col justify-between space-y-4 group"
             >
               <div className="space-y-4">
-                {/* Image Preview & Badges */}
+                {/* Image Preview & Badges - FIXED POSITIONING */}
                 <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-solix-bg">
                   <Image
                     src={project.mainImage}
                     alt={project.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                    <span className="bg-solix-dark text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 pointer-events-none" />
+
+                  {/* Category Badge: Top-Left */}
+                  <div className="absolute top-3 left-3 flex items-center">
+                    <span className="bg-solix-dark/90 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm border border-white/10">
                       {project.category}
                     </span>
                   </div>
 
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                    {project.isFeatured && (
-                      <span className="bg-amber-500 text-solix-dark text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                  {/* Featured Badge: Bottom-Left */}
+                  {project.isFeatured && (
+                    <div className="absolute bottom-3 left-3 flex items-center">
+                      <span className="bg-amber-500 text-solix-dark text-[10px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
                         <Star className="w-3 h-3 fill-current" />
                         <span>Featured</span>
                       </span>
-                    )}
+                    </div>
+                  )}
+
+                  {/* Status Badge: Bottom-Right */}
+                  <div className="absolute bottom-3 right-3 flex items-center">
                     <span
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full capitalize ${
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full capitalize shadow-md ${
                         project.status === 'published'
                           ? 'bg-solix-green text-white'
                           : project.status === 'draft'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                          : 'bg-rose-100 text-rose-800 border border-rose-300'
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : 'bg-rose-100 text-rose-900 border border-rose-300'
                       }`}
                     >
                       {project.status || 'published'}
@@ -473,7 +580,7 @@ export default function AdminProjectsPage() {
                       <MapPin className="w-3.5 h-3.5 text-solix-green shrink-0" />
                       <span className="truncate">{project.location}</span>
                     </div>
-                    <div className="flex items-center gap-1 truncate max-w-[45%]">
+                    <div className="flex items-center gap-1 truncate max-w-[45%] font-bold text-solix-dark">
                       <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       <span className="truncate">{project.capacity}</span>
                     </div>
@@ -536,7 +643,7 @@ export default function AdminProjectsPage() {
                   {editingProject ? `Edit Project: ${editingProject.title}` : 'Create New Project Case Study'}
                 </h2>
                 <p className="text-xs text-solix-muted">
-                  Manage core metadata, content scope, main image, and gallery.
+                  All fields are compulsory except Full Story and Featured Project.
                 </p>
               </div>
               <button
@@ -556,17 +663,17 @@ export default function AdminProjectsPage() {
                 </div>
               )}
 
-              {/* CORE INFORMATION GRID */}
+              {/* 1. CORE INFORMATION GRID */}
               <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-solix-green border-b border-solix-border pb-2">
-                  1. Core Information
+                  1. Core Information (Compulsory)
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Title */}
                   <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-xs font-bold text-solix-dark">
-                      Project Title <span className="text-solix-green">*</span>
+                      Project Title <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -581,7 +688,7 @@ export default function AdminProjectsPage() {
                   {/* Slug */}
                   <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-xs font-bold text-solix-dark">
-                      URL Slug <span className="text-solix-green">*</span>
+                      URL Slug <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-2.5 text-xs text-solix-muted font-mono">/projects/</span>
@@ -599,7 +706,7 @@ export default function AdminProjectsPage() {
                   {/* Client */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-solix-dark">
-                      Client / Organization <span className="text-solix-green">*</span>
+                      Client / Organization <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -614,7 +721,7 @@ export default function AdminProjectsPage() {
                   {/* Location */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-solix-dark">
-                      Location <span className="text-solix-green">*</span>
+                      Location <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -629,7 +736,7 @@ export default function AdminProjectsPage() {
                   {/* Capacity */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-solix-dark">
-                      Capacity / Rating <span className="text-solix-green">*</span>
+                      Capacity / Project Size <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -644,7 +751,7 @@ export default function AdminProjectsPage() {
                   {/* Category */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-solix-dark">
-                      Category <span className="text-solix-green">*</span>
+                      Category <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={formData.category}
@@ -662,7 +769,7 @@ export default function AdminProjectsPage() {
                   {/* Completion Year */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-solix-dark">
-                      Completion / Commission Year <span className="text-solix-green">*</span>
+                      Completion Year <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="number"
@@ -670,14 +777,18 @@ export default function AdminProjectsPage() {
                       min={1990}
                       max={2035}
                       value={formData.completionYear}
-                      onChange={(e) => setFormData({ ...formData, completionYear: parseInt(e.target.value) || 2024 })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, completionYear: parseInt(e.target.value, 10) || 2024 })
+                      }
                       className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     />
                   </div>
 
                   {/* Visibility Status */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Visibility Status</label>
+                    <label className="text-xs font-bold text-solix-dark">
+                      Visibility Status <span className="text-rose-500">*</span>
+                    </label>
                     <select
                       value={formData.status}
                       onChange={(e) =>
@@ -685,7 +796,7 @@ export default function AdminProjectsPage() {
                       }
                       className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2.5 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
                     >
-                      <option value="published">Published (Visible Publicly)</option>
+                      <option value="published">Published (Publicly Visible)</option>
                       <option value="draft">Draft (Admin Only)</option>
                       <option value="archived">Archived (Internal Retained)</option>
                     </select>
@@ -693,46 +804,51 @@ export default function AdminProjectsPage() {
                 </div>
               </div>
 
-              {/* PROJECT CONTENT */}
+              {/* 2. PROJECT CONTENT & NARRATIVE */}
               <div className="space-y-4 pt-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-solix-green border-b border-solix-border pb-2">
-                  2. Project Narrative & Content
+                  2. Project Narrative & Summary
                 </h3>
 
-                {/* Summary */}
+                {/* Short Summary (Compulsory) */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <label className="font-bold text-solix-dark">
-                      Short Summary <span className="text-solix-green">*</span> (Card Grid & Meta)
+                      Short Summary <span className="text-rose-500">*</span> (10 – 400 chars)
                     </label>
                     <span
-                      className={`font-mono ${
-                        formData.summary.length > 300 ? 'text-amber-600' : 'text-solix-muted'
+                      className={`font-mono text-[11px] ${
+                        formData.summary.length > 400 || (formData.summary.length > 0 && formData.summary.length < 10)
+                          ? 'text-rose-600 font-bold'
+                          : 'text-solix-muted'
                       }`}
                     >
-                      {formData.summary.length}/300 chars
+                      {formData.summary.length}/400 chars
                     </span>
                   </div>
                   <textarea
                     required
                     rows={3}
                     maxLength={400}
-                    placeholder="Turnkey solar energy installation powering campus academic blocks..."
+                    minLength={10}
+                    placeholder="Turnkey solar energy installation powering campus academic blocks, research laboratories, and administrative facilities..."
                     value={formData.summary}
                     onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
                     className="w-full bg-solix-bg border border-solix-border rounded-2xl p-3 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white leading-relaxed"
                   />
                 </div>
 
-                {/* Full Story */}
+                {/* Full Story (OPTIONAL) */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-solix-dark">
-                    Full Story / Engineering Scope <span className="text-solix-green">*</span>
-                  </label>
+                  <div className="flex items-center justify-between text-xs">
+                    <label className="font-bold text-solix-dark">
+                      Full Story / Engineering Scope <span className="text-solix-muted font-normal">(Optional)</span>
+                    </label>
+                    <span className="text-[11px] text-solix-muted">Displayed on detail page only if provided</span>
+                  </div>
                   <textarea
-                    required
-                    rows={6}
-                    placeholder="E&E Industries engineered and commissioned a comprehensive solar power array at MNS University... Describe technical requirements, engineering challenges, execution, and outcomes."
+                    rows={5}
+                    placeholder="Optional: Describe engineering challenges, structural steel specifications, electrical architecture, installation chronology, and ROI outcomes."
                     value={formData.fullStory}
                     onChange={(e) => setFormData({ ...formData, fullStory: e.target.value })}
                     className="w-full bg-solix-bg border border-solix-border rounded-2xl p-3 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white leading-relaxed font-sans"
@@ -740,21 +856,21 @@ export default function AdminProjectsPage() {
                 </div>
               </div>
 
-              {/* MEDIA & UPLOADS */}
+              {/* 3. MEDIA & UPLOADS */}
               <div className="space-y-4 pt-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-solix-green border-b border-solix-border pb-2">
                   3. Media & Uploads
                 </h3>
 
-                {/* Main Image */}
+                {/* Main Image (Compulsory, File Upload Only) */}
                 <div className="space-y-3">
                   <label className="text-xs font-bold text-solix-dark">
-                    Main Project Image <span className="text-solix-green">*</span>
+                    Main Project Image <span className="text-rose-500">*</span> (File Upload Only)
                   </label>
 
                   <div className="flex flex-col sm:flex-row gap-4 items-start">
                     {/* Image Preview Box */}
-                    <div className="relative w-full sm:w-48 aspect-[4/3] bg-solix-bg border border-solix-border rounded-2xl overflow-hidden shrink-0 flex items-center justify-center">
+                    <div className="relative w-full sm:w-48 aspect-[4/3] bg-solix-bg border border-solix-border rounded-2xl overflow-hidden shrink-0 flex items-center justify-center shadow-inner">
                       {mainImagePreview || formData.mainImage ? (
                         <Image
                           src={mainImagePreview || formData.mainImage}
@@ -764,93 +880,112 @@ export default function AdminProjectsPage() {
                         />
                       ) : (
                         <div className="text-center p-4 text-solix-muted text-xs">
-                          <Upload className="w-6 h-6 mx-auto mb-1 opacity-50" />
-                          <span>No Image</span>
+                          <Upload className="w-6 h-6 mx-auto mb-1 opacity-50 text-solix-green" />
+                          <span>No Image Uploaded</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Upload Controls */}
-                    <div className="space-y-3 flex-1 w-full">
-                      <div className="flex items-center gap-3">
-                        <label className="inline-flex items-center gap-2 bg-solix-dark hover:bg-black text-white text-xs font-bold px-4 py-2.5 rounded-full cursor-pointer transition-colors shadow-md">
-                          <Upload className="w-4 h-4" />
-                          <span>{uploadingMain ? 'Uploading...' : 'Upload Image File'}</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleMainImageUpload}
-                            disabled={uploadingMain}
-                            className="hidden"
-                          />
-                        </label>
-                        <span className="text-[11px] text-solix-muted">Max 5MB (JPG, PNG, WEBP)</span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-[11px] text-solix-muted">Or enter image URL manually:</span>
+                    {/* Upload Control */}
+                    <div className="space-y-2 flex-1 w-full">
+                      <label className="inline-flex items-center gap-2 bg-solix-dark hover:bg-black text-white text-xs font-bold px-5 py-3 rounded-full cursor-pointer transition-colors shadow-md">
+                        <Upload className="w-4 h-4 text-solix-green" />
+                        <span>{uploadingMain ? 'Uploading...' : 'Upload Main Image File'}</span>
                         <input
-                          type="url"
-                          placeholder="https://images.unsplash.com/..."
-                          value={formData.mainImage}
-                          onChange={(e) => {
-                            setFormData({ ...formData, mainImage: e.target.value });
-                            setMainImagePreview(e.target.value);
-                          }}
-                          className="w-full bg-solix-bg border border-solix-border rounded-2xl px-4 py-2 text-xs text-solix-dark focus:outline-none focus:border-solix-green focus:bg-white"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                          onChange={handleMainImageUpload}
+                          disabled={uploadingMain}
+                          className="hidden"
                         />
-                      </div>
+                      </label>
+                      <p className="text-[11px] text-solix-muted">
+                        Compulsory. JPG, PNG, WEBP, or SVG format (Max 10MB). Manual URL input has been disabled for data consistency.
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Gallery */}
+                {/* Supporting Media / Gallery (1 to 3 items, Max 1 Video) */}
                 <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-solix-dark">
-                      Project Gallery Images ({galleryPreviews.length} uploaded)
-                    </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="text-xs font-bold text-solix-dark">
+                        Supporting Project Media <span className="text-rose-500">*</span> ({formData.gallery.length}/3 uploaded)
+                      </label>
+                      <p className="text-[11px] text-solix-muted">
+                        Min 1, max 3 files. Images &amp; videos supported (Max 1 video).
+                      </p>
+                    </div>
 
-                    <label className="inline-flex items-center gap-1.5 bg-solix-bg hover:bg-white text-solix-dark text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-colors border border-solix-border">
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Gallery Photos</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleGalleryUpload}
-                        disabled={uploadingGallery}
-                        className="hidden"
-                      />
-                    </label>
+                    {formData.gallery.length < 3 && (
+                      <label className="inline-flex items-center gap-1.5 bg-solix-bg hover:bg-white text-solix-dark text-xs font-bold px-4 py-2 rounded-full cursor-pointer transition-colors border border-solix-border shadow-sm shrink-0">
+                        <Plus className="w-3.5 h-3.5 text-solix-green" />
+                        <span>Add Media (Image/Video)</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/svg+xml,video/mp4,video/webm,video/quicktime,video/ogg"
+                          multiple
+                          onChange={handleGalleryUpload}
+                          disabled={uploadingGallery || formData.gallery.length >= 3}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
                   </div>
 
-                  {galleryPreviews.length > 0 ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 pt-1">
-                      {galleryPreviews.map((url, idx) => (
-                        <div key={idx} className="relative aspect-square bg-solix-bg rounded-2xl overflow-hidden group border border-solix-border">
-                          <Image src={url} alt={`Gallery ${idx}`} fill className="object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryImage(idx)}
-                            className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Remove image"
+                  {formData.gallery.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+                      {formData.gallery.map((url, idx) => {
+                        const isVid = isVideoMedia(url);
+                        return (
+                          <div
+                            key={idx}
+                            className="relative aspect-[4/3] bg-solix-bg rounded-2xl overflow-hidden group border border-solix-border shadow-sm flex items-center justify-center"
                           >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                            {isVid ? (
+                              <video
+                                src={url}
+                                controls={false}
+                                className="object-cover w-full h-full pointer-events-none"
+                              />
+                            ) : (
+                              <Image src={url} alt={`Media ${idx + 1}`} fill className="object-cover" />
+                            )}
+
+                            {/* Badge indicating type */}
+                            <div className="absolute top-2 left-2 pointer-events-none">
+                              <span className="bg-solix-dark/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
+                                {isVid ? <Video className="w-2.5 h-2.5 text-emerald-400" /> : <ImageIcon className="w-2.5 h-2.5 text-emerald-400" />}
+                                <span>{isVid ? 'Video' : 'Image'}</span>
+                              </span>
+                            </div>
+
+                            {/* Remove button */}
+                            <button
+                              type="button"
+                              onClick={() => removeGalleryMedia(idx)}
+                              className="absolute top-2 right-2 bg-rose-600 text-white p-1.5 rounded-full opacity-90 group-hover:opacity-100 transition-opacity shadow-md hover:bg-rose-700"
+                              title="Remove media file"
+                            >
+                              <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <p className="text-xs text-solix-muted italic">No additional gallery photos added yet.</p>
+                    <div className="bg-rose-50/60 border border-dashed border-rose-200 rounded-2xl p-4 text-center text-xs text-rose-700">
+                      At least 1 supporting image or video file must be uploaded.
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* OPTIONS & DANGER ZONE */}
+              {/* 4. OPTIONS & DANGER ZONE */}
               <div className="space-y-4 pt-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-solix-green border-b border-solix-border pb-2">
-                  4. Options & Danger Zone
+                  4. Options &amp; Settings
                 </h3>
 
                 <div className="flex items-center gap-3">
@@ -861,12 +996,12 @@ export default function AdminProjectsPage() {
                     onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
                     className="w-4 h-4 rounded text-solix-green focus:ring-emerald-500 bg-solix-bg border-solix-border"
                   />
-                  <label htmlFor="isFeatured" className="text-xs font-bold text-solix-dark">
-                    Feature on Homepage Showcase (Featured Project)
+                  <label htmlFor="isFeatured" className="text-xs font-bold text-solix-dark cursor-pointer">
+                    Feature on Homepage Showcase (Optional, defaults to false)
                   </label>
                 </div>
 
-                {/* DANGER ZONE */}
+                {/* DANGER ZONE (Edit mode only) */}
                 {editingProject && (
                   <div className="mt-8 border border-rose-200 bg-rose-50 rounded-2xl p-5 space-y-3">
                     <div className="flex items-center gap-2 text-rose-800 text-xs font-bold uppercase tracking-wider">
@@ -874,7 +1009,7 @@ export default function AdminProjectsPage() {
                       <span>Danger Zone</span>
                     </div>
                     <p className="text-xs text-rose-700">
-                      Permanently removing this project will delete it completely from the system and public website.
+                      Permanently removing this project will delete it completely from the database and public website.
                     </p>
                     <button
                       type="button"
@@ -996,12 +1131,14 @@ export default function AdminProjectsPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2 pt-2">
-                    <h4 className="text-sm font-bold text-solix-dark">Engineering Scope Narrative</h4>
-                    <p className="text-xs text-solix-muted leading-relaxed whitespace-pre-wrap">
-                      {previewProject.fullStory}
-                    </p>
-                  </div>
+                  {previewProject.fullStory && previewProject.fullStory.trim().length > 0 && (
+                    <div className="space-y-2 pt-2">
+                      <h4 className="text-sm font-bold text-solix-dark">Engineering Scope Narrative</h4>
+                      <p className="text-xs text-solix-muted leading-relaxed whitespace-pre-wrap">
+                        {previewProject.fullStory}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1022,7 +1159,7 @@ export default function AdminProjectsPage() {
                 This action is irreversible. To confirm deletion, type the exact project title below:
               </p>
               <div className="bg-solix-bg p-2.5 rounded-xl text-xs font-mono font-bold text-rose-700 border border-solix-border">
-                "{deleteConfirmProject.title}"
+                &ldquo;{deleteConfirmProject.title}&rdquo;
               </div>
             </div>
 

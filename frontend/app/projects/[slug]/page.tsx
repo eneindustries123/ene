@@ -82,41 +82,73 @@ export default async function ProjectDetailPage({ params }: { params: { slug: st
           </div>
         </div>
 
-        {/* Case Study Content */}
-        <div className="max-w-4xl mx-auto space-y-8 bg-white rounded-3xl p-8 sm:p-12 border border-solix-border shadow-solix">
-          <h2 className="text-2xl font-bold text-solix-dark border-b border-solix-border pb-4">
-            Project Overview & Engineering Scope
-          </h2>
+        {/* Case Study Content (Rendered only if fullStory or gallery exists) */}
+        {(Boolean(project.fullStory && project.fullStory.trim().length > 0) || Boolean(project.gallery && project.gallery.length > 0)) && (
+          <div className="max-w-4xl mx-auto space-y-8 bg-white rounded-3xl p-8 sm:p-12 border border-solix-border shadow-solix">
+            {project.fullStory && project.fullStory.trim().length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold text-solix-dark border-b border-solix-border pb-4">
+                  Project Overview &amp; Engineering Scope
+                </h2>
 
-          <p className="text-base text-solix-muted leading-relaxed whitespace-pre-wrap">
-            {project.fullStory}
-          </p>
-
-          {/* Gallery display if present */}
-          {project.gallery && project.gallery.length > 0 && (
-            <div className="pt-6 border-t border-solix-border space-y-4">
-              <h3 className="text-lg font-bold text-solix-dark">Project Media Gallery</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {project.gallery.map((imgUrl, idx) => (
-                  <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-solix-border">
-                    <Image src={imgUrl} alt={`${project.title} gallery photo ${idx + 1}`} fill className="object-cover" />
-                  </div>
-                ))}
+                <p className="text-base text-solix-muted leading-relaxed whitespace-pre-wrap">
+                  {project.fullStory}
+                </p>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="pt-6 border-t border-solix-border/50 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <span className="text-xs text-solix-muted">Interested in similar capacity deployments?</span>
-            <Link
-              href="/request-a-quote"
-              className="flex items-center gap-2 bg-solix-dark text-white text-xs font-bold px-6 py-3 rounded-full hover:bg-black transition-colors"
-            >
-              <span>Consult Engineering Team</span>
-              <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-            </Link>
+            {/* Supporting Media Gallery (Images and Videos) */}
+            {project.gallery && project.gallery.length > 0 && (
+              <div className="pt-6 border-t border-solix-border space-y-4">
+                <h3 className="text-lg font-bold text-solix-dark">Project Supporting Media</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {project.gallery.map((mediaUrl, idx) => {
+                    const isVideo =
+                      mediaUrl.toLowerCase().endsWith('.mp4') ||
+                      mediaUrl.toLowerCase().endsWith('.webm') ||
+                      mediaUrl.toLowerCase().endsWith('.mov') ||
+                      mediaUrl.toLowerCase().endsWith('.ogg') ||
+                      mediaUrl.startsWith('data:video/');
+
+                    return (
+                      <div
+                        key={idx}
+                        className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-solix-border bg-solix-bg flex items-center justify-center"
+                      >
+                        {isVideo ? (
+                          <video
+                            src={mediaUrl}
+                            controls
+                            className="object-cover w-full h-full rounded-2xl"
+                          />
+                        ) : (
+                          <Image
+                            src={mediaUrl}
+                            alt={`${project.title} media ${idx + 1}`}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            className="object-cover"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-6 border-t border-solix-border/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <span className="text-xs text-solix-muted">Interested in similar capacity deployments?</span>
+              <Link
+                href="/request-a-quote"
+                className="flex items-center gap-2 bg-solix-dark text-white text-xs font-bold px-6 py-3 rounded-full hover:bg-black transition-colors"
+              >
+                <span>Consult Engineering Team</span>
+                <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       <Footer />

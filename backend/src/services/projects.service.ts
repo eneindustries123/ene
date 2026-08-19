@@ -9,9 +9,9 @@ export interface Project {
   location: string;
   capacity: string;
   category: string;
-  completionYear: string;
+  completionYear: number;
   summary: string;
-  fullStory: string;
+  fullStory?: string;
   mainImage: string;
   gallery: string[];
   isFeatured: boolean;
@@ -35,7 +35,7 @@ let inMemoryProjects: Project[] = [
     location: 'Multan, Punjab, Pakistan',
     capacity: 'High-Capacity On-Grid Array',
     category: 'Institutional Solar',
-    completionYear: '2024',
+    completionYear: 2024,
     summary: 'Turnkey solar energy installation powering campus academic blocks, research laboratories, and administrative facilities.',
     fullStory: 'E&E Industries engineered and commissioned a comprehensive solar power array at MNS University of Agriculture Multan. The project involved site load analysis, elevated structural mounting over academic rooftops, Tier-1 panel installation, and full grid synchronization.',
     mainImage: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?q=80&w=1200&auto=format&fit=crop',
@@ -54,11 +54,13 @@ let inMemoryProjects: Project[] = [
     location: 'Chakdara, Swat, KPK, Pakistan',
     capacity: '25KW',
     category: 'Commercial Solar',
-    completionYear: '2023',
+    completionYear: 2023,
     summary: 'A 25KW solar deployment providing uninterrupted commercial power in northern mountainous terrain.',
     fullStory: 'Designed to handle high wind shear and mountain ambient weather, this 25KW commercial solar project utilizes heavy-duty galvanized mounting structures and hybrid energy storage.',
     mainImage: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1200&auto=format&fit=crop',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1200&auto=format&fit=crop',
+    ],
     isFeatured: true,
     status: 'published',
   },
@@ -70,11 +72,13 @@ let inMemoryProjects: Project[] = [
     location: 'Lahore, Punjab, Pakistan',
     capacity: 'Commercial Hybrid System',
     category: 'Commercial & Logistics',
-    completionYear: '2024',
+    completionYear: 2024,
     summary: 'Solar integration providing continuous power backup for cold storage pharmaceutical inventory.',
     fullStory: 'Ensuring 100% operational uptime for temperature-sensitive medical supplies, E&E Industries installed custom solar arrays paired with instant hybrid battery transfer switches.',
     mainImage: 'https://images.unsplash.com/photo-1542336391-ae2936d8eff4?q=80&w=1200&auto=format&fit=crop',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1542336391-ae2936d8eff4?q=80&w=1200&auto=format&fit=crop',
+    ],
     isFeatured: true,
     status: 'published',
   },
@@ -86,11 +90,13 @@ let inMemoryProjects: Project[] = [
     location: 'Chitral, KPK, Pakistan',
     capacity: '50KW',
     category: 'Infrastructure & Solar',
-    completionYear: '2023',
+    completionYear: 2023,
     summary: 'A 50KW off-grid/hybrid solar project powering remote infrastructure and regional operational hubs.',
     fullStory: 'Navigating rugged mountain transport routes, E&E delivered specialized procurement, steel fabrication, and on-site engineering commissioning.',
     mainImage: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?q=80&w=1200&auto=format&fit=crop',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1509391365360-2e959784a276?q=80&w=1200&auto=format&fit=crop',
+    ],
     isFeatured: true,
     status: 'published',
   },
@@ -102,11 +108,13 @@ let inMemoryProjects: Project[] = [
     location: 'Gujranwala, Punjab, Pakistan',
     capacity: '55KW',
     category: 'Commercial Solar',
-    completionYear: '2024',
+    completionYear: 2024,
     summary: '55KW commercial solar facility cutting peak grid power costs by over 70%.',
     fullStory: 'Engineered for optimal daytime load offset, this 55KW system features net metering integration and continuous IoT telemetry monitoring.',
     mainImage: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=1200&auto=format&fit=crop',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=1200&auto=format&fit=crop',
+    ],
     isFeatured: true,
     status: 'published',
   },
@@ -118,11 +126,13 @@ let inMemoryProjects: Project[] = [
     location: 'DHA, Lahore, Pakistan',
     capacity: '40KW Elevated Shed',
     category: 'Fabrication & Solar',
-    completionYear: '2024',
+    completionYear: 2024,
     summary: '40KW solar installation mounted on a custom-designed elevated structural steel roof shed.',
     fullStory: 'Combining our fabrication and solar services, E&E Industrial Corporation engineered an aesthetic elevated steel roof structure over existing retail rooftop space to accommodate 40KW of solar modules without disturbing store operations.',
     mainImage: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200&auto=format&fit=crop',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200&auto=format&fit=crop',
+    ],
     isFeatured: true,
     status: 'published',
   },
@@ -137,11 +147,11 @@ function mapProjectRow(row: any): Project {
     location: row.location,
     capacity: row.capacity,
     category: row.category,
-    completionYear: String(row.completion_year),
+    completionYear: Number(row.completion_year) || 2024,
     summary: row.summary,
-    fullStory: row.full_story,
+    fullStory: row.full_story || '',
     mainImage: row.main_image,
-    gallery: row.gallery || [],
+    gallery: Array.isArray(row.gallery) ? row.gallery : [],
     isFeatured: Boolean(row.is_featured),
     status: (row.status as 'published' | 'draft' | 'archived') || 'published',
     createdAt: row.created_at,
@@ -157,11 +167,11 @@ function mapProjectToRow(project: Omit<Project, 'id'>) {
     location: project.location,
     capacity: project.capacity,
     category: project.category,
-    completion_year: project.completionYear,
+    completion_year: Number(project.completionYear) || 2024,
     summary: project.summary,
-    full_story: project.fullStory,
+    full_story: project.fullStory || '',
     main_image: project.mainImage,
-    gallery: project.gallery || [],
+    gallery: Array.isArray(project.gallery) ? project.gallery : [],
     is_featured: Boolean(project.isFeatured),
     status: project.status || 'published',
   };

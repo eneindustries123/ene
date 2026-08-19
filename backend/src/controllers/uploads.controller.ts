@@ -9,10 +9,21 @@ export class UploadsController {
         return res.status(400).json({ error: 'No file provided' });
       }
 
-      // Check mime type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+      // Check mime type (Images & Videos)
+      const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/svg+xml',
+        'video/mp4',
+        'video/webm',
+        'video/quicktime',
+        'video/ogg',
+      ];
       if (!allowedTypes.includes(file.mimetype)) {
-        return res.status(400).json({ error: 'Invalid file type. Only JPEG, PNG, WEBP, and SVG allowed.' });
+        return res.status(400).json({
+          error: 'Invalid file type. Only JPEG, PNG, WEBP, SVG images and MP4, WEBM, MOV, OGG videos are allowed.',
+        });
       }
 
       const result = await UploadsService.uploadFile(
