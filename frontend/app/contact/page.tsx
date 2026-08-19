@@ -13,8 +13,8 @@ export default function ContactPage() {
     phone: '',
     city: '',
     address: '',
-    serviceRequired: 'Solar Energy',
-    monthlyBill: '$500 - $1,500 / Month',
+    serviceRequired: '',
+    monthlyBill: 'PKR 50,000 – 100,000 / month',
     solarType: 'On-Grid Net Metering',
     subject: '',
     message: '',
@@ -27,6 +27,12 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.serviceRequired) {
+      setStatus('error');
+      setResponseMsg('Please select a service before submitting.');
+      return;
+    }
+
     setStatus('loading');
     const res = await submitContactForm({
       ...formData,
@@ -41,8 +47,8 @@ export default function ContactPage() {
         phone: '',
         city: '',
         address: '',
-        serviceRequired: 'Solar Energy',
-        monthlyBill: '$500 - $1,500 / Month',
+        serviceRequired: '',
+        monthlyBill: 'PKR 50,000 – 100,000 / month',
         solarType: 'On-Grid Net Metering',
         subject: '',
         message: '',
@@ -63,10 +69,10 @@ export default function ContactPage() {
           <div className="lg:col-span-5 space-y-8">
             <div className="space-y-4">
               <div className="inline-block px-4 py-1 rounded-full border border-solix-border text-solix-muted text-xs font-semibold uppercase tracking-wider bg-white">
-                Connect With E&E
+                Connect With E&amp;E
               </div>
               <h1 className="text-4xl sm:text-5xl font-extrabold text-solix-dark tracking-tight leading-tight">
-                Let's Discuss Your Next Project
+                Let&apos;s Discuss Your Next Project
               </h1>
               <p className="text-sm text-solix-muted leading-relaxed">
                 Whether you are planning a solar installation, sourcing engineering materials, or developing a structural fabrication project, our team can help evaluate your requirements.
@@ -74,36 +80,66 @@ export default function ContactPage() {
             </div>
 
             <div className="space-y-4 bg-white rounded-3xl p-6 sm:p-8 border border-solix-border shadow-solix">
+              {/* Head Office Address */}
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-solix-bg border border-solix-border flex items-center justify-center text-solix-green shrink-0">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-solix-dark">Global Headquarters</h4>
-                  <p className="text-xs text-solix-muted leading-relaxed">475 Cherry Dr, Troy, Michigan 46546 United States</p>
+                  <h4 className="text-sm font-bold text-solix-dark">Head Office</h4>
+                  <p className="text-xs text-solix-muted leading-relaxed">
+                    183B Iqbal Avenue 1, Lahore, Pakistan
+                  </p>
                 </div>
               </div>
 
+              {/* Direct Phone */}
               <div className="flex items-start gap-4 pt-4 border-t border-solix-border/50">
                 <div className="w-10 h-10 rounded-xl bg-solix-bg border border-solix-border flex items-center justify-center text-solix-green shrink-0">
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-solix-dark">Direct Phone</h4>
-                  <p className="text-xs text-solix-muted">+1 (258) 525-2353 / +92 (42) 111-333-363</p>
+                  <p className="text-xs text-solix-muted">
+                    <a
+                      href="tel:+923063999363"
+                      className="hover:text-solix-green font-semibold transition-colors"
+                    >
+                      +92 306 3999363
+                    </a>
+                  </p>
                 </div>
               </div>
 
+              {/* Official Email */}
               <div className="flex items-start gap-4 pt-4 border-t border-solix-border/50">
                 <div className="w-10 h-10 rounded-xl bg-solix-bg border border-solix-border flex items-center justify-center text-solix-green shrink-0">
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-solix-dark">Official Email</h4>
-                  <p className="text-xs text-solix-muted">contact@ee-industries.com / info@ee-industries.com</p>
+                  <div className="text-xs text-solix-muted space-y-0.5">
+                    <div>
+                      <a
+                        href="mailto:sales@eneindustries.com"
+                        className="hover:text-solix-green font-medium transition-colors"
+                      >
+                        sales@eneindustries.com
+                      </a>
+                    </div>
+                    <div>
+                      <a
+                        href="mailto:marketing@eneindustries.com"
+                        className="hover:text-solix-green font-medium transition-colors"
+                      >
+                        marketing@eneindustries.com
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* Office Hours */}
               <div className="flex items-start gap-4 pt-4 border-t border-solix-border/50">
                 <div className="w-10 h-10 rounded-xl bg-solix-bg border border-solix-border flex items-center justify-center text-solix-green shrink-0">
                   <Clock className="w-5 h-5" />
@@ -116,7 +152,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Right Contact Form with Conditional Logic */}
+          {/* Right Contact Form with Neutral Placeholders & Conditional Logic */}
           <div className="lg:col-span-7 bg-white rounded-3xl p-8 sm:p-12 border border-solix-border shadow-solix">
             {status === 'success' ? (
               <div className="py-12 text-center space-y-4">
@@ -144,7 +180,7 @@ export default function ContactPage() {
                       required
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      placeholder="John Doe"
+                      placeholder="Enter your full name"
                       className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
@@ -156,7 +192,7 @@ export default function ContactPage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="john@company.com"
+                      placeholder="you@example.com"
                       className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
@@ -170,7 +206,7 @@ export default function ContactPage() {
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+1 (555) 000-0000"
+                      placeholder="+92 3XX XXXXXXX"
                       className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
@@ -181,7 +217,7 @@ export default function ContactPage() {
                       type="text"
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      placeholder="Lahore / Multan / Karachi"
+                      placeholder="e.g. Lahore, Punjab"
                       className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
@@ -191,13 +227,17 @@ export default function ContactPage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-solix-dark">Service Required *</label>
                   <select
+                    required
                     value={formData.serviceRequired}
                     onChange={(e) => setFormData({ ...formData, serviceRequired: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
                   >
+                    <option value="" disabled>
+                      Select a service
+                    </option>
                     <option value="Solar Energy">Solar Energy</option>
-                    <option value="Trading & Contracting">Trading & Contracting</option>
-                    <option value="Fabrication & Design">Fabrication & Design</option>
+                    <option value="Trading & Contracting">Trading &amp; Contracting</option>
+                    <option value="Fabrication & Design">Fabrication &amp; Design</option>
                     <option value="General Enquiry">General Enquiry</option>
                   </select>
                 </div>
@@ -212,10 +252,11 @@ export default function ContactPage() {
                         onChange={(e) => setFormData({ ...formData, monthlyBill: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-xl bg-white border border-solix-border text-xs text-solix-dark"
                       >
-                        <option>&lt; $300 / Month</option>
-                        <option>$300 - $800 / Month</option>
-                        <option>$800 - $2,000 / Month</option>
-                        <option>&gt; $2,000 Commercial Bill</option>
+                        <option value="Under PKR 25,000 / month">Under PKR 25,000 / month</option>
+                        <option value="PKR 25,000 – 50,000 / month">PKR 25,000 – 50,000 / month</option>
+                        <option value="PKR 50,000 – 100,000 / month">PKR 50,000 – 100,000 / month</option>
+                        <option value="PKR 100,000 – 250,000 / month">PKR 100,000 – 250,000 / month</option>
+                        <option value="PKR 250,000+ / month">PKR 250,000+ / month</option>
                       </select>
                     </div>
 
@@ -226,10 +267,10 @@ export default function ContactPage() {
                         onChange={(e) => setFormData({ ...formData, solarType: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-xl bg-white border border-solix-border text-xs text-solix-dark"
                       >
-                        <option>On-Grid Net Metering</option>
-                        <option>Hybrid (Battery Storage + Grid)</option>
-                        <option>Off-Grid Standalone System</option>
-                        <option>Agricultural Water Tubewell</option>
+                        <option value="On-Grid Net Metering">On-Grid Net Metering</option>
+                        <option value="Hybrid (Battery Storage + Grid)">Hybrid (Battery Storage + Grid)</option>
+                        <option value="Off-Grid Standalone System">Off-Grid Standalone System</option>
+                        <option value="Agricultural Solar Tubewell">Agricultural Solar Tubewell</option>
                       </select>
                     </div>
                   </div>
@@ -242,7 +283,7 @@ export default function ContactPage() {
                     required
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Provide details on project scope, capacity requirements, or material specifications..."
+                    placeholder="Tell us about your project requirements, capacity, location, or material specifications..."
                     className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                   />
                 </div>
