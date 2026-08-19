@@ -27,7 +27,7 @@ export default function NotFound() {
               className="inline-flex items-center gap-2 bg-solix-dark text-white text-xs font-bold px-6 py-3.5 rounded-full hover:bg-black transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Solix Homepage</span>
+              <span>Back to E&E Homepage</span>
             </Link>
           </div>
         </div>

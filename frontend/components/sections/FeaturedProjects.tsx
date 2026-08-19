@@ -16,7 +16,7 @@ export function FeaturedProjects() {
       category: 'Commercial Solar EPC',
       summary: 'Turnkey megawatt campus solar installation featuring high-efficiency monocrystalline arrays and three-phase industrial string inverters.',
       image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?q=80&w=1000&auto=format&fit=crop',
-      href: '/projects/mns-university-multan',
+      href: '/projects/mns-university-of-agriculture-multan',
     },
     {
       id: 'chakdara-swat',

@@ -25,8 +25,12 @@ export function WhatsAppButton() {
       href="https://wa.me/923010145952"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Chat with E&E Industries on WhatsApp."
-      className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20ba5a] text-white p-3.5 rounded-full shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group"
+      aria-label="Chat with E&E Industries on WhatsApp"
+      className="fixed bottom-6 right-6 z-40 bg-[#25D366] hover:bg-[#20ba5a] text-white p-3.5 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+      style={{
+        bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+        right: 'calc(1.5rem + env(safe-area-inset-right, 0px))',
+      }}
     >
       <WhatsAppIcon className="w-6 h-6 shrink-0" />
       <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out text-xs font-bold pl-0 group-hover:pl-2">

@@ -89,7 +89,7 @@ export function GetInTouchForm() {
                   required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="John Doe"
+                  placeholder="Enter your full name"
                   className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                 />
               </div>
@@ -102,7 +102,7 @@ export function GetInTouchForm() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="john@company.com"
+                  placeholder="you@example.com"
                   className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                 />
               </div>
@@ -115,7 +115,7 @@ export function GetInTouchForm() {
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+92 300 0000000"
+                  placeholder="+92 3XX XXXXXXX"
                   className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                 />
               </div>

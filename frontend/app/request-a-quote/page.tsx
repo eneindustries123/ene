@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { submitQuoteRequest } from '@/app/actions/contact';
-import { ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 export default function RequestQuotePage() {
   const router = useRouter();
@@ -15,11 +15,11 @@ export default function RequestQuotePage() {
     email: '',
     phone: '',
     company: '',
-    country: 'United States',
+    country: 'Pakistan',
     solutionType: 'solar',
     projectType: 'commercial',
     estimatedCapacity: '1 MW - 5 MW',
-    estimatedBudget: '$500k - $2M',
+    estimatedBudget: 'PKR 5M - 20M',
     timeline: '3 - 6 months',
     message: '',
   });
@@ -49,7 +49,7 @@ export default function RequestQuotePage() {
           <h1 className="text-3xl sm:text-5xl font-extrabold text-solix-dark tracking-tight">
             Request Custom Quotation
           </h1>
-          <p className="text-sm text-solix-muted max-w-xl mx-auto">
+          <p className="text-xs sm:text-sm text-solix-muted max-w-xl mx-auto leading-relaxed">
             Complete our multi-step engineering wizard to receive a comprehensive project estimate and technical layout proposal.
           </p>
         </div>
@@ -68,11 +68,11 @@ export default function RequestQuotePage() {
         </div>
 
         {/* Form Container */}
-        <div className="bg-white rounded-3xl p-8 sm:p-12 border border-solix-border shadow-solix">
+        <div className="bg-white rounded-3xl p-6 sm:p-12 border border-solix-border shadow-solix">
           <form onSubmit={handleSubmit} className="space-y-8">
             {step === 1 && (
               <div className="space-y-6 animate-fadeIn">
-                <h3 className="text-xl font-bold text-solix-dark">Step 1: Select Solution & Capacity Requirements</h3>
+                <h3 className="text-xl font-bold text-solix-dark">Step 1: Select Solution &amp; Capacity Requirements</h3>
 
                 <div className="space-y-3">
                   <label className="text-xs font-bold text-solix-dark">Technology Type *</label>
@@ -82,7 +82,7 @@ export default function RequestQuotePage() {
                         key={type}
                         type="button"
                         onClick={() => setFormData({ ...formData, solutionType: type })}
-                        className={`p-4 rounded-2xl border text-xs font-bold capitalize transition-all ${
+                        className={`p-3.5 sm:p-4 rounded-2xl border text-xs font-bold capitalize transition-all ${
                           formData.solutionType === type
                             ? 'bg-solix-dark text-white border-solix-dark shadow-md'
                             : 'bg-solix-bg text-solix-dark border-solix-border hover:border-solix-dark'
@@ -102,7 +102,7 @@ export default function RequestQuotePage() {
                         key={env}
                         type="button"
                         onClick={() => setFormData({ ...formData, projectType: env })}
-                        className={`p-4 rounded-2xl border text-xs font-bold capitalize transition-all ${
+                        className={`p-3.5 sm:p-4 rounded-2xl border text-xs font-bold capitalize transition-all ${
                           formData.projectType === env
                             ? 'bg-solix-dark text-white border-solix-dark shadow-md'
                             : 'bg-solix-bg text-solix-dark border-solix-border hover:border-solix-dark'
@@ -120,7 +120,7 @@ export default function RequestQuotePage() {
                     <select
                       value={formData.estimatedCapacity}
                       onChange={(e) => setFormData({ ...formData, estimatedCapacity: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
                     >
                       <option>&lt; 500 kW</option>
                       <option>500 kW - 1 MW</option>
@@ -135,7 +135,7 @@ export default function RequestQuotePage() {
                     <select
                       value={formData.timeline}
                       onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
                     >
                       <option>Immediate (&lt; 1 month)</option>
                       <option>1 - 3 months</option>
@@ -149,7 +149,7 @@ export default function RequestQuotePage() {
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="flex items-center gap-2 bg-solix-dark text-white text-xs font-bold px-6 py-3.5 rounded-full hover:bg-black transition-colors"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-solix-dark text-white text-xs font-bold px-6 py-3.5 rounded-full hover:bg-black transition-colors"
                   >
                     <span>Next: Contact Information</span>
                     <ArrowRight className="w-4 h-4" />
@@ -160,7 +160,7 @@ export default function RequestQuotePage() {
 
             {step === 2 && (
               <div className="space-y-6 animate-fadeIn">
-                <h3 className="text-xl font-bold text-solix-dark">Step 2: Contact & Facility Information</h3>
+                <h3 className="text-xl font-bold text-solix-dark">Step 2: Contact &amp; Facility Information</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -170,8 +170,8 @@ export default function RequestQuotePage() {
                       required
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      placeholder="Jane Smith"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs"
+                      placeholder="Enter your full name"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
 
@@ -182,8 +182,8 @@ export default function RequestQuotePage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="jane@enterprise.com"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs"
+                      placeholder="you@example.com"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
                 </div>
@@ -196,8 +196,8 @@ export default function RequestQuotePage() {
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+1 (555) 000-0000"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs"
+                      placeholder="+92 3XX XXXXXXX"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
 
@@ -208,8 +208,8 @@ export default function RequestQuotePage() {
                       required
                       value={formData.country}
                       onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                      placeholder="United States"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs"
+                      placeholder="e.g. Lahore, Pakistan"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
                 </div>
@@ -221,15 +221,15 @@ export default function RequestQuotePage() {
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder="Specify roof surface area, grid connection requirements, or existing battery backup systems..."
-                    className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs"
+                    className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="flex items-center gap-2 border border-solix-border text-solix-dark text-xs font-bold px-6 py-3.5 rounded-full hover:bg-solix-bg transition-colors"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 border border-solix-border text-solix-dark text-xs font-bold px-6 py-3.5 rounded-full hover:bg-solix-bg transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back</span>
@@ -238,7 +238,7 @@ export default function RequestQuotePage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center gap-2 bg-solix-dark hover:bg-black text-white text-xs font-bold px-8 py-3.5 rounded-full transition-colors disabled:opacity-50"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-solix-dark hover:bg-black text-white text-xs font-bold px-8 py-3.5 rounded-full transition-colors disabled:opacity-50 shadow-md"
                   >
                     <span>{loading ? 'Submitting Request...' : 'Submit Quotation Request'}</span>
                     <CheckCircle2 className="w-4 h-4" />

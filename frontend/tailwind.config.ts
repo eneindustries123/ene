@@ -37,6 +37,20 @@ const config: Config = {
         'solix-lg': '0 30px 60px -20px rgba(0, 0, 0, 0.12)',
         'solix-dark': '0 30px 60px -20px rgba(0, 0, 0, 0.4)',
       },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(-4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideLeft: {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.2s ease-out forwards',
+        slideLeft: 'slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+      },
     },
   },
   plugins: [],

@@ -66,6 +66,18 @@ export function TestimonialsSection() {
   const [submitStatusMessage, setSubmitStatusMessage] = useState('');
   const [submitError, setSubmitError] = useState('');
 
+  // Lock body scroll when review modal is open
+  useEffect(() => {
+    if (isSubmitModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isSubmitModalOpen]);
+
   useEffect(() => {
     async function loadApprovedReviews() {
       try {

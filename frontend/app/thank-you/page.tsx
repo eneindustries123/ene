@@ -5,7 +5,7 @@ import { Footer } from '@/components/layout/Footer';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 
 export const metadata = {
-  title: 'Submission Received | Solix Renewable Energy',
+  title: 'Submission Received | E&E Industries',
 };
 
 export default function ThankYouPage() {
