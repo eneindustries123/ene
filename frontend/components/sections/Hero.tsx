@@ -59,7 +59,7 @@ export function Hero() {
   const currentSlide = HERO_SLIDES[activeIndex];
 
   return (
-    <section className="relative w-full min-h-screen min-h-[100svh] xl:min-h-[92vh] flex flex-col pt-24 sm:pt-28 md:pt-28 pt-[calc(4.5rem+clamp(1.5rem,4svh,2.5rem))] sm:pt-[calc(5rem+clamp(1.5rem,4svh,2.5rem))] md:pt-[calc(5.5rem+clamp(1.5rem,4svh,2.5rem))] xl:pt-32 pb-10 md:pb-16 px-4 sm:px-8 overflow-hidden select-none">
+    <section className="relative w-full min-h-screen min-h-[100svh] xl:min-h-[92vh] flex flex-col pt-24 sm:pt-28 md:pt-28 pt-[calc(4.5rem+clamp(1.5rem,3svh,2rem))] sm:pt-[calc(5rem+clamp(1.5rem,3svh,2rem))] md:pt-[calc(5.5rem+clamp(1.5rem,3svh,2rem))] xl:pt-32 pb-10 md:pb-16 px-4 sm:px-8 overflow-hidden select-none">
       {/* Background Image Crossfade & Cinematic Scale (Animated) */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-solix-dark">
         <AnimatePresence mode="sync">
@@ -92,8 +92,8 @@ export function Hero() {
 
       {/* Hero Main Content Shell */}
       <div className="relative z-20 max-w-7xl mx-auto w-full flex-1 flex flex-col">
-        <div className="max-w-3xl w-full flex-1 flex flex-col justify-end xl:justify-start">
-          <div className="flex flex-col gap-6">
+        <div className="max-w-3xl w-full flex-1 flex flex-col">
+          <div className="flex flex-col gap-[clamp(0.75rem,1.75svh,1rem)] sm:gap-5 xl:gap-6">
           {/* 1. Animated Eyebrow Category Pill (Fixed Height Row) */}
           <div className="h-8 sm:h-9 flex items-center shrink-0">
             <AnimatePresence mode="wait" initial={false}>
@@ -116,7 +116,7 @@ export function Hero() {
             <div className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.08]">
               E&amp;E
             </div>
-            <div className="min-h-[5.25rem] sm:min-h-[4.5rem] lg:min-h-[5.25rem] flex items-start">
+            <div className="min-h-[calc(2*1lh)] min-[375px]:min-h-[1lh] sm:min-h-[calc(2*1lh)] md:min-h-[4.5rem] lg:min-h-[5.25rem] flex items-start text-4xl sm:text-6xl lg:text-7xl leading-[1.08]">
               <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.08] w-full">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.span
@@ -134,8 +134,8 @@ export function Hero() {
             </div>
           </div>
 
-          {/* 3. Animated Service Description (Reserved Fixed-Height Container) */}
-          <div className="min-h-[8.5rem] sm:min-h-[5.5rem] lg:min-h-[5rem] flex items-start shrink-0">
+          {/* 3. Animated Service Description (Line-based stable slot) */}
+          <div className="min-h-[calc(5*1lh)] min-[350px]:min-h-[calc(4*1lh)] sm:min-h-[calc(3*1lh)] xl:min-h-[5rem] flex items-start shrink-0 text-base sm:text-lg leading-relaxed">
             <AnimatePresence mode="wait" initial={false}>
               <motion.p
                 key={currentSlide.id}
@@ -173,10 +173,10 @@ export function Hero() {
           </div>
           </div>
 
-          {/* Fluid first-fold space: grows toward the fold, then caps on tall screens. */}
+          {/* Flexible viewport fill belongs after the CTA, with a short-screen minimum. */}
           <div
             aria-hidden="true"
-            className="flex-1 min-h-[clamp(1.5rem,4svh,2.5rem)] max-h-[clamp(3rem,10svh,6rem)] xl:flex-none xl:h-6 xl:min-h-0 xl:max-h-none"
+            className="flex-1 min-h-[clamp(1.5rem,4svh,2.5rem)] xl:flex-none xl:h-6 xl:min-h-0"
           />
 
           {/* 5. Completely Static Trust / Qualifier Row */}
