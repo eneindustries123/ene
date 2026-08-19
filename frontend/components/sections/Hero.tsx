@@ -90,18 +90,18 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-b from-solix-dark/60 via-transparent to-solix-bg z-10" />
       </div>
 
-      {/* Hero Main Content */}
+      {/* Hero Main Content Shell (Mounted & Fixed Framework) */}
       <div className="relative z-20 max-w-7xl mx-auto w-full pt-2 sm:pt-4">
-        <div className="max-w-3xl space-y-6">
-          {/* 1. Animated Eyebrow Category Pill */}
-          <div className="min-h-[32px] flex items-center">
+        <div className="max-w-3xl flex flex-col space-y-6">
+          {/* 1. Animated Eyebrow Category Pill (Fixed Height Row) */}
+          <div className="h-8 sm:h-9 flex items-center shrink-0">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={currentSlide.id}
-                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 8 }}
+                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -6 }}
-                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
               >
                 <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-xs font-extrabold tracking-widest uppercase">
                   <span>{currentSlide.label}</span>
@@ -110,37 +110,38 @@ export function Hero() {
             </AnimatePresence>
           </div>
 
-          {/* 2. Headline: Static "E&E" on Line 1, Animated Service Title on Line 2 */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.08]">
-            {/* Static Line 1: Completely permanent */}
-            <span className="block text-white">E&E</span>
+          {/* 2. Headline: Static "E&E" on Line 1, Reserved-Height Dynamic Service Title on Line 2 */}
+          <div className="shrink-0 space-y-1">
+            <div className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.08]">
+              E&amp;E
+            </div>
+            <div className="min-h-[5.25rem] sm:min-h-[4.5rem] lg:min-h-[5.25rem] flex items-start">
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.08] w-full">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={currentSlide.id}
+                    initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -8 }}
+                    transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="block"
+                  >
+                    {currentSlide.serviceTitle}
+                  </motion.span>
+                </AnimatePresence>
+              </h1>
+            </div>
+          </div>
 
-            {/* Dynamic Line 2: Service-specific name with smooth transition */}
-            <span className="block mt-1">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={currentSlide.id}
-                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -8 }}
-                  transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="block"
-                >
-                  {currentSlide.serviceTitle}
-                </motion.span>
-              </AnimatePresence>
-            </span>
-          </h1>
-
-          {/* 3. Animated Service Description */}
-          <div className="min-h-[72px] sm:min-h-[84px] flex items-start">
+          {/* 3. Animated Service Description (Reserved Fixed-Height Container) */}
+          <div className="min-h-[8.5rem] sm:min-h-[5.5rem] lg:min-h-[5rem] flex items-start shrink-0">
             <AnimatePresence mode="wait" initial={false}>
               <motion.p
                 key={currentSlide.id}
-                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 10 }}
+                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -8 }}
-                transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -6 }}
+                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
                 className="text-base sm:text-lg text-white/85 font-normal leading-relaxed max-w-2xl text-balance"
               >
                 {currentSlide.description}
@@ -149,7 +150,7 @@ export function Hero() {
           </div>
 
           {/* 4. Completely Static CTAs (Never remount or fade) */}
-          <div className="flex flex-wrap items-center gap-4 pt-1">
+          <div className="flex flex-wrap items-center gap-4 pt-1 shrink-0">
             {/* Primary CTA -> Scroll to Services */}
             <Link
               href="#services"
@@ -166,12 +167,12 @@ export function Hero() {
               href="#mission-vision"
               className="text-white/90 hover:text-white text-sm font-semibold px-6 py-3.5 rounded-full bg-black/30 hover:bg-black/40 backdrop-blur border border-white/20 transition-all"
             >
-              Mission & Vision
+              Mission &amp; Vision
             </Link>
           </div>
 
           {/* 5. Completely Static Trust / Qualifier Row */}
-          <div className="pt-4 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs font-medium text-white/80">
+          <div className="pt-4 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs font-medium text-white/80 shrink-0">
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>10+ Years Engineering Track Record</span>
@@ -182,7 +183,7 @@ export function Hero() {
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Residential, Commercial & Industrial</span>
+              <span>Residential, Commercial &amp; Industrial</span>
             </div>
           </div>
         </div>
