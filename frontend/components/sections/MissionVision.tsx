@@ -8,7 +8,7 @@ export function MissionVision() {
   return (
     <section
       id="mission-vision"
-      className="py-20 px-4 sm:px-8 max-w-7xl mx-auto w-full space-y-12 scroll-mt-24"
+      className="py-12 md:py-20 px-4 sm:px-8 max-w-7xl mx-auto w-full space-y-12 scroll-mt-24"
     >
       {/* Editorial Header Row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end border-b border-solix-border/70 pb-10">

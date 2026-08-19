@@ -59,7 +59,7 @@ export function Hero() {
   const currentSlide = HERO_SLIDES[activeIndex];
 
   return (
-    <section className="relative w-full min-h-[85vh] lg:min-h-[92vh] flex flex-col justify-between pt-24 sm:pt-28 pb-16 px-4 sm:px-8 overflow-hidden select-none">
+    <section className="relative w-full min-h-0 md:min-h-[85vh] lg:min-h-[92vh] flex flex-col justify-between pt-24 sm:pt-28 pb-10 md:pb-16 px-4 sm:px-8 overflow-hidden select-none">
       {/* Background Image Crossfade & Cinematic Scale (Animated) */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-solix-dark">
         <AnimatePresence mode="sync">
@@ -189,8 +189,8 @@ export function Hero() {
         </div>
       </div>
 
-      {/* Spacing for Lower Integrated Stats Panel */}
-      <div className="relative z-20 h-12 sm:h-20" />
+      {/* Spacing for Lower Integrated Stats Panel (Desktop only) */}
+      <div className="relative z-20 hidden md:block h-12 sm:h-20" />
     </section>
   );
 }
