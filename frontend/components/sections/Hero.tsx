@@ -59,7 +59,7 @@ export function Hero() {
   const currentSlide = HERO_SLIDES[activeIndex];
 
   return (
-    <section className="relative w-full min-h-screen min-h-[100svh] xl:min-h-[92vh] flex flex-col pt-24 sm:pt-28 md:pt-28 pt-[calc(4.5rem+clamp(1.5rem,3svh,2rem))] sm:pt-[calc(5rem+clamp(1.5rem,3svh,2rem))] md:pt-[calc(5.5rem+clamp(1.5rem,3svh,2rem))] xl:pt-32 pb-10 md:pb-16 px-4 sm:px-8 overflow-hidden select-none">
+    <section className="relative w-full xl:min-h-[92vh] flex flex-col pt-24 sm:pt-28 md:pt-28 pt-[calc(4.5rem+clamp(1.5rem,3svh,2rem))] sm:pt-[calc(5rem+clamp(1.5rem,3svh,2rem))] md:pt-[calc(5.5rem+clamp(1.5rem,3svh,2rem))] xl:pt-32 pb-10 md:pb-16 px-4 sm:px-8 overflow-hidden select-none">
       {/* Background Image Crossfade & Cinematic Scale (Animated) */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-solix-dark">
         <AnimatePresence mode="sync">
@@ -91,9 +91,9 @@ export function Hero() {
       </div>
 
       {/* Hero Main Content Shell */}
-      <div className="relative z-20 max-w-7xl mx-auto w-full flex-1 flex flex-col">
-        <div className="max-w-3xl w-full flex-1 flex flex-col">
-          <div className="flex flex-col gap-[clamp(0.75rem,1.75svh,1rem)] sm:gap-5 xl:gap-6">
+      <div className="relative z-20 max-w-7xl mx-auto w-full flex flex-col xl:flex-1">
+        <div className="max-w-3xl w-full flex flex-col xl:flex-1">
+          <div className="flex flex-col">
           {/* 1. Animated Eyebrow Category Pill (Fixed Height Row) */}
           <div className="h-8 sm:h-9 flex items-center shrink-0">
             <AnimatePresence mode="wait" initial={false}>
@@ -112,7 +112,7 @@ export function Hero() {
           </div>
 
           {/* 2. Headline: Static "E&E" on Line 1, Reserved-Height Dynamic Service Title on Line 2 */}
-          <div className="shrink-0 space-y-1">
+          <div className="mt-[clamp(1.25rem,3vw,1.5rem)] xl:mt-6 shrink-0 space-y-1">
             <div className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.08]">
               E&amp;E
             </div>
@@ -135,7 +135,7 @@ export function Hero() {
           </div>
 
           {/* 3. Animated Service Description (Line-based stable slot) */}
-          <div className="min-h-[calc(5*1lh)] min-[350px]:min-h-[calc(4*1lh)] sm:min-h-[calc(3*1lh)] xl:min-h-[5rem] flex items-start shrink-0 text-base sm:text-lg leading-relaxed">
+          <div className="mt-[clamp(1.5rem,4vw,2rem)] xl:mt-6 min-h-[calc(5*1lh)] min-[350px]:min-h-[calc(4*1lh)] sm:min-h-[calc(3*1lh)] xl:min-h-[5rem] flex items-start shrink-0 text-base sm:text-lg leading-relaxed">
             <AnimatePresence mode="wait" initial={false}>
               <motion.p
                 key={currentSlide.id}
@@ -151,7 +151,7 @@ export function Hero() {
           </div>
 
           {/* 4. Completely Static CTAs (Never remount or fade) */}
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 pt-1 shrink-0">
+          <div className="mt-[clamp(1.75rem,4.5vw,2.25rem)] xl:mt-6 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 pt-1 shrink-0">
             {/* Primary CTA -> Scroll to Services */}
             <Link
               href="#services"
@@ -173,10 +173,10 @@ export function Hero() {
           </div>
           </div>
 
-          {/* Flexible viewport fill belongs after the CTA, with a short-screen minimum. */}
+          {/* Controlled CTA-to-information spacing; never fills unused viewport height. */}
           <div
             aria-hidden="true"
-            className="flex-1 min-h-[clamp(1.5rem,4svh,2.5rem)] xl:flex-none xl:h-6 xl:min-h-0"
+            className="h-[clamp(2rem,5vw,3rem)] shrink-0 xl:h-6"
           />
 
           {/* 5. Completely Static Trust / Qualifier Row */}
@@ -197,8 +197,8 @@ export function Hero() {
         </div>
       </div>
 
-      {/* Spacing for Lower Integrated Stats Panel (Desktop only) */}
-      <div className="relative z-20 hidden md:block h-12 sm:h-20" />
+      {/* Reserve the intentional tablet/desktop overlap for the metrics panel. */}
+      <div className="relative z-20 hidden md:block h-20" />
     </section>
   );
 }
