@@ -43,6 +43,31 @@ const HERO_SLIDES: HeroSlide[] = [
 
 const AUTO_PLAY_INTERVAL = 3000; // 3 seconds
 
+const PersistentHeroActions = React.memo(function PersistentHeroActions() {
+  return (
+    <div className="mt-[clamp(1.75rem,4.5vw,2.25rem)] xl:mt-6 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 pt-1 shrink-0">
+      {/* Primary CTA -> Scroll to Services */}
+      <Link
+        href="#services"
+        className="group inline-flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-solix-dark font-semibold text-sm h-14 px-6 rounded-full transition-[background-color,box-shadow] duration-200 shadow-lg hover:shadow-xl shrink-0"
+      >
+        <span>Explore Our Services</span>
+        <div className="w-7 h-7 rounded-full bg-solix-dark text-white flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
+          <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+        </div>
+      </Link>
+
+      {/* Secondary CTA -> Scroll to Mission & Vision */}
+      <Link
+        href="#mission-vision"
+        className="inline-flex items-center justify-center text-white/90 hover:text-white text-sm font-semibold h-14 px-6 rounded-full bg-black/30 hover:bg-black/40 backdrop-blur border border-white/20 transition-colors shrink-0"
+      >
+        Mission &amp; Vision
+      </Link>
+    </div>
+  );
+});
+
 export function Hero() {
   const [activeIndex, setActiveIndex] = useState(0);
   const prefersReducedMotion = useReducedMotion();
@@ -135,7 +160,7 @@ export function Hero() {
           </div>
 
           {/* 3. Animated Service Description (Line-based stable slot) */}
-          <div className="mt-[clamp(1.5rem,4vw,2rem)] xl:mt-6 min-h-[calc(5*1lh)] min-[350px]:min-h-[calc(4*1lh)] sm:min-h-[calc(3*1lh)] xl:min-h-[5rem] flex items-start shrink-0 text-base sm:text-lg leading-relaxed">
+          <div className="mt-[clamp(1.5rem,4vw,2rem)] xl:mt-6 min-h-[calc(5*1lh)] min-[350px]:min-h-[calc(4*1lh)] sm:min-h-[calc(3*1lh)] flex items-start shrink-0 text-base sm:text-lg leading-relaxed">
             <AnimatePresence mode="wait" initial={false}>
               <motion.p
                 key={currentSlide.id}
@@ -150,27 +175,8 @@ export function Hero() {
             </AnimatePresence>
           </div>
 
-          {/* 4. Completely Static CTAs (Never remount or fade) */}
-          <div className="mt-[clamp(1.75rem,4.5vw,2.25rem)] xl:mt-6 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 pt-1 shrink-0">
-            {/* Primary CTA -> Scroll to Services */}
-            <Link
-              href="#services"
-              className="group inline-flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-solix-dark font-semibold text-sm h-14 px-6 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl shrink-0"
-            >
-              <span>Explore Our Services</span>
-              <div className="w-7 h-7 rounded-full bg-solix-dark text-white flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
-                <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-              </div>
-            </Link>
-
-            {/* Secondary CTA -> Scroll to Mission & Vision */}
-            <Link
-              href="#mission-vision"
-              className="inline-flex items-center justify-center text-white/90 hover:text-white text-sm font-semibold h-14 px-6 rounded-full bg-black/30 hover:bg-black/40 backdrop-blur border border-white/20 transition-all shrink-0"
-            >
-              Mission &amp; Vision
-            </Link>
-          </div>
+          {/* 4. Persistent CTAs (memoized outside the slide render cycle) */}
+          <PersistentHeroActions />
           </div>
 
           {/* Controlled CTA-to-information spacing; never fills unused viewport height. */}
