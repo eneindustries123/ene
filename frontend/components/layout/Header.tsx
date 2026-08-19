@@ -342,12 +342,7 @@ export function Header() {
                         : 'text-white/90 hover:bg-white/10 hover:text-white'
                     )}
                   >
-                    <div className="flex items-center gap-2">
-                      <span>Services</span>
-                      <span className="text-[10px] uppercase tracking-widest font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                        3 Divisions
-                      </span>
-                    </div>
+                    <span>Services</span>
                     <ChevronDown
                       className={cn(
                         'w-4 h-4 text-emerald-400 transition-transform duration-200',
