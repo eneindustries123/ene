@@ -154,7 +154,7 @@ export function Hero() {
             {/* Primary CTA -> Scroll to Services */}
             <Link
               href="#services"
-              className="group flex items-center gap-3 bg-white hover:bg-slate-100 text-solix-dark font-semibold text-sm px-6 py-3.5 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="group inline-flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-solix-dark font-semibold text-sm h-14 px-6 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl shrink-0"
             >
               <span>Explore Our Services</span>
               <div className="w-7 h-7 rounded-full bg-solix-dark text-white flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">
@@ -165,7 +165,7 @@ export function Hero() {
             {/* Secondary CTA -> Scroll to Mission & Vision */}
             <Link
               href="#mission-vision"
-              className="text-white/90 hover:text-white text-sm font-semibold px-6 py-3.5 rounded-full bg-black/30 hover:bg-black/40 backdrop-blur border border-white/20 transition-all"
+              className="inline-flex items-center justify-center text-white/90 hover:text-white text-sm font-semibold h-14 px-6 rounded-full bg-black/30 hover:bg-black/40 backdrop-blur border border-white/20 transition-all shrink-0"
             >
               Mission &amp; Vision
             </Link>

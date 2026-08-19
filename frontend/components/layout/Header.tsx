@@ -11,7 +11,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
-  const [mobileServicesOpen, setMobileServicesOpen] = useState(true); // default open in mobile accordion for quick access
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false); // Initially collapsed
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -44,17 +44,21 @@ export function Header() {
     };
   }, [mobileMenuOpen]);
 
-  // Close mobile menu on route change
+  // Close mobile menu on route change & reset services state
   useEffect(() => {
     setMobileMenuOpen(false);
     setServicesOpen(false);
+    setMobileServicesOpen(false);
   }, [pathname]);
 
   // Keyboard accessibility (Escape) & click-outside handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (mobileMenuOpen) setMobileMenuOpen(false);
+        if (mobileMenuOpen) {
+          setMobileMenuOpen(false);
+          setMobileServicesOpen(false);
+        }
         if (servicesOpen) setServicesOpen(false);
       }
     };
@@ -121,6 +125,7 @@ export function Header() {
 
   const closeMobile = () => {
     setMobileMenuOpen(false);
+    setMobileServicesOpen(false);
   };
 
   return (
@@ -258,7 +263,12 @@ export function Header() {
           {/* Mobile Menu Trigger */}
           <button
             type="button"
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            onClick={() =>
+              setMobileMenuOpen((prev) => {
+                if (!prev) setMobileServicesOpen(false);
+                return !prev;
+              })
+            }
             aria-label={mobileMenuOpen ? 'Close mobile menu' : 'Open mobile navigation menu'}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-navigation-drawer"
@@ -352,7 +362,7 @@ export function Header() {
                   </button>
 
                   {mobileServicesOpen && (
-                    <div className="mt-1 ml-3 pl-3 border-l-2 border-emerald-500/30 space-y-1">
+                    <div className="mt-1 ml-3 pl-3 border-l-2 border-emerald-500/30 space-y-1 animate-fadeIn">
                       {serviceLinks.map((sub) => (
                         <Link
                           key={sub.name}
