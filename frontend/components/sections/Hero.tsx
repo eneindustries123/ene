@@ -90,9 +90,10 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-b from-solix-dark/60 via-transparent to-solix-bg z-10" />
       </div>
 
-      {/* Hero Main Content Shell (Mounted & Fixed Framework) */}
+      {/* Hero Main Content Shell */}
       <div className="relative z-20 max-w-7xl mx-auto w-full flex-1 flex flex-col">
-        <div className="max-w-3xl w-full flex-1 flex flex-col gap-6">
+        <div className="max-w-3xl w-full flex-1 flex flex-col justify-end xl:justify-start">
+          <div className="flex flex-col gap-6">
           {/* 1. Animated Eyebrow Category Pill (Fixed Height Row) */}
           <div className="h-8 sm:h-9 flex items-center shrink-0">
             <AnimatePresence mode="wait" initial={false}>
@@ -170,9 +171,16 @@ export function Hero() {
               Mission &amp; Vision
             </Link>
           </div>
+          </div>
+
+          {/* Fluid first-fold space: grows toward the fold, then caps on tall screens. */}
+          <div
+            aria-hidden="true"
+            className="flex-1 min-h-[clamp(1.5rem,4svh,2.5rem)] max-h-[clamp(3rem,10svh,6rem)] xl:flex-none xl:h-6 xl:min-h-0 xl:max-h-none"
+          />
 
           {/* 5. Completely Static Trust / Qualifier Row */}
-          <div className="mt-auto xl:mt-0 pt-4 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs font-medium text-white/80 shrink-0">
+          <div className="pt-4 border-t border-white/15 flex flex-wrap items-center gap-6 text-xs font-medium text-white/80 shrink-0">
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>10+ Years Engineering Track Record</span>
