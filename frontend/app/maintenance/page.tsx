@@ -99,7 +99,7 @@ export default function MaintenancePage() {
               key={plan.name}
               className={`rounded-3xl p-8 border flex flex-col justify-between space-y-8 relative ${
                 plan.recommended
-                  ? 'bg-solix-dark text-white border-solix-dark shadow-solix-dark scale-105'
+                  ? 'bg-solix-dark text-white border-solix-dark shadow-solix-dark md:scale-105'
                   : 'bg-white text-solix-dark border-solix-border shadow-solix'
               }`}
             >

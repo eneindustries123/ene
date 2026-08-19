@@ -1,15 +1,16 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import app from '../src/server';
-import { signToken, SESSION_COOKIE_NAME } from '../src/middleware/auth';
+import { getAdminCredentials, signToken, SESSION_COOKIE_NAME } from '../src/middleware/auth';
 
 describe('E&E Industries Backend API Endpoints', () => {
   let adminCookie: string;
+  const adminCredentials = getAdminCredentials();
 
   beforeAll(() => {
     // Generate valid admin test session token
     const token = signToken({
-      email: 'eneindustries123@gmail.com',
+      email: adminCredentials.email,
       exp: Date.now() + 24 * 60 * 60 * 1000,
     });
     adminCookie = `${SESSION_COOKIE_NAME}=${token}`;
@@ -29,8 +30,8 @@ describe('E&E Industries Backend API Endpoints', () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'eneindustries123@gmail.com',
-          password: 'BlackPanther@5412',
+          email: adminCredentials.email,
+          password: adminCredentials.password,
         });
 
       expect(res.status).toBe(200);

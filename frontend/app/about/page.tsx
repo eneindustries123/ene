@@ -134,7 +134,7 @@ export default function AboutPage() {
       <Header />
 
       {/* 1. HERO SECTION */}
-      <section className="relative w-full min-h-[500px] lg:min-h-[560px] flex items-center justify-center pt-32 pb-20 px-4 sm:px-8 overflow-hidden bg-solix-dark">
+      <section className="relative w-full min-h-screen min-h-[100svh] xl:min-h-[560px] flex items-center justify-center pt-32 pb-20 px-4 sm:px-8 overflow-hidden bg-solix-dark">
         {/* Background Image & Overlays */}
         <div className="absolute inset-0 z-0">
           <Image

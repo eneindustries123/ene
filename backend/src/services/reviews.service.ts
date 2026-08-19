@@ -134,8 +134,9 @@ export class ReviewsService {
       }
     }
 
-    const all = await this.getAllReviews();
-    return all.filter((r) => r.status === 'approved' && r.featured && r.rating >= 4).slice(0, 4);
+    return inMemoryReviews
+      .filter((r) => r.status === 'approved' && r.featured && r.rating >= 4)
+      .slice(0, 4);
   }
 
   static async getReviewById(id: string): Promise<Review | null> {
@@ -156,8 +157,7 @@ export class ReviewsService {
       }
     }
 
-    const all = await this.getAllReviews();
-    return all.find((r) => r.id === id) || null;
+    return inMemoryReviews.find((r) => r.id === id) || null;
   }
 
   static moderateReviewContent(input: {

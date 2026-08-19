@@ -105,7 +105,7 @@ export default function FabricationDesignPage() {
       <Header />
 
       {/* 1. HERO / INTRO SECTION */}
-      <section className="relative w-full min-h-[520px] lg:min-h-[580px] flex items-center justify-center pt-32 pb-20 px-4 sm:px-8 overflow-hidden bg-solix-dark">
+      <section className="relative w-full min-h-screen min-h-[100svh] xl:min-h-[580px] flex items-center justify-center pt-32 pb-20 px-4 sm:px-8 overflow-hidden bg-solix-dark">
         {/* Background Image & Gradient Overlays */}
         <div className="absolute inset-0 z-0">
           <Image

@@ -296,7 +296,7 @@ export function Header() {
           />
 
           {/* Drawer Container */}
-          <div className="relative w-full max-w-sm sm:max-w-md h-[100dvh] bg-solix-dark text-white border-l border-white/10 shadow-2xl flex flex-col z-10 animate-slideLeft">
+          <div className="relative w-full max-w-sm sm:max-w-md h-screen h-[100dvh] bg-solix-dark text-white border-l border-white/10 shadow-2xl flex flex-col z-10 animate-slideLeft">
             {/* 1. Drawer Header Row */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-solix-dark/95 shrink-0">
               <BrandLogo light />

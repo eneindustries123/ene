@@ -1,5 +1,5 @@
 import { Project, INITIAL_PROJECTS } from './data';
-import { getApiUrl } from './api-client';
+import { apiFetchWithTimeout, getApiUrl, isProductionBuild } from './api-client';
 
 let inMemoryProjects: Project[] = INITIAL_PROJECTS.map((p) => ({
   ...p,
@@ -12,8 +12,10 @@ export type { Project };
  * Retrieves all projects from standalone backend API (or fallback).
  */
 export async function getAllProjects(): Promise<Project[]> {
+  if (isProductionBuild()) return [...inMemoryProjects];
+
   try {
-    const res = await fetch(getApiUrl('/api/projects'), {
+    const res = await apiFetchWithTimeout(getApiUrl('/api/projects'), {
       cache: 'no-store',
       credentials: 'include',
     });
@@ -34,8 +36,12 @@ export async function getAllProjects(): Promise<Project[]> {
  * Retrieves only published projects for public display.
  */
 export async function getPublishedProjects(): Promise<Project[]> {
+  if (isProductionBuild()) {
+    return inMemoryProjects.filter((p) => p.status === 'published' || p.status === undefined);
+  }
+
   try {
-    const res = await fetch(getApiUrl('/api/projects?status=published'), {
+    const res = await apiFetchWithTimeout(getApiUrl('/api/projects?status=published'), {
       next: { revalidate: 60 },
     });
     if (res.ok) {
@@ -48,16 +54,19 @@ export async function getPublishedProjects(): Promise<Project[]> {
     // Local fallback
   }
 
-  const all = await getAllProjects();
-  return all.filter((p) => p.status === 'published' || p.status === undefined);
+  return inMemoryProjects.filter((p) => p.status === 'published' || p.status === undefined);
 }
 
 /**
  * Retrieves a single project by URL slug.
  */
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
+  if (isProductionBuild()) {
+    return inMemoryProjects.find((p) => p.slug === slug) || null;
+  }
+
   try {
-    const res = await fetch(getApiUrl(`/api/projects/${slug}`), {
+    const res = await apiFetchWithTimeout(getApiUrl(`/api/projects/${slug}`), {
       next: { revalidate: 60 },
     });
     if (res.ok) {
@@ -78,8 +87,12 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
  * Retrieves a single project by ID.
  */
 export async function getProjectById(id: string): Promise<Project | null> {
+  if (isProductionBuild()) {
+    return inMemoryProjects.find((p) => p.id === id) || null;
+  }
+
   try {
-    const res = await fetch(getApiUrl(`/api/projects/${id}`), {
+    const res = await apiFetchWithTimeout(getApiUrl(`/api/projects/${id}`), {
       cache: 'no-store',
       credentials: 'include',
     });
@@ -102,7 +115,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
  */
 export async function createProject(projectData: Omit<Project, 'id'>): Promise<Project> {
   try {
-    const res = await fetch(getApiUrl('/api/projects'), {
+    const res = await apiFetchWithTimeout(getApiUrl('/api/projects'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -134,7 +147,7 @@ export async function createProject(projectData: Omit<Project, 'id'>): Promise<P
  */
 export async function updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
   try {
-    const res = await fetch(getApiUrl(`/api/projects/${id}`), {
+    const res = await apiFetchWithTimeout(getApiUrl(`/api/projects/${id}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -165,7 +178,7 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
  */
 export async function deleteProject(id: string): Promise<boolean> {
   try {
-    const res = await fetch(getApiUrl(`/api/projects/${id}`), {
+    const res = await apiFetchWithTimeout(getApiUrl(`/api/projects/${id}`), {
       method: 'DELETE',
       credentials: 'include',
     });

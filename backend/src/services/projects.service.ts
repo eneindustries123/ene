@@ -215,8 +215,7 @@ export class ProjectsService {
       }
     }
 
-    const all = await this.getAllProjects();
-    return all.filter((p) => p.status === 'published' || p.status === undefined);
+    return inMemoryProjects.filter((p) => p.status === 'published' || p.status === undefined);
   }
 
   static async getProjectById(id: string): Promise<Project | null> {
@@ -237,8 +236,7 @@ export class ProjectsService {
       }
     }
 
-    const all = await this.getAllProjects();
-    return all.find((p) => p.id === id) || null;
+    return inMemoryProjects.find((p) => p.id === id) || null;
   }
 
   static async getProjectBySlug(slug: string): Promise<Project | null> {
@@ -259,8 +257,7 @@ export class ProjectsService {
       }
     }
 
-    const all = await this.getAllProjects();
-    return all.find((p) => p.slug === slug) || null;
+    return inMemoryProjects.find((p) => p.slug === slug) || null;
   }
 
   static async createProject(projectData: Omit<Project, 'id'>): Promise<Project> {

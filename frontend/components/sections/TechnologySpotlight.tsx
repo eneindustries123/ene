@@ -15,7 +15,7 @@ export function TechnologySpotlight() {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto">
+    <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto overflow-x-clip">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
         {/* Left Column: Headline & Description */}
         <motion.div

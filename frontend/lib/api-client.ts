@@ -6,9 +6,30 @@ const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 ).replace(/\/$/, '');
 
+const DEFAULT_API_TIMEOUT_MS = 4000;
+
 export function getApiUrl(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   return `${API_BASE_URL}${cleanPath}`;
+}
+
+export function isProductionBuild(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
+
+export async function apiFetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = DEFAULT_API_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function apiFetch<T = any>(
@@ -18,7 +39,7 @@ export async function apiFetch<T = any>(
   const url = endpoint.startsWith('http') ? endpoint : getApiUrl(endpoint);
 
   try {
-    const res = await fetch(url, {
+    const res = await apiFetchWithTimeout(url, {
       ...options,
       credentials: options.credentials || 'include',
       headers: {

@@ -83,51 +83,55 @@ export function GetInTouchForm() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Full Name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-solix-dark">Full Name *</label>
+                <label htmlFor="home-contact-name" className="text-xs font-bold text-solix-dark">Full Name *</label>
                 <input
+                  id="home-contact-name"
                   type="text"
                   required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   placeholder="Enter your full name"
-                  className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                  className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                 />
               </div>
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-solix-dark">Email Address *</label>
+                <label htmlFor="home-contact-email" className="text-xs font-bold text-solix-dark">Email Address *</label>
                 <input
+                  id="home-contact-email"
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="you@example.com"
-                  className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                  className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                 />
               </div>
 
               {/* Phone */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-solix-dark">Phone Number *</label>
+                <label htmlFor="home-contact-phone" className="text-xs font-bold text-solix-dark">Phone Number *</label>
                 <input
+                  id="home-contact-phone"
                   type="tel"
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+92 3XX XXXXXXX"
-                  className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                  className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                 />
               </div>
             </div>
 
             {/* Service Type */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-solix-dark">Service Required *</label>
+              <label htmlFor="home-contact-service" className="text-xs font-bold text-solix-dark">Service Required *</label>
               <select
+                id="home-contact-service"
                 value={formData.serviceType}
                 onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
+                className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
               >
                 <option value="Solar Energy">Solar Energy (Residential / Commercial / Industrial)</option>
                 <option value="Trading & Contracting">Trading & Contracting (Procurement & Supply)</option>
@@ -138,13 +142,14 @@ export function GetInTouchForm() {
 
             {/* Message */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-solix-dark">Project Details / Scope</label>
+              <label htmlFor="home-contact-message" className="text-xs font-bold text-solix-dark">Project Details / Scope</label>
               <textarea
+                id="home-contact-message"
                 rows={3}
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="Briefly describe system capacity, site location, or material specifications..."
-                className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
               />
             </div>
 

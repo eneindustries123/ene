@@ -45,7 +45,7 @@ E&E Industries is an enterprise-grade renewable energy and industrial engineerin
 ## 🔒 Security Architecture
 
 - **Zero Privileged Key Exposure**: `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, and `AUTH_SECRET` are kept strictly in `backend/.env`. They are never imported or bundled in client-side code.
-- **Frontend Isolation**: `frontend/.env.local` only receives public variables (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+- **Frontend Isolation**: `frontend/.env.local` only receives public application variables (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`). Database credentials remain backend-only.
 - **Authentication**: Admin session uses signed HMAC-SHA256 tokens in HTTP-only cookies with CSRF/CORS protections.
 - **Rate Limiting & Anti-Spam**: Public form endpoints (`/api/enquiries`, `/api/quote-requests`, `/api/reviews/submit`) and login (`/api/auth/login`) are protected with IP-based rate limiting, honeypot fields, and automated spam heuristics.
 
@@ -73,8 +73,7 @@ AUTH_SECRET=your_hmac_secret_key_minimum_32_characters
 #### Frontend (`frontend/.env.local`):
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_SUPABASE_URL=https://xnvxmolqsxizrfjysnnk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ---

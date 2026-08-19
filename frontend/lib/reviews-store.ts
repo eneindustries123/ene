@@ -1,4 +1,4 @@
-import { getApiUrl } from './api-client';
+import { apiFetchWithTimeout, getApiUrl, isProductionBuild } from './api-client';
 
 export interface Review {
   id: string;
@@ -109,8 +109,10 @@ export function moderateReviewContent(input: {
  * Retrieves all reviews from the backend API (or fallback).
  */
 export async function getAllReviews(): Promise<Review[]> {
+  if (isProductionBuild()) return [...inMemoryReviews];
+
   try {
-    const res = await fetch(getApiUrl('/api/reviews'), {
+    const res = await apiFetchWithTimeout(getApiUrl('/api/reviews'), {
       cache: 'no-store',
       credentials: 'include',
     });
@@ -131,8 +133,14 @@ export async function getAllReviews(): Promise<Review[]> {
  * Retrieves approved, featured reviews for public display.
  */
 export async function getApprovedFeaturedReviews(): Promise<Review[]> {
+  if (isProductionBuild()) {
+    return inMemoryReviews
+      .filter((r) => r.status === 'approved' && r.featured && r.rating >= 4)
+      .slice(0, 4);
+  }
+
   try {
-    const res = await fetch(getApiUrl('/api/reviews/approved'), {
+    const res = await apiFetchWithTimeout(getApiUrl('/api/reviews/approved'), {
       next: { revalidate: 60 },
     });
     if (res.ok) {
@@ -145,8 +153,9 @@ export async function getApprovedFeaturedReviews(): Promise<Review[]> {
     // Fallback
   }
 
-  const all = await getAllReviews();
-  return all.filter((r) => r.status === 'approved' && r.featured && r.rating >= 4).slice(0, 4);
+  return inMemoryReviews
+    .filter((r) => r.status === 'approved' && r.featured && r.rating >= 4)
+    .slice(0, 4);
 }
 
 /**
@@ -164,7 +173,7 @@ export async function submitPublicReview(data: {
   honeypot?: string;
 }): Promise<{ success: boolean; reviewId: string; status: Review['status']; message: string }> {
   try {
-    const res = await fetch(getApiUrl('/api/reviews/submit'), {
+    const res = await apiFetchWithTimeout(getApiUrl('/api/reviews/submit'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -217,7 +226,7 @@ export async function updateReviewStatus(
   isFeatured?: boolean
 ): Promise<Review | null> {
   try {
-    const res = await fetch(getApiUrl(`/api/reviews/${id}`), {
+    const res = await apiFetchWithTimeout(getApiUrl(`/api/reviews/${id}`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -256,7 +265,7 @@ export async function updateReviewStatus(
  */
 export async function deleteReview(id: string): Promise<boolean> {
   try {
-    const res = await fetch(getApiUrl(`/api/reviews/${id}`), {
+    const res = await apiFetchWithTimeout(getApiUrl(`/api/reviews/${id}`), {
       method: 'DELETE',
       credentials: 'include',
     });

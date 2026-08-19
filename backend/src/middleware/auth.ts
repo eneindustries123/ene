@@ -93,7 +93,14 @@ export function verifyToken(token: string): { valid: boolean; email?: string } {
       .update(base64Payload)
       .digest('base64url');
 
-    if (signature !== expectedSignature) return { valid: false };
+    const signatureBuffer = Buffer.from(signature);
+    const expectedSignatureBuffer = Buffer.from(expectedSignature);
+    if (
+      signatureBuffer.length !== expectedSignatureBuffer.length ||
+      !crypto.timingSafeEqual(signatureBuffer, expectedSignatureBuffer)
+    ) {
+      return { valid: false };
+    }
 
     const jsonPayload = Buffer.from(base64Payload, 'base64url').toString('utf8');
     const payload = JSON.parse(jsonPayload);

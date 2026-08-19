@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { fetchWithTimeout } from '../fetchWithTimeout';
 
 let supabaseAnonClient: SupabaseClient | null = null;
 
@@ -14,6 +15,10 @@ export function getSupabaseAnonClient(): SupabaseClient | null {
     return null;
   }
 
-  supabaseAnonClient = createClient(supabaseUrl, anonKey);
+  supabaseAnonClient = createClient(supabaseUrl, anonKey, {
+    global: {
+      fetch: fetchWithTimeout,
+    },
+  });
   return supabaseAnonClient;
 }

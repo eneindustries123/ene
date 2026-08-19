@@ -174,63 +174,68 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Full Name *</label>
+                    <label htmlFor="contact-full-name" className="text-xs font-bold text-solix-dark">Full Name *</label>
                     <input
+                      id="contact-full-name"
                       type="text"
                       required
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       placeholder="Enter your full name"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Email Address *</label>
+                    <label htmlFor="contact-email" className="text-xs font-bold text-solix-dark">Email Address *</label>
                     <input
+                      id="contact-email"
                       type="email"
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="you@example.com"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Phone Number *</label>
+                    <label htmlFor="contact-phone" className="text-xs font-bold text-solix-dark">Phone Number *</label>
                     <input
+                      id="contact-phone"
                       type="tel"
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+92 3XX XXXXXXX"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">City / Location</label>
+                    <label htmlFor="contact-city" className="text-xs font-bold text-solix-dark">City / Location</label>
                     <input
+                      id="contact-city"
                       type="text"
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       placeholder="e.g. Lahore, Punjab"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
                 </div>
 
                 {/* Service Required Selector */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-solix-dark">Service Required *</label>
+                  <label htmlFor="contact-service" className="text-xs font-bold text-solix-dark">Service Required *</label>
                   <select
+                    id="contact-service"
                     required
                     value={formData.serviceRequired}
                     onChange={(e) => setFormData({ ...formData, serviceRequired: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
+                    className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
                   >
                     <option value="" disabled>
                       Select a service
@@ -246,11 +251,12 @@ export default function ContactPage() {
                 {isSolarSelected && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-solix-bg/70 rounded-2xl border border-solix-border/70 animate-fadeIn">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-solix-dark">Monthly Electricity Bill</label>
+                      <label htmlFor="contact-monthly-bill" className="text-xs font-bold text-solix-dark">Monthly Electricity Bill</label>
                       <select
+                        id="contact-monthly-bill"
                         value={formData.monthlyBill}
                         onChange={(e) => setFormData({ ...formData, monthlyBill: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-solix-border text-xs text-solix-dark"
+                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-solix-border text-base sm:text-xs text-solix-dark"
                       >
                         <option value="Under PKR 25,000 / month">Under PKR 25,000 / month</option>
                         <option value="PKR 25,000 – 50,000 / month">PKR 25,000 – 50,000 / month</option>
@@ -261,11 +267,12 @@ export default function ContactPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-solix-dark">Solar System Type</label>
+                      <label htmlFor="contact-solar-type" className="text-xs font-bold text-solix-dark">Solar System Type</label>
                       <select
+                        id="contact-solar-type"
                         value={formData.solarType}
                         onChange={(e) => setFormData({ ...formData, solarType: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-solix-border text-xs text-solix-dark"
+                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-solix-border text-base sm:text-xs text-solix-dark"
                       >
                         <option value="On-Grid Net Metering">On-Grid Net Metering</option>
                         <option value="Hybrid (Battery Storage + Grid)">Hybrid (Battery Storage + Grid)</option>
@@ -277,14 +284,15 @@ export default function ContactPage() {
                 )}
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-solix-dark">Project Details / Message *</label>
+                  <label htmlFor="contact-message" className="text-xs font-bold text-solix-dark">Project Details / Message *</label>
                   <textarea
+                    id="contact-message"
                     rows={4}
                     required
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder="Tell us about your project requirements, capacity, location, or material specifications..."
-                    className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                    className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                   />
                 </div>
 

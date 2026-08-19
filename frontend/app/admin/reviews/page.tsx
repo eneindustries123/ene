@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   Star,
   CheckCircle,
@@ -24,7 +24,7 @@ export default function AdminReviewsPage() {
   const [deleteConfirmReview, setDeleteConfirmReview] = useState<Review | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     setLoading(true);
     try {
       const path =
@@ -43,11 +43,11 @@ export default function AdminReviewsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchReviews();
-  }, [statusFilter]);
+  }, [fetchReviews]);
 
   const handleUpdateStatus = async (id: string, newStatus: Review['status'], isFeatured?: boolean) => {
     try {
@@ -224,7 +224,7 @@ export default function AdminReviewsPage() {
 
               {/* Review Text Quote */}
               <blockquote className="text-xs sm:text-sm text-solix-dark font-medium leading-relaxed italic bg-solix-bg/60 p-4 rounded-2xl border border-solix-border/60">
-                "{review.review}"
+                &ldquo;{review.review}&rdquo;
               </blockquote>
 
               {/* Action Toolbar */}

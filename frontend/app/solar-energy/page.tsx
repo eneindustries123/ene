@@ -248,7 +248,7 @@ export default function SolarEnergyPage() {
       <Header />
 
       {/* 1. HERO SECTION */}
-      <section className="relative w-full min-h-[520px] lg:min-h-[580px] flex items-center justify-center pt-32 pb-20 px-4 sm:px-8 overflow-hidden bg-solix-dark">
+      <section className="relative w-full min-h-screen min-h-[100svh] xl:min-h-[580px] flex items-center justify-center pt-32 pb-20 px-4 sm:px-8 overflow-hidden bg-solix-dark">
         {/* Background Image & Cinematic Gradient Overlays */}
         <div className="absolute inset-0 z-0">
           <Image

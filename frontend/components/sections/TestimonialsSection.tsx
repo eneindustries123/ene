@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Quote, Building2, CheckCircle2, Star, Plus, X } from 'lucide-react';
-import { getApiUrl } from '@/lib/api-client';
+import { apiFetchWithTimeout, getApiUrl } from '@/lib/api-client';
 
 interface ReviewItem {
   id: string;
@@ -68,20 +68,28 @@ export function TestimonialsSection() {
 
   // Lock body scroll when review modal is open
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsSubmitModalOpen(false);
+      }
+    };
+
     if (isSubmitModalOpen) {
       document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', handleKeyDown);
     } else {
       document.body.style.overflow = '';
     }
     return () => {
       document.body.style.overflow = '';
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isSubmitModalOpen]);
 
   useEffect(() => {
     async function loadApprovedReviews() {
       try {
-        const res = await fetch(getApiUrl('/api/reviews/approved'));
+        const res = await apiFetchWithTimeout(getApiUrl('/api/reviews/approved'));
         if (res.ok) {
           const data = await res.json();
           const list = Array.isArray(data) ? data : data.reviews || [];
@@ -122,11 +130,11 @@ export function TestimonialsSection() {
     setSubmitting(true);
 
     try {
-      const res = await fetch(getApiUrl('/api/reviews/submit'), {
+      const res = await apiFetchWithTimeout(getApiUrl('/api/reviews/submit'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitForm),
-      });
+      }, 10000);
 
       const data = await res.json();
 
@@ -160,7 +168,7 @@ export function TestimonialsSection() {
   };
 
   return (
-    <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto">
+    <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto overflow-x-clip">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         {/* Left Column: Heading & Carousel Controls */}
         <motion.div
@@ -231,9 +239,9 @@ export function TestimonialsSection() {
                   <div className="w-10 h-10 rounded-xl bg-solix-bg border border-solix-border flex items-center justify-center text-solix-green">
                     <Quote className="w-5 h-5 rotate-180 fill-current" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[11px] font-bold text-solix-green uppercase tracking-wider">Project Context</span>
-                    <div className="text-xs font-extrabold text-solix-dark">{activeTestimonial.projectType}</div>
+                    <div className="text-xs font-extrabold text-solix-dark break-words">{activeTestimonial.projectType}</div>
                   </div>
                 </div>
 
@@ -244,7 +252,7 @@ export function TestimonialsSection() {
               </div>
 
               <blockquote className="text-base sm:text-xl text-solix-dark font-medium leading-relaxed italic">
-                "{activeTestimonial.quote}"
+                &ldquo;{activeTestimonial.quote}&rdquo;
               </blockquote>
 
               <div className="pt-4 border-t border-solix-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -269,16 +277,23 @@ export function TestimonialsSection() {
 
       {/* PUBLIC REVIEW SUBMISSION MODAL */}
       {isSubmitModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-dialog-title"
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+        >
           <div className="w-full max-w-lg bg-white rounded-3xl border border-solix-border shadow-2xl overflow-hidden my-8">
             <div className="p-6 border-b border-solix-border flex items-center justify-between bg-solix-bg">
               <div>
-                <h3 className="text-lg font-bold text-solix-dark">Submit Client Review</h3>
+                <h3 id="review-dialog-title" className="text-lg font-bold text-solix-dark">Submit Client Review</h3>
                 <p className="text-xs text-solix-muted">Share your experience with E&E engineering services.</p>
               </div>
               <button
                 type="button"
+                autoFocus
                 onClick={() => setIsSubmitModalOpen(false)}
+                aria-label="Close review form"
                 className="p-2 text-solix-muted hover:text-solix-dark rounded-full hover:bg-white transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -310,73 +325,80 @@ export function TestimonialsSection() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-solix-dark">Full Name *</label>
+                  <label htmlFor="review-name" className="font-bold text-solix-dark">Full Name *</label>
                   <input
+                    id="review-name"
                     type="text"
                     required
                     placeholder="e.g. Ahmed Raza"
                     value={submitForm.name}
                     onChange={(e) => setSubmitForm({ ...submitForm, name: e.target.value })}
-                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-solix-green"
+                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-base sm:text-xs focus:outline-none focus:border-solix-green"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-solix-dark">Email Address *</label>
+                  <label htmlFor="review-email" className="font-bold text-solix-dark">Email Address *</label>
                   <input
+                    id="review-email"
                     type="email"
                     required
                     placeholder="ahmed@company.com"
                     value={submitForm.email}
                     onChange={(e) => setSubmitForm({ ...submitForm, email: e.target.value })}
-                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-solix-green"
+                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-base sm:text-xs focus:outline-none focus:border-solix-green"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-solix-dark">Company / Organization</label>
+                  <label htmlFor="review-company" className="font-bold text-solix-dark">Company / Organization</label>
                   <input
+                    id="review-company"
                     type="text"
                     placeholder="e.g. Logistics Complex"
                     value={submitForm.company}
                     onChange={(e) => setSubmitForm({ ...submitForm, company: e.target.value })}
-                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-solix-green"
+                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-base sm:text-xs focus:outline-none focus:border-solix-green"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-solix-dark">Your Role</label>
+                  <label htmlFor="review-role" className="font-bold text-solix-dark">Your Role</label>
                   <input
+                    id="review-role"
                     type="text"
                     placeholder="e.g. Project Manager"
                     value={submitForm.role}
                     onChange={(e) => setSubmitForm({ ...submitForm, role: e.target.value })}
-                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-solix-green"
+                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-base sm:text-xs focus:outline-none focus:border-solix-green"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-solix-dark">Service / Project Delivered *</label>
+                <label htmlFor="review-service" className="font-bold text-solix-dark">Service / Project Delivered *</label>
                 <input
+                  id="review-service"
                   type="text"
                   required
                   placeholder="e.g. 1.2MW Commercial Solar Array or Structural Steel Supply"
                   value={submitForm.service}
                   onChange={(e) => setSubmitForm({ ...submitForm, service: e.target.value })}
-                  className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-solix-green"
+                  className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-2 text-base sm:text-xs focus:outline-none focus:border-solix-green"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-solix-dark">Rating *</label>
-                <div className="flex items-center gap-2">
+                <div id="review-rating-label" className="font-bold text-solix-dark">Rating *</div>
+                <div role="group" aria-labelledby="review-rating-label" className="flex flex-wrap items-center gap-1 sm:gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
                       onClick={() => setSubmitForm({ ...submitForm, rating: star })}
-                      className="p-1 text-amber-400 focus:outline-none"
+                      aria-label={`${star} star${star === 1 ? '' : 's'}`}
+                      aria-pressed={star === submitForm.rating}
+                      className="p-2 text-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-lg"
                     >
                       <Star className={`w-5 h-5 ${star <= submitForm.rating ? 'fill-current' : 'text-slate-300'}`} />
                     </button>
@@ -386,14 +408,15 @@ export function TestimonialsSection() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-solix-dark">Your Review / Feedback *</label>
+                <label htmlFor="review-feedback" className="font-bold text-solix-dark">Your Review / Feedback *</label>
                 <textarea
+                  id="review-feedback"
                   required
                   rows={4}
                   placeholder="Write your experience working with E&E on project delivery..."
                   value={submitForm.review}
                   onChange={(e) => setSubmitForm({ ...submitForm, review: e.target.value })}
-                  className="w-full bg-solix-bg border border-solix-border rounded-xl p-3 text-xs focus:outline-none focus:border-solix-green leading-relaxed"
+                  className="w-full bg-solix-bg border border-solix-border rounded-xl p-3 text-base sm:text-xs focus:outline-none focus:border-solix-green leading-relaxed"
                 />
               </div>
 

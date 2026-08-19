@@ -75,12 +75,13 @@ export default function RequestQuotePage() {
                 <h3 className="text-xl font-bold text-solix-dark">Step 1: Select Solution &amp; Capacity Requirements</h3>
 
                 <div className="space-y-3">
-                  <label className="text-xs font-bold text-solix-dark">Technology Type *</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div id="quote-solution-label" className="text-xs font-bold text-solix-dark">Technology Type *</div>
+                  <div role="group" aria-labelledby="quote-solution-label" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {['solar', 'wind', 'hybrid', 'maintenance'].map((type) => (
                       <button
                         key={type}
                         type="button"
+                        aria-pressed={formData.solutionType === type}
                         onClick={() => setFormData({ ...formData, solutionType: type })}
                         className={`p-3.5 sm:p-4 rounded-2xl border text-xs font-bold capitalize transition-all ${
                           formData.solutionType === type
@@ -95,12 +96,13 @@ export default function RequestQuotePage() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-xs font-bold text-solix-dark">Project Environment *</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div id="quote-project-type-label" className="text-xs font-bold text-solix-dark">Project Environment *</div>
+                  <div role="group" aria-labelledby="quote-project-type-label" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {['commercial', 'industrial', 'residential', 'utility'].map((env) => (
                       <button
                         key={env}
                         type="button"
+                        aria-pressed={formData.projectType === env}
                         onClick={() => setFormData({ ...formData, projectType: env })}
                         className={`p-3.5 sm:p-4 rounded-2xl border text-xs font-bold capitalize transition-all ${
                           formData.projectType === env
@@ -116,11 +118,12 @@ export default function RequestQuotePage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Estimated Capacity Target</label>
+                    <label htmlFor="quote-capacity" className="text-xs font-bold text-solix-dark">Estimated Capacity Target</label>
                     <select
+                      id="quote-capacity"
                       value={formData.estimatedCapacity}
                       onChange={(e) => setFormData({ ...formData, estimatedCapacity: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
                     >
                       <option>&lt; 500 kW</option>
                       <option>500 kW - 1 MW</option>
@@ -131,11 +134,12 @@ export default function RequestQuotePage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Deployment Timeline</label>
+                    <label htmlFor="quote-timeline" className="text-xs font-bold text-solix-dark">Deployment Timeline</label>
                     <select
+                      id="quote-timeline"
                       value={formData.timeline}
                       onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
                     >
                       <option>Immediate (&lt; 1 month)</option>
                       <option>1 - 3 months</option>
@@ -164,64 +168,69 @@ export default function RequestQuotePage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Full Name *</label>
+                    <label htmlFor="quote-full-name" className="text-xs font-bold text-solix-dark">Full Name *</label>
                     <input
+                      id="quote-full-name"
                       type="text"
                       required
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       placeholder="Enter your full name"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Business Email *</label>
+                    <label htmlFor="quote-email" className="text-xs font-bold text-solix-dark">Business Email *</label>
                     <input
+                      id="quote-email"
                       type="email"
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="you@example.com"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Phone Number *</label>
+                    <label htmlFor="quote-phone" className="text-xs font-bold text-solix-dark">Phone Number *</label>
                     <input
+                      id="quote-phone"
                       type="tel"
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+92 3XX XXXXXXX"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-solix-dark">Country / Region *</label>
+                    <label htmlFor="quote-country" className="text-xs font-bold text-solix-dark">Country / Region *</label>
                     <input
+                      id="quote-country"
                       type="text"
                       required
                       value={formData.country}
                       onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                       placeholder="e.g. Lahore, Pakistan"
-                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                      className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-solix-dark">Additional Project Scope Notes</label>
+                  <label htmlFor="quote-message" className="text-xs font-bold text-solix-dark">Additional Project Scope Notes</label>
                   <textarea
+                    id="quote-message"
                     rows={3}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder="Specify roof surface area, grid connection requirements, or existing battery backup systems..."
-                    className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-xs focus:outline-none focus:border-solix-dark"
+                    className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                   />
                 </div>
 

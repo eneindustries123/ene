@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { getApiUrl } from '../../lib/api-client';
+import { apiFetchWithTimeout, getApiUrl } from '../../lib/api-client';
 
 const newsletterSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -53,11 +53,11 @@ export async function submitContactForm(formData: Record<string, any>) {
   }
 
   try {
-    const res = await fetch(getApiUrl('/api/enquiries'), {
+    const res = await apiFetchWithTimeout(getApiUrl('/api/enquiries'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
-    });
+    }, 10000);
 
     if (res.ok) {
       const data = await res.json();
@@ -80,11 +80,11 @@ export async function submitQuoteRequest(formData: Record<string, any>) {
   }
 
   try {
-    const res = await fetch(getApiUrl('/api/quote-requests'), {
+    const res = await apiFetchWithTimeout(getApiUrl('/api/quote-requests'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
-    });
+    }, 10000);
 
     if (res.ok) {
       const data = await res.json();
