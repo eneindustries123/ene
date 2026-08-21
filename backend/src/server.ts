@@ -16,6 +16,7 @@ import { uploadsRouter } from './routes/uploads.routes';
 import { errorHandler } from './middleware/error';
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 4000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || FRONTEND_URL;
