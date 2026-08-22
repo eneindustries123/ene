@@ -13,6 +13,11 @@ export function getApiUrl(path: string): string {
   return `${API_BASE_URL}${cleanPath}`;
 }
 
+export function getAdminApiUrl(path: string): string {
+  const cleanPath = path.replace(/^\/?api\//, '').replace(/^\//, '');
+  return `/api/admin/backend/${cleanPath}`;
+}
+
 export function isProductionBuild(): boolean {
   return process.env.NEXT_PHASE === 'phase-production-build';
 }

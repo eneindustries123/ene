@@ -13,7 +13,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { Review } from '@/lib/reviews-store';
-import { getApiUrl } from '@/lib/api-client';
+import { getAdminApiUrl } from '@/lib/api-client';
 
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -33,7 +33,7 @@ export default function AdminReviewsPage() {
           : statusFilter !== 'all'
           ? `/api/reviews?status=${statusFilter}`
           : '/api/reviews';
-      const res = await fetch(getApiUrl(path), { credentials: 'include' });
+      const res = await fetch(getAdminApiUrl(path));
       if (res.ok) {
         const data = await res.json();
         setReviews(Array.isArray(data) ? data : data.reviews || []);
@@ -51,7 +51,7 @@ export default function AdminReviewsPage() {
 
   const handleUpdateStatus = async (id: string, newStatus: Review['status'], isFeatured?: boolean) => {
     try {
-      const res = await fetch(getApiUrl(`/api/reviews/${id}`), {
+      const res = await fetch(getAdminApiUrl(`/api/reviews/${id}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -71,7 +71,7 @@ export default function AdminReviewsPage() {
     setDeleting(true);
 
     try {
-      const res = await fetch(getApiUrl(`/api/reviews/${deleteConfirmReview.id}`), {
+      const res = await fetch(getAdminApiUrl(`/api/reviews/${deleteConfirmReview.id}`), {
         method: 'DELETE',
         credentials: 'include',
       });

@@ -24,7 +24,7 @@ import {
   ImageIcon,
 } from 'lucide-react';
 import { Project } from '@/lib/data';
-import { getApiUrl } from '@/lib/api-client';
+import { getAdminApiUrl, getApiUrl } from '@/lib/api-client';
 
 const CATEGORY_OPTIONS = [
   'Institutional Solar',
@@ -205,7 +205,7 @@ export default function AdminProjectsPage() {
     body.append('file', file);
 
     try {
-      const res = await fetch(getApiUrl('/api/uploads'), {
+      const res = await fetch(getAdminApiUrl('/api/uploads'), {
         method: 'POST',
         credentials: 'include',
         body,
@@ -269,7 +269,7 @@ export default function AdminProjectsPage() {
       body.append('file', file);
 
       try {
-        const res = await fetch(getApiUrl('/api/uploads'), {
+        const res = await fetch(getAdminApiUrl('/api/uploads'), {
           method: 'POST',
           credentials: 'include',
           body,
@@ -355,8 +355,8 @@ export default function AdminProjectsPage() {
 
     try {
       const endpoint = editingProject
-        ? getApiUrl(`/api/projects/${editingProject.id}`)
-        : getApiUrl('/api/projects');
+        ? getAdminApiUrl(`/api/projects/${editingProject.id}`)
+        : getAdminApiUrl('/api/projects');
       const method = editingProject ? 'PUT' : 'POST';
 
       const res = await fetch(endpoint, {
@@ -395,7 +395,7 @@ export default function AdminProjectsPage() {
     setDeleteError('');
 
     try {
-      const res = await fetch(getApiUrl(`/api/projects/${deleteConfirmProject.id}`), {
+      const res = await fetch(getAdminApiUrl(`/api/projects/${deleteConfirmProject.id}`), {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

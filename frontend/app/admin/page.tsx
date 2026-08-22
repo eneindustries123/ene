@@ -10,11 +10,25 @@ import {
   Plus,
 } from 'lucide-react';
 import { getAllProjects } from '@/lib/projects-store';
-import { getAllReviews } from '@/lib/reviews-store';
+import type { Review } from '@/lib/reviews-store';
+import { fetchAdminBackend } from '@/lib/admin-server-api';
+
+async function getAdminReviews(): Promise<Review[]> {
+  try {
+    const response = await fetchAdminBackend('/api/reviews');
+    if (!response?.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : data.reviews || [];
+  } catch {
+    return [];
+  }
+}
 
 export default async function AdminDashboardOverview() {
-  const projects = await getAllProjects();
-  const reviews = await getAllReviews();
+  const [projects, reviews] = await Promise.all([getAllProjects(), getAdminReviews()]);
 
   const publishedProjectsCount = projects.filter((p) => p.status === 'published' || p.status === undefined).length;
   const featuredProjectsCount = projects.filter((p) => p.isFeatured).length;

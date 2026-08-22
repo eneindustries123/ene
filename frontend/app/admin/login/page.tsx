@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { getApiUrl } from '@/lib/api-client';
+
+const LOGIN_TIMEOUT_MS = 12000;
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -18,27 +19,35 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setErrorMessage('');
     setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
 
     try {
-      const res = await fetch(getApiUrl('/api/auth/login'), {
+      const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setErrorMessage(data.error || 'Authentication failed');
-        setLoading(false);
         return;
       }
 
-      router.push('/admin');
+      router.replace('/admin');
       router.refresh();
-    } catch {
-      setErrorMessage('An unexpected network error occurred. Please try again.');
+    } catch (error) {
+      const timedOut = error instanceof Error && error.name === 'AbortError';
+      setErrorMessage(
+        timedOut
+          ? 'Authentication timed out. Please try again.'
+          : 'An unexpected network error occurred. Please try again.'
+      );
+    } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };

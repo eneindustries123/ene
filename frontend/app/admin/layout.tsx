@@ -13,7 +13,6 @@ import {
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getApiUrl } from '@/lib/api-client';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -33,15 +32,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleSignOut = async () => {
     try {
-      await fetch(getApiUrl('/api/auth/logout'), {
+      await fetch('/api/admin/logout', {
         method: 'POST',
-        credentials: 'include',
       });
     } catch {
       // Ignore
+    } finally {
+      router.replace('/admin/login');
+      router.refresh();
     }
-    router.push('/admin/login');
-    router.refresh();
   };
 
   return (
