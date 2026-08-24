@@ -11,8 +11,25 @@ import { FeaturedProjects } from '@/components/sections/FeaturedProjects';
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
 import { GetInTouchForm } from '@/components/sections/GetInTouchForm';
 import { Footer } from '@/components/layout/Footer';
+import {
+  fetchPublishedProjectsFromApi,
+  selectHomepageProjects,
+} from '@/lib/projects-store';
+import type { Project } from '@/lib/data';
 
-export default function HomePage() {
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
+  let featuredProjects: Project[] = [];
+  let projectsLoadFailed = false;
+
+  try {
+    const publishedProjects = await fetchPublishedProjectsFromApi({ cache: 'no-store' }, 12_000);
+    featuredProjects = selectHomepageProjects(publishedProjects);
+  } catch {
+    projectsLoadFailed = true;
+  }
+
   return (
     <main className="min-h-screen bg-solix-bg overflow-hidden flex flex-col justify-between">
       {/* 1. Header */}
@@ -40,7 +57,7 @@ export default function HomePage() {
       <WhyChooseUs />
 
       {/* 9. Featured Projects */}
-      <FeaturedProjects />
+      <FeaturedProjects projects={featuredProjects} loadFailed={projectsLoadFailed} />
 
       {/* 10. Testimonials / Client Proof */}
       <TestimonialsSection />

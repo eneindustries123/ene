@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 // Custom WhatsApp SVG Icon
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -22,7 +23,7 @@ export function WhatsAppButton() {
 
   return (
     <a
-      href="https://wa.me/923063999363"
+      href={buildWhatsAppUrl()}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with E&E Industries on WhatsApp"

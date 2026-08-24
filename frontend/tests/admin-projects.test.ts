@@ -7,6 +7,7 @@ import {
   updateProject,
   deleteProject,
   isSlugUnique,
+  selectHomepageProjects,
 } from '../lib/projects-store';
 
 describe('Admin Projects Store & CRUD Unit Tests', () => {
@@ -24,6 +25,21 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
     published.forEach((p) => {
       expect(p.status === 'published' || p.status === undefined).toBe(true);
     });
+  });
+
+  it('selects three homepage projects using featured status and public ordering', () => {
+    const projects = [
+      { id: '1', slug: 'newest', isFeatured: false },
+      { id: '2', slug: 'featured-newest', isFeatured: true },
+      { id: '3', slug: 'featured-next', isFeatured: true },
+      { id: '4', slug: 'older', isFeatured: false },
+    ] as Awaited<ReturnType<typeof getPublishedProjects>>;
+
+    expect(selectHomepageProjects(projects).map((project) => project.slug)).toEqual([
+      'featured-newest',
+      'featured-next',
+      'newest',
+    ]);
   });
 
   it('creates a new project and validates slug uniqueness', async () => {

@@ -5,40 +5,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, MapPin, Zap } from 'lucide-react';
+import { Project } from '@/lib/data';
 
-export function FeaturedProjects() {
-  const projects = [
-    {
-      id: 'mns-multan',
-      title: 'MNS University of Agriculture',
-      location: 'Multan, Pakistan',
-      capacity: '1.2MW Array',
-      category: 'Commercial Solar EPC',
-      summary: 'Turnkey megawatt campus solar installation featuring high-efficiency monocrystalline arrays and three-phase industrial string inverters.',
-      image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?q=80&w=1000&auto=format&fit=crop',
-      href: '/projects/mns-university-of-agriculture-multan',
-    },
-    {
-      id: 'chakdara-swat',
-      title: 'Chakdara Swat Site',
-      location: 'Swat, KPK, Pakistan',
-      capacity: '25KW Hybrid',
-      category: 'Remote Hybrid Power',
-      summary: 'Off-grid and hybrid energy infrastructure engineered for harsh mountainous weather and uninterrupted remote power delivery.',
-      image: 'https://images.unsplash.com/photo-1542336391-ae2936d8eff4?q=80&w=1000&auto=format&fit=crop',
-      href: '/projects/chakdara-swat-25kw',
-    },
-    {
-      id: 'bareeze-dha',
-      title: 'Bareeze DHA Elevated Shed',
-      location: 'DHA, Lahore, Pakistan',
-      capacity: '40KW Elevated Shed',
-      category: 'Fabrication & Solar',
-      summary: 'Custom-designed elevated structural steel roof shed delivering 40KW clean solar power while maximizing usable rooftop space.',
-      image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1000&auto=format&fit=crop',
-      href: '/projects/bareeze-dha-40kw-elevated-shed',
-    },
-  ];
+interface FeaturedProjectsProps {
+  projects: Project[];
+  loadFailed?: boolean;
+}
+
+export function FeaturedProjects({ projects, loadFailed = false }: FeaturedProjectsProps) {
 
   return (
     <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto space-y-12">
@@ -68,10 +42,11 @@ export function FeaturedProjects() {
       </div>
 
       {/* 3 Featured Projects Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {projects.map((proj, idx) => (
+      {projects.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {projects.map((proj, idx) => (
           <motion.div
-            key={proj.id}
+            key={proj.id || proj.slug}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -81,7 +56,7 @@ export function FeaturedProjects() {
             {/* Project Image */}
             <div className="relative w-full h-[220px] overflow-hidden">
               <Image
-                src={proj.image}
+                src={proj.mainImage}
                 alt={proj.title}
                 fill
                 sizes="(max-width: 768px) 100vw, 33vw"
@@ -117,7 +92,7 @@ export function FeaturedProjects() {
 
               <div className="pt-4 border-t border-solix-border/50">
                 <Link
-                  href={proj.href}
+                  href={`/projects/${proj.slug}`}
                   className="inline-flex items-center gap-2 text-xs font-bold text-solix-dark group-hover:text-solix-green transition-colors"
                 >
                   <span>Explore Project Case Study</span>
@@ -126,8 +101,18 @@ export function FeaturedProjects() {
               </div>
             </div>
           </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-solix-border shadow-solix px-6 py-12 text-center space-y-3">
+          <p className="text-sm font-bold text-solix-dark">
+            {loadFailed ? 'Current projects are temporarily unavailable.' : 'No published projects are available yet.'}
+          </p>
+          <p className="text-xs text-solix-muted">
+            Visit the complete projects directory to try again.
+          </p>
+        </div>
+      )}
     </section>
   );
 }

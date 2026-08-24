@@ -13,6 +13,7 @@ import { reviewsRouter } from './routes/reviews.routes';
 import { enquiriesRouter } from './routes/enquiries.routes';
 import { quotesRouter } from './routes/quotes.routes';
 import { uploadsRouter } from './routes/uploads.routes';
+import { solarAnalyzerRouter } from './routes/solarAnalyzer.routes';
 import { errorHandler } from './middleware/error';
 
 const app = express();
@@ -76,6 +77,7 @@ app.use('/api/enquiries', enquiriesRouter);
 app.use('/api/quote-requests', quotesRouter);
 app.use('/api/quotes', quotesRouter);
 app.use('/api/uploads', uploadsRouter);
+app.use('/api/solar-analyzer', solarAnalyzerRouter);
 
 // Global Error Handler
 app.use(errorHandler);

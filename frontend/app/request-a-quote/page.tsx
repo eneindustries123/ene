@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -25,6 +25,47 @@ export default function RequestQuotePage() {
   });
 
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('source') !== 'solar_bill_analyzer') return;
+
+    const recommendedSystem = params.get('recommendedSystem');
+    const recommendedPvKw = params.get('recommendedPvKw');
+    const recommendedInverterKw = params.get('recommendedInverterKw');
+    const recommendedBatteryRange = params.get('recommendedBatteryRange');
+    const annualConsumptionKwh = params.get('annualConsumptionKwh');
+    const averageMonthlyConsumptionKwh = params.get('averageMonthlyConsumptionKwh');
+    const city = params.get('city');
+    const billAnalysisConfidence = params.get('billAnalysisConfidence');
+    const analyzerContext = [
+      'Source: ENE Solar Bill Analyzer',
+      recommendedSystem && recommendedPvKw
+        ? `Preliminary recommendation: ${recommendedPvKw} kWp ${recommendedSystem}`
+        : null,
+      recommendedInverterKw ? `Preliminary inverter: ${recommendedInverterKw} kW` : null,
+      recommendedBatteryRange ? `Preliminary battery range: ${recommendedBatteryRange}` : null,
+      annualConsumptionKwh ? `Verified annual consumption: ${annualConsumptionKwh} kWh` : null,
+      averageMonthlyConsumptionKwh
+        ? `Verified average monthly consumption: ${averageMonthlyConsumptionKwh} kWh`
+        : null,
+      city ? `Installation city: ${city}` : null,
+      billAnalysisConfidence
+        ? `Bill analysis confidence: ${billAnalysisConfidence}`
+        : null,
+      'Please verify this preliminary recommendation through a site and load assessment.',
+    ].filter(Boolean).join('\n');
+
+    setFormData((current) => ({
+      ...current,
+      solutionType: 'solar',
+      estimatedCapacity: recommendedPvKw
+        ? `${recommendedPvKw} kWp preliminary recommendation`
+        : current.estimatedCapacity,
+      country: city ? `${city}, Pakistan` : current.country,
+      message: analyzerContext,
+    }));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +166,9 @@ export default function RequestQuotePage() {
                       onChange={(e) => setFormData({ ...formData, estimatedCapacity: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
                     >
+                      {!['< 500 kW', '500 kW - 1 MW', '1 MW - 5 MW', '5 MW - 20 MW', '> 20 MW Utility Scale'].includes(formData.estimatedCapacity) && (
+                        <option value={formData.estimatedCapacity}>{formData.estimatedCapacity}</option>
+                      )}
                       <option>&lt; 500 kW</option>
                       <option>500 kW - 1 MW</option>
                       <option>1 MW - 5 MW</option>

@@ -8,6 +8,45 @@ let inMemoryProjects: Project[] = INITIAL_PROJECTS.map((p) => ({
 
 export type { Project };
 
+type ProjectFetchOptions = RequestInit & {
+  next?: { revalidate?: number };
+};
+
+/**
+ * Fetches the backend's ordered public project list without using local seed data.
+ * Intended for surfaces that must never display stale hard-coded projects.
+ */
+export async function fetchPublishedProjectsFromApi(
+  options: ProjectFetchOptions = { cache: 'no-store' },
+  timeoutMs?: number
+): Promise<Project[]> {
+  const res = await apiFetchWithTimeout(
+    getApiUrl('/api/projects?status=published'),
+    options,
+    timeoutMs
+  );
+
+  if (!res.ok) {
+    throw new Error('Published projects are temporarily unavailable.');
+  }
+
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    throw new Error('The published projects response is invalid.');
+  }
+
+  return data;
+}
+
+/**
+ * Uses the existing featured flag and preserves backend ordering within each group.
+ */
+export function selectHomepageProjects(projects: Project[], limit = 3): Project[] {
+  const featured = projects.filter((project) => project.isFeatured);
+  const remaining = projects.filter((project) => !project.isFeatured);
+  return [...featured, ...remaining].slice(0, limit);
+}
+
 /**
  * Retrieves all projects from standalone backend API (or fallback).
  */
@@ -41,14 +80,11 @@ export async function getPublishedProjects(): Promise<Project[]> {
   }
 
   try {
-    const res = await apiFetchWithTimeout(getApiUrl('/api/projects?status=published'), {
+    const data = await fetchPublishedProjectsFromApi({
       next: { revalidate: 60 },
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        return data;
-      }
+    if (data.length > 0) {
+      return data;
     }
   } catch {
     // Local fallback

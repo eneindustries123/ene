@@ -299,6 +299,30 @@ export default function SolarEnergyPage() {
         </div>
       </section>
 
+      {/* BILL-BASED SOLAR ANALYZER CTA */}
+      <section className="px-4 sm:px-8 -mt-8 relative z-30">
+        <div className="max-w-5xl mx-auto bg-white border border-solix-border rounded-3xl shadow-solix-lg p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-solix-green shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-solix-green">New · Pakistan solar analyzer</span>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-solix-dark mt-1">Not sure what solar system you need?</h2>
+              <p className="text-xs sm:text-sm text-solix-muted mt-2 max-w-2xl">
+                Upload your electricity bill and compare preliminary On-Grid, Hybrid, and Off-Grid recommendations based on your verified monthly usage.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/solar-bill-analyzer"
+            className="inline-flex items-center justify-center gap-2 bg-solix-dark hover:bg-black text-white text-sm font-bold px-6 py-3.5 rounded-full transition-colors shrink-0"
+          >
+            Analyze My Bill <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+
       {/* 2. SOLAR SOLUTIONS BY SECTOR (4 EQUAL CARDS) */}
       <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto w-full">
         {/* Section Header */}

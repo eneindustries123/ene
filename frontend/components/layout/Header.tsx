@@ -119,9 +119,15 @@ export function Header() {
     { name: 'Solar Energy', href: '/solar-energy', desc: 'Commercial, industrial, and residential solar EPC' },
     { name: 'Trading & Contracting', href: '/trading-contracting', desc: 'Material procurement, electrical equipment & EPC' },
     { name: 'Fabrication & Design', href: '/fabrication-design', desc: 'Precision steel structures, PEB buildings & mounts' },
+    { name: 'Solar Bill Analyzer', href: '/solar-bill-analyzer', desc: 'Bill-based On-Grid, Hybrid & Off-Grid recommendations' },
   ];
 
-  const isServiceActive = ['/solar-energy', '/trading-contracting', '/fabrication-design'].includes(pathname);
+  const isServiceActive = [
+    '/solar-energy',
+    '/trading-contracting',
+    '/fabrication-design',
+    '/solar-bill-analyzer',
+  ].includes(pathname);
 
   const closeMobile = () => {
     setMobileMenuOpen(false);

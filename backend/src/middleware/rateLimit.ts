@@ -19,3 +19,14 @@ export const publicApiRateLimiter = rateLimit({
     error: 'Too many requests, please slow down.',
   },
 });
+
+export const solarAnalyzerExtractionRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.SOLAR_ANALYZER_RATE_LIMIT_MAX) || 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too many bill analysis requests. Please retry after 15 minutes or enter usage manually.',
+    code: 'SOLAR_ANALYZER_RATE_LIMITED',
+  },
+});
