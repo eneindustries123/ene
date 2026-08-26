@@ -6,14 +6,29 @@ import {
 } from './config';
 import { calculateConsumptionMetrics, round } from './consumption';
 import { resolvePakistanSolarProfile } from './profiles';
+import { aggregateAnnualBill, BillingAccount, calculateMonthlyBill } from './billing';
 import {
+  loadFlowStudyRequired,
+  nepraConcurrenceRequired,
+  getTouWindow,
+  POLICY_REFERENCE_DATE,
+  PROSUMER_POLICY_2026,
+  resolveProsumerRegime,
+  resolveUtility,
+} from './policy';
+import {
+  AnalysisMode,
   BatteryEstimate,
   MONTH_KEYS,
   MonthlyConsumption,
   MonthlySimulation,
+  ProtectedStatus,
+  ResultConfidence,
+  ScenarioArchitecture,
   SolarRecommendationResult,
   SystemRecommendation,
   SystemType,
+  TariffCategory,
 } from './types';
 
 export interface BatteryPreferences {
@@ -26,6 +41,18 @@ export interface RecommendationInput {
   city: string;
   monthlyConsumption: MonthlyConsumption[];
   batteryPreferences?: BatteryPreferences;
+  utility?: string;
+  tariffCategory?: TariffCategory;
+  protectedStatus?: ProtectedStatus;
+  tou?: boolean;
+  sanctionedLoadKw?: number;
+  mdiKw?: number;
+  greenMeter?: boolean;
+  legacyAgreementStatus?: 'valid' | 'expired' | 'none' | 'unknown';
+  peakConsumptionShare?: number;
+  analysisMode?: AnalysisMode;
+  chosenArchitecture?: ScenarioArchitecture;
+  billExtractionConfidence?: 'high' | 'medium' | 'low' | 'manual';
 }
 
 export function calculatePanelConfiguration(targetPvKw: number) {
@@ -333,6 +360,223 @@ function buildSystemRecommendation(
   };
 }
 
+const SCENARIO_DEFINITIONS: ReadonlyArray<{
+  architecture: ScenarioArchitecture;
+  label: string;
+  type: SystemType;
+  exportConnected: boolean;
+  battery: boolean;
+  complexityPenalty: number;
+}> = [
+  { architecture: 'on-grid-only', label: 'On-Grid Only', type: 'on-grid', exportConnected: true, battery: false, complexityPenalty: 0 },
+  { architecture: 'hybrid-green-no-battery', label: 'Hybrid + Green Meter — No Battery', type: 'hybrid', exportConnected: true, battery: false, complexityPenalty: 6 },
+  { architecture: 'hybrid-green-battery', label: 'Hybrid + Green Meter + Battery', type: 'hybrid', exportConnected: true, battery: true, complexityPenalty: 10 },
+  { architecture: 'hybrid-no-green-no-battery', label: 'Hybrid Only — No Green Meter / No Battery', type: 'hybrid', exportConnected: false, battery: false, complexityPenalty: 6 },
+  { architecture: 'hybrid-no-green-battery', label: 'Hybrid + Battery — No Green Meter', type: 'hybrid', exportConnected: false, battery: true, complexityPenalty: 10 },
+  { architecture: 'off-grid', label: 'Off-Grid', type: 'off-grid', exportConnected: false, battery: true, complexityPenalty: 35 },
+] as const;
+
+function confidenceFromInput(value?: RecommendationInput['billExtractionConfidence']): ResultConfidence {
+  if (value === 'high') return 'High';
+  if (value === 'medium' || value === 'manual') return 'Medium';
+  return 'Preliminary';
+}
+
+function resolveScenarioRegime(
+  definition: (typeof SCENARIO_DEFINITIONS)[number],
+  input: RecommendationInput
+) {
+  if (!definition.exportConnected) return 'not-applicable' as const;
+  if (!input.greenMeter) return 'current-2026' as const;
+  return resolveProsumerRegime({
+    greenMeter: true,
+    legacyAgreementStatus: input.legacyAgreementStatus || 'unknown',
+  });
+}
+
+function buildCurrentAnnualBill(
+  input: RecommendationInput,
+  account: BillingAccount,
+  peakShare: number
+) {
+  return aggregateAnnualBill(input.monthlyConsumption.map((month) => {
+    const peakImportedKwh = input.tou ? month.kwh * peakShare : 0;
+    return calculateMonthlyBill(account, {
+      importedKwh: month.kwh,
+      peakImportedKwh,
+      offPeakImportedKwh: month.kwh - peakImportedKwh,
+    });
+  }));
+}
+
+function buildEconomicRecommendation(
+  definition: (typeof SCENARIO_DEFINITIONS)[number],
+  selected: ReturnType<typeof selectCandidate>,
+  input: RecommendationInput,
+  account: BillingAccount,
+  averageDailyKwh: number,
+  peakShare: number,
+  currentBill: ReturnType<typeof aggregateAnnualBill>
+): SystemRecommendation {
+  const simulation = selected.simulation.monthlySimulation;
+  const summary = selected.summary;
+  const regime = resolveScenarioRegime(definition, input);
+  const battery = definition.battery
+    ? calculateBatteryEstimate(averageDailyKwh, definition.type === 'off-grid' ? 'off-grid' : 'hybrid', input.batteryPreferences)
+    : null;
+  const qualifications: string[] = [];
+  let annualGridImportKwh = 0;
+  let annualGridExportKwh = 0;
+  let annualDirectConsumptionKwh = 0;
+  let annualUnusableSurplusKwh = 0;
+
+  const postBills = simulation.map((month) => {
+    const touWindow = getTouWindow(month.month);
+    const peakConsumption = account.tou
+      ? month.consumptionKwh * peakShare * (touWindow.peakHours / 4)
+      : 0;
+    const offPeakConsumption = month.consumptionKwh - peakConsumption;
+    const directUseLimit = month.consumptionKwh * (account.tariffCategory === 'commercial' ? 0.5 : 0.38);
+    const directConsumption = Math.min(month.generationKwh, offPeakConsumption, directUseLimit);
+    let remainingPeak = peakConsumption;
+    let remainingOffPeak = Math.max(0, offPeakConsumption - directConsumption);
+    const surplusBeforeBattery = Math.max(0, month.generationKwh - directConsumption);
+    let batteryDischarge = 0;
+    let batteryCharge = 0;
+
+    if (battery) {
+      const usableDailyThroughput = battery.minKwh * DAYS_IN_MONTH[month.month];
+      batteryDischarge = Math.min(
+        surplusBeforeBattery * SOLAR_ENGINEERING_CONFIG.batteryRoundTripEfficiency,
+        remainingPeak + remainingOffPeak,
+        usableDailyThroughput
+      );
+      batteryCharge = batteryDischarge / SOLAR_ENGINEERING_CONFIG.batteryRoundTripEfficiency;
+
+      // TOU dispatch preserves stored solar for the configured four-hour peak window first.
+      const peakDischarge = Math.min(remainingPeak, batteryDischarge);
+      remainingPeak -= peakDischarge;
+      remainingOffPeak = Math.max(0, remainingOffPeak - (batteryDischarge - peakDischarge));
+    }
+
+    const exportableSurplus = Math.max(0, surplusBeforeBattery - batteryCharge);
+    const exportedKwh = definition.exportConnected ? exportableSurplus : 0;
+    const unusableSurplus = definition.exportConnected ? 0 : exportableSurplus;
+    const gridImport = definition.type === 'off-grid' ? 0 : remainingPeak + remainingOffPeak;
+
+    annualGridImportKwh += gridImport;
+    annualGridExportKwh += exportedKwh;
+    annualDirectConsumptionKwh += directConsumption + batteryDischarge;
+    annualUnusableSurplusKwh += unusableSurplus;
+
+    if (definition.type === 'off-grid') {
+      return null;
+    }
+    return calculateMonthlyBill(account, {
+      importedKwh: gridImport,
+      peakImportedKwh: remainingPeak,
+      offPeakImportedKwh: remainingOffPeak,
+      exportedKwh,
+      peakExportedKwh: 0,
+      offPeakExportedKwh: exportedKwh,
+    }, regime);
+  });
+
+  const postBill = definition.type === 'off-grid'
+    ? { ...currentBill, total: 0, fixedCharges: 0, exportCredit: 0 }
+    : aggregateAnnualBill(postBills.filter((bill): bill is NonNullable<typeof bill> => bill !== null));
+  const billReduction = Math.max(0, currentBill.total - postBill.total);
+  const billReductionPercent = currentBill.total > 0 ? (billReduction / currentBill.total) * 100 : 0;
+  const actualPvCapacityKw = selected.simulation.actualPvCapacityKw;
+  const regulatoryValid = !definition.exportConnected ||
+    input.sanctionedLoadKw === undefined ||
+    actualPvCapacityKw <= input.sanctionedLoadKw + 0.0001;
+
+  if (definition.exportConnected) {
+    qualifications.push('Utility/interconnection approval remains applicable.');
+    qualifications.push('Final interconnection remains subject to DISCO/K-Electric network and transformer feasibility.');
+    if (input.sanctionedLoadKw === undefined) {
+      qualifications.push('Sanctioned load must be confirmed before the export-connected DG capacity can be validated.');
+    }
+  }
+  if (regime === 'uncertain') {
+    qualifications.push('Preliminary — prosumer agreement status must be confirmed.');
+  }
+  if (definition.type === 'off-grid') {
+    qualifications.push('Detailed load assessment and autonomy study required; off-grid economics assume disconnection from grid billing.');
+  }
+  if (!input.tou && input.peakConsumptionShare === undefined) {
+    // No billing impact for non-TOU accounts; keep the assumption out of confidence scoring.
+  } else if (input.peakConsumptionShare === undefined) {
+    qualifications.push('TOU peak/off-peak consumption split is preliminary because interval data was not provided.');
+  }
+
+  const policyConfidence: ResultConfidence = regime === 'uncertain' ? 'Preliminary' : 'High';
+  const recommendationConfidence: ResultConfidence =
+    (definition.exportConnected && input.sanctionedLoadKw === undefined) ||
+    (account.tou && input.peakConsumptionShare === undefined) ||
+    (definition.type === 'off-grid' && summary.annualShortfallKwh > 0)
+      ? 'Preliminary'
+      : 'Medium';
+
+  return {
+    type: definition.type,
+    architecture: definition.architecture,
+    label: definition.label,
+    pvCapacityKw: selected.candidate,
+    actualPvCapacityKw,
+    inverterKw: selectPracticalInverter(actualPvCapacityKw),
+    panelCount: selected.simulation.panelCount,
+    ...summary,
+    monthlySimulation: simulation,
+    battery,
+    suitability: definition.architecture === 'on-grid-only'
+      ? 'Lowest-complexity export-connected option'
+      : definition.exportConnected
+        ? 'Export-enabled alternative'
+        : definition.type === 'off-grid'
+          ? 'Independence option'
+          : 'Zero-export alternative',
+    caution: qualifications[0],
+    annualGridImportKwh: round(annualGridImportKwh, 1),
+    annualGridExportKwh: round(annualGridExportKwh, 1),
+    annualDirectConsumptionKwh: round(annualDirectConsumptionKwh, 1),
+    annualUnusableSurplusKwh: round(annualUnusableSurplusKwh, 1),
+    currentEstimatedBill: round(currentBill.total, 0),
+    postSolarEstimatedBill: round(postBill.total, 0),
+    billReduction: round(billReduction, 0),
+    billReductionPercent: round(billReductionPercent, 1),
+    prosumerRegime: regime,
+    nepraConcurrenceRequired: definition.exportConnected ? nepraConcurrenceRequired(actualPvCapacityKw) : false,
+    utilityApprovalRequired: definition.exportConnected,
+    loadFlowStudyRequired: definition.exportConnected ? loadFlowStudyRequired(actualPvCapacityKw) : false,
+    regulatoryValid,
+    confidence: recommendationConfidence,
+    policyConfidence,
+    recommendationConfidence,
+    qualifications,
+  };
+}
+
+function candidatesForScenario(
+  definition: (typeof SCENARIO_DEFINITIONS)[number],
+  candidates: number[],
+  input: RecommendationInput
+) {
+  const regulatoryScopeCandidates = candidates.filter((candidate) =>
+    calculatePanelConfiguration(candidate).actualPvCapacityKw <= PROSUMER_POLICY_2026.maximumDgCapacityKw
+  );
+  if (!definition.exportConnected || input.sanctionedLoadKw === undefined) return regulatoryScopeCandidates;
+  const allowed = regulatoryScopeCandidates.filter((candidate) =>
+    calculatePanelConfiguration(candidate).actualPvCapacityKw <= input.sanctionedLoadKw! + 0.0001
+  );
+  if (allowed.length) return allowed;
+
+  const panelCapacity = SOLAR_ENGINEERING_CONFIG.panelWattage / 1000;
+  const panelCount = Math.floor(input.sanctionedLoadKw / panelCapacity);
+  return panelCount >= 1 ? [round(panelCount * panelCapacity, 3)] : regulatoryScopeCandidates.slice(0, 1);
+}
+
 export function recommendSolarSystems(input: RecommendationInput): SolarRecommendationResult {
   const consumption = calculateConsumptionMetrics(input.monthlyConsumption);
   if (!consumption.complete || consumption.annualKwh <= 0) {
@@ -348,54 +592,122 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
     consumption.averageDailyKwh /
     (averageDailyPeakSunHours * SOLAR_ENGINEERING_CONFIG.performanceRatio);
   const candidates = buildPvCandidates(theoreticalPvKw);
+  const utility = resolveUtility(input.utility);
+  const tariffCategory = input.tariffCategory || 'residential';
+  const account: BillingAccount = {
+    utility,
+    tariffCategory,
+    protectedStatus: input.protectedStatus || 'non-protected',
+    tou: input.tou || false,
+    sanctionedLoadKw: input.sanctionedLoadKw,
+    mdiKw: input.mdiKw,
+  };
+  const peakShare = Math.min(
+    1,
+    Math.max(0, input.peakConsumptionShare ?? getTouWindow('jan').peakHours / 24)
+  );
+  const currentBill = buildCurrentAnnualBill(input, account, peakShare);
+  const analysisMode = input.analysisMode || 'recommend';
+  const chosenArchitecture = input.chosenArchitecture || 'on-grid-only';
+  const definitionsToEvaluate = analysisMode === 'chosen'
+    ? SCENARIO_DEFINITIONS.filter((definition) => definition.architecture === chosenArchitecture)
+    : SCENARIO_DEFINITIONS;
 
-  const onGridSelection = selectCandidate(
-    candidates,
-    input.monthlyConsumption,
-    location.monthlyPeakSunHours,
-    100
-  );
-  const hybridSelection = selectCandidate(
-    candidates,
-    input.monthlyConsumption,
-    location.monthlyPeakSunHours,
-    110
-  );
-  const offGridSelection = selectCandidate(
-    candidates,
-    input.monthlyConsumption,
-    location.monthlyPeakSunHours,
-    100 * SOLAR_ENGINEERING_CONFIG.offGridPvMargin,
-    100 * SOLAR_ENGINEERING_CONFIG.offGridPvMargin
-  );
+  const scenarios = definitionsToEvaluate.map((definition) => {
+    let scenarioCandidates = candidatesForScenario(definition, candidates, input);
+    if (definition.type === 'off-grid') {
+      const technicallyEligible = scenarioCandidates.filter((candidate) => {
+        const candidateSimulation = simulateMonthlyPerformance(candidate, input.monthlyConsumption, location.monthlyPeakSunHours);
+        return summarizeSimulation(candidateSimulation.monthlySimulation).generationToConsumptionPercent >=
+          100 * SOLAR_ENGINEERING_CONFIG.offGridPvMargin;
+      });
+      if (technicallyEligible.length) scenarioCandidates = technicallyEligible;
+    }
 
-  const onGrid = buildSystemRecommendation(
-    'on-grid',
-    onGridSelection,
-    consumption.averageDailyKwh
-  );
-  const hybrid = buildSystemRecommendation(
-    'hybrid',
-    hybridSelection,
-    consumption.averageDailyKwh,
-    input.batteryPreferences
-  );
-  const offGrid = buildSystemRecommendation(
-    'off-grid',
-    offGridSelection,
-    consumption.averageDailyKwh
-  );
+    const evaluated = scenarioCandidates.map((candidate) => {
+      const selection = selectCandidate(
+        [candidate], input.monthlyConsumption, location.monthlyPeakSunHours, 100
+      );
+      return buildEconomicRecommendation(
+        definition,
+        selection,
+        input,
+        account,
+        consumption.averageDailyKwh,
+        peakShare,
+        currentBill
+      );
+    });
+    const maximumReduction = Math.max(...evaluated.map((result) => result.billReductionPercent || 0));
+    const marginallyEquivalent = evaluated.filter((result) =>
+      (result.billReductionPercent || 0) >= maximumReduction - 5
+    );
+    return marginallyEquivalent.reduce((smallest, result) =>
+      result.actualPvCapacityKw < smallest.actualPvCapacityKw ? result : smallest
+    );
+  });
+
+  const practicalScore = (result: SystemRecommendation) => {
+    const definition = SCENARIO_DEFINITIONS.find((item) => item.architecture === result.architecture)!;
+    const unusablePenalty = result.annualConsumptionKwh
+      ? ((result.annualUnusableSurplusKwh || 0) / result.annualConsumptionKwh) * 5
+      : 0;
+    const validityPenalty = result.regulatoryValid ? 0 : 100;
+    const offGridShortfallPenalty = result.type === 'off-grid' && result.annualConsumptionKwh
+      ? (result.annualShortfallKwh / result.annualConsumptionKwh) * 20
+      : 0;
+    return (result.billReductionPercent || 0) - definition.complexityPenalty - unusablePenalty - validityPenalty - offGridShortfallPenalty;
+  };
+  let bestMatch = scenarios.reduce((best, result) => {
+    const difference = practicalScore(result) - practicalScore(best);
+    if (difference > 0.001) return result;
+    if (Math.abs(difference) <= 0.001 && result.actualPvCapacityKw < best.actualPvCapacityKw) return result;
+    return best;
+  });
+
+  // Preserve the established sizing behavior for older API clients that do not yet send
+  // tariff/policy fields. New analyzer requests always send these fields and use the bill optimizer.
+  const policyInputsProvided = input.utility !== undefined ||
+    input.tariffCategory !== undefined ||
+    input.protectedStatus !== undefined ||
+    input.tou !== undefined ||
+    input.sanctionedLoadKw !== undefined ||
+    input.greenMeter !== undefined ||
+    input.analysisMode !== undefined;
+  if (!policyInputsProvided) {
+    const establishedOnGridSelection = selectCandidate(
+      candidates, input.monthlyConsumption, location.monthlyPeakSunHours, 100
+    );
+    bestMatch = buildEconomicRecommendation(
+      SCENARIO_DEFINITIONS[0], establishedOnGridSelection, input, account,
+      consumption.averageDailyKwh, peakShare, currentBill
+    );
+  }
+
+  const onGrid = !policyInputsProvided
+    ? bestMatch
+    : scenarios.find((scenario) => scenario.architecture === 'on-grid-only') || bestMatch;
+  const hybrid = scenarios.find((scenario) => scenario.architecture === 'hybrid-green-battery') || bestMatch;
+  const offGrid = scenarios.find((scenario) => scenario.architecture === 'off-grid') || bestMatch;
+  const selectedSystem = analysisMode === 'both'
+    ? scenarios.find((scenario) => scenario.architecture === chosenArchitecture) || null
+    : analysisMode === 'chosen'
+      ? bestMatch
+      : null;
 
   const locationText = location.fallbackUsed
     ? `${input.city} using the conservative ${location.profileCity} regional profile`
     : location.profileCity;
 
   return {
-    bestMatch: onGrid,
+    bestMatch,
     systems: { onGrid, hybrid, offGrid },
+    scenarios,
+    selectedSystem,
+    analysisMode,
     consumption,
     location,
-    explanation: `Your verified monthly consumption pattern aligns most efficiently with an approximately ${onGrid.actualPvCapacityKw} kWp On-Grid system under the ${locationText} solar profile. It provides a strong annual energy match without the battery assumptions required by Hybrid or Off-Grid designs.`,
+    explanation: `The deterministic optimizer identifies ${bestMatch.actualPvCapacityKw} kWp ${bestMatch.label} as the maximum practical bill-reduction option under the ${locationText} solar profile and configured 2026 tariff rules. The estimate retains fixed charges and values exports only under the applicable prosumer regime.`,
     assumptions: {
       panelWattage: SOLAR_ENGINEERING_CONFIG.panelWattage,
       performanceRatio: SOLAR_ENGINEERING_CONFIG.performanceRatio,
@@ -403,9 +715,31 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
       dcAcRatioTarget: SOLAR_ENGINEERING_CONFIG.dcAcRatioTarget,
       dcAcRatioRange: SOLAR_ENGINEERING_CONFIG.dcAcRatioRange,
       selectionRule:
-        'Integer-panel candidates around the theoretical requirement are simulated month by month and scored for annual energy match, consumption coverage, surplus, shortfall, seasonal match, and practical inverter compatibility. Excess generation is penalized rather than maximizing coverage.',
+        'Bounded integer-panel candidates are simulated month by month across the applicable architectures and optimized for bill reduction, remaining bill, imports, export value, direct use, battery dispatch, surplus, practical inverter sizing, and regulatory validity. A smaller configuration is selected when further bill reduction is marginal.',
     },
     dataCompleteness: 'complete',
-    disclaimer: SOLAR_RECOMMENDATION_DISCLAIMER,
+    disclaimer: `${SOLAR_RECOMMENDATION_DISCLAIMER} Estimates exclude dynamic FCA, QTA, and statutory taxes unless separately configured; savings are not guaranteed.`,
+    billing: {
+      currentEstimatedBill: bestMatch.currentEstimatedBill || 0,
+      postSolarEstimatedBill: bestMatch.postSolarEstimatedBill || 0,
+      billReduction: bestMatch.billReduction || 0,
+      billReductionPercent: bestMatch.billReductionPercent || 0,
+      dynamicComponentsConfigured: currentBill.excludedComponents.length === 0,
+      excludedComponents: currentBill.excludedComponents,
+      fixedChargeConfidence: currentBill.fixedChargeConfidence,
+    },
+    confidence: {
+      billExtraction: confidenceFromInput(input.billExtractionConfidence),
+      tariffPolicy: bestMatch.policyConfidence || 'Medium',
+      recommendation: bestMatch.recommendationConfidence || 'Medium',
+    },
+    policy: {
+      utility,
+      tariffCategory,
+      prosumerRegime: bestMatch.prosumerRegime || 'not-applicable',
+      referenceDate: POLICY_REFERENCE_DATE,
+      tariffSource: 'S.R.O. 279(I)/2026',
+      prosumerSource: 'S.R.O. 251(I)/2026; S.R.O. 547(I)/2026; S.R.O. 1330(I)/2026',
+    },
   };
 }

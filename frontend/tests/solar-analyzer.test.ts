@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
   ANALYZER_MONTHS,
+  buildAnalyzerComparisonExplanation,
+  buildAnalyzerHeroExplanation,
   buildAnalyzerQuoteUrl,
   buildAnalyzerWhatsAppMessage,
   calculateAnalyzerMetrics,
   createEmptyMonthlyValues,
   formatBatteryRange,
+  getAnalyzerResultPresentation,
+  getBatteryRefinementTitle,
+  getCustomerBillPresentation,
+  AnalyzerArchitecture,
   SolarRecommendationResponse,
+  transitionAnalysisMode,
+  validateAnalysisSelection,
   validateAnalyzerBillFile,
 } from '../lib/solar-analyzer';
 
@@ -21,7 +30,8 @@ function completeValues() {
 const recommendation = {
   bestMatch: {
     type: 'on-grid',
-    label: 'On-Grid',
+    architecture: 'on-grid-only',
+    label: 'On-Grid Only',
     pvCapacityKw: 10,
     actualPvCapacityKw: 10.53,
     inverterKw: 10,
@@ -36,6 +46,12 @@ const recommendation = {
     monthlySimulation: [],
     battery: null,
     suitability: 'Best bill-based energy match',
+    billReductionPercent: 90,
+    postSolarEstimatedBill: 12000,
+    annualGridImportKwh: 2200,
+    annualGridExportKwh: 1800,
+    utilityApprovalRequired: true,
+    prosumerRegime: 'current-2026',
   },
   systems: {} as SolarRecommendationResponse['systems'],
   consumption: {
@@ -65,7 +81,32 @@ const recommendation = {
   },
   dataCompleteness: 'complete',
   disclaimer: 'Preliminary only.',
+  analysisMode: 'recommend',
 } as SolarRecommendationResponse;
+
+function scenario(
+  architecture: AnalyzerArchitecture,
+  label: string,
+  billReductionPercent: number,
+  options: Partial<SolarRecommendationResponse['bestMatch']> = {}
+) {
+  return {
+    ...recommendation.bestMatch,
+    architecture,
+    label,
+    billReductionPercent,
+    ...options,
+  };
+}
+
+const sixScenarios = [
+  recommendation.bestMatch,
+  scenario('hybrid-green-no-battery', 'Hybrid + Green Meter — No Battery', 87),
+  scenario('hybrid-green-battery', 'Hybrid + Green Meter + Battery', 91, { type: 'hybrid', battery: { minKwh: 10, maxKwh: 15, basis: 'test' } }),
+  scenario('hybrid-no-green-no-battery', 'Hybrid Only — No Green Meter / No Battery', 88, { type: 'hybrid', utilityApprovalRequired: false, annualGridExportKwh: 0, prosumerRegime: 'not-applicable' }),
+  scenario('hybrid-no-green-battery', 'Hybrid + Battery — No Green Meter', 86, { type: 'hybrid', battery: { minKwh: 10, maxKwh: 15, basis: 'test' }, utilityApprovalRequired: false, annualGridExportKwh: 0 }),
+  scenario('off-grid', 'Off-Grid', 92, { type: 'off-grid', battery: { minKwh: 20, maxKwh: 30, basis: 'test' }, utilityApprovalRequired: false, annualGridImportKwh: 0, annualGridExportKwh: 0 }),
+];
 
 describe('frontend solar analyzer helpers', () => {
   it('calculates verified annual, monthly, daily, highest, and lowest metrics', () => {
@@ -129,5 +170,164 @@ describe('frontend solar analyzer helpers', () => {
   it('formats an equal battery range as a single capacity', () => {
     expect(formatBatteryRange(5, 5)).toBe('5 kWh');
     expect(formatBatteryRange(5, 10)).toBe('5–10 kWh');
+  });
+
+  it('blocks missing analysis selections and conditionally requires one chosen architecture', () => {
+    expect(validateAnalysisSelection('', '')).toMatch(/Choose how/);
+    expect(validateAnalysisSelection('recommend', '')).toBeNull();
+    expect(validateAnalysisSelection('chosen', '')).toMatch(/Choose one/);
+    expect(validateAnalysisSelection('chosen', 'off-grid')).toBeNull();
+    expect(validateAnalysisSelection('both', '')).toMatch(/Choose one/);
+    expect(validateAnalysisSelection('both', 'hybrid-green-battery')).toBeNull();
+  });
+
+  it('preserves the cached chosen architecture when analysis mode changes', () => {
+    const chosen = transitionAnalysisMode('hybrid-no-green-battery', 'chosen');
+    const both = transitionAnalysisMode(chosen.chosenArchitecture, 'both');
+    const recommend = transitionAnalysisMode(both.chosenArchitecture, 'recommend');
+
+    expect(chosen.chosenArchitecture).toBe('hybrid-no-green-battery');
+    expect(both.chosenArchitecture).toBe('hybrid-no-green-battery');
+    expect(recommend.chosenArchitecture).toBe('hybrid-no-green-battery');
+  });
+
+  it('shows recommend mode as best plus no more than one useful alternative', () => {
+    const result = { ...recommendation, scenarios: sixScenarios, analysisMode: 'recommend' };
+    const presented = getAnalyzerResultPresentation(result);
+
+    expect(presented).toHaveLength(2);
+    expect(presented[0].title).toBe('Best Recommendation');
+    expect(presented[1].title).toBe('Zero-Export Alternative');
+    expect(presented.map((item) => item.system.architecture)).not.toHaveLength(6);
+  });
+
+  it('shows only the optimized selected architecture in chosen mode', () => {
+    const selected = sixScenarios[4];
+    const result = {
+      ...recommendation,
+      analysisMode: 'chosen' as const,
+      bestMatch: selected,
+      selectedSystem: selected,
+      scenarios: [selected],
+    };
+    const presented = getAnalyzerResultPresentation(result);
+
+    expect(presented).toHaveLength(1);
+    expect(presented[0].title).toBe('Your Selected System');
+    expect(presented[0].system.architecture).toBe('hybrid-no-green-battery');
+  });
+
+  it('shows recommended versus selected results and deterministic comparison in both mode', () => {
+    const selected = sixScenarios[2];
+    const result = {
+      ...recommendation,
+      analysisMode: 'both' as const,
+      scenarios: sixScenarios,
+      selectedSystem: selected,
+    };
+    const presented = getAnalyzerResultPresentation(result);
+    const explanation = buildAnalyzerComparisonExplanation(result);
+
+    expect(presented.map((item) => item.title)).toEqual(['Best Recommended System', 'Your Selected System']);
+    expect(explanation).toHaveLength(3);
+    expect(explanation.join(' ')).toMatch(/bill reduction|imports|exports|battery/i);
+  });
+
+  it('keeps analysis selectors responsive at mobile, tablet, and desktop breakpoints', () => {
+    const source = readFileSync(
+      new URL('../components/solar-analyzer/SolarBillAnalyzer.tsx', import.meta.url),
+      'utf8'
+    );
+    expect(source).toContain('grid grid-cols-1 lg:grid-cols-3');
+    expect(source).toContain('grid grid-cols-1 md:grid-cols-2');
+    expect(source).toContain('min-w-0 rounded-2xl');
+  });
+
+  it('uses not-applicable grid-bill semantics for Off-Grid instead of savings claims', () => {
+    const offGrid = scenario('off-grid', 'Off-Grid', 100, {
+      type: 'off-grid',
+      postSolarEstimatedBill: 0,
+      annualGridImportKwh: 0,
+      annualGridExportKwh: 0,
+      battery: { minKwh: 20, maxKwh: 30, basis: 'test' },
+    });
+    const presentation = getCustomerBillPresentation(offGrid);
+
+    expect(presentation.applicable).toBe(false);
+    expect(presentation.billReductionPercent).toBeNull();
+    expect(presentation.remainingBill).toBeNull();
+    expect(presentation.gridBillMessage).toMatch(/Not applicable.*disconnected/i);
+    expect(JSON.stringify(presentation)).not.toContain('100%');
+    expect(JSON.stringify(presentation)).not.toContain('Rs 0');
+  });
+
+  it('uses deterministic Off-Grid hero copy without export or prosumer language', () => {
+    const offGrid = scenario('off-grid', 'Off-Grid', 100, {
+      type: 'off-grid',
+      postSolarEstimatedBill: 0,
+      battery: { minKwh: 20, maxKwh: 30, basis: 'test' },
+    });
+    const explanation = buildAnalyzerHeroExplanation({
+      ...recommendation,
+      analysisMode: 'chosen',
+      bestMatch: offGrid,
+      selectedSystem: offGrid,
+      explanation: 'Retains fixed charges and values exports under the prosumer regime.',
+    });
+
+    expect(explanation).toMatch(/preliminary Off-Grid configuration/i);
+    expect(explanation).toMatch(/load, surge-demand, battery-autonomy and site assessment/i);
+    expect(explanation).not.toMatch(/export|prosumer/i);
+  });
+
+  it('uses the Battery & Autonomy refinement title for a selected Off-Grid system', () => {
+    const offGrid = scenario('off-grid', 'Off-Grid', 100, {
+      type: 'off-grid',
+      battery: { minKwh: 20, maxKwh: 30, basis: 'test' },
+    });
+    const offGridResult = {
+      ...recommendation,
+      analysisMode: 'chosen' as const,
+      bestMatch: offGrid,
+      selectedSystem: offGrid,
+    };
+    const hybridResult = {
+      ...recommendation,
+      analysisMode: 'chosen' as const,
+      bestMatch: sixScenarios[2],
+      selectedSystem: sixScenarios[2],
+    };
+
+    expect(getBatteryRefinementTitle(offGridResult)).toBe('Refine Battery & Autonomy Estimate');
+    expect(getBatteryRefinementTitle(hybridResult)).toBe('Refine the Hybrid battery estimate');
+  });
+
+  it('treats Off-Grid as independence rather than 100% bill reduction in Both mode', () => {
+    const offGrid = scenario('off-grid', 'Off-Grid', 100, {
+      type: 'off-grid',
+      postSolarEstimatedBill: 0,
+      annualGridImportKwh: 0,
+      annualGridExportKwh: 0,
+      battery: { minKwh: 20, maxKwh: 30, basis: 'test' },
+    });
+    const explanation = buildAnalyzerComparisonExplanation({
+      ...recommendation,
+      analysisMode: 'both',
+      selectedSystem: offGrid,
+      scenarios: [...sixScenarios.slice(0, 5), offGrid],
+    });
+
+    expect(explanation).toHaveLength(3);
+    expect(explanation.join(' ')).toMatch(/independence option.*not directly comparable/i);
+    expect(explanation.join(' ')).not.toContain('100%');
+  });
+
+  it('preserves normal bill-reduction metrics for the other five architectures', () => {
+    for (const system of sixScenarios.filter((item) => item.architecture !== 'off-grid')) {
+      const presentation = getCustomerBillPresentation(system);
+      expect(presentation.applicable).toBe(true);
+      expect(presentation.billReductionPercent).toBe(system.billReductionPercent);
+      expect(presentation.remainingBill).toBe(system.postSolarEstimatedBill);
+    }
   });
 });

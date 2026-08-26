@@ -22,23 +22,64 @@ import {
 import { apiFetchWithTimeout, getApiUrl } from '@/lib/api-client';
 import {
   ANALYZER_MONTHS,
+  AnalyzerAnalysisMode,
+  AnalyzerArchitecture,
   AnalyzerConfidence,
   AnalyzerMonthKey,
   AnalyzerSystemRecommendation,
+  buildAnalyzerComparisonExplanation,
+  buildAnalyzerHeroExplanation,
   buildAnalyzerQuoteUrl,
   buildAnalyzerWhatsAppMessage,
   calculateAnalyzerMetrics,
   createEmptyMonthlyValues,
   ExtractionResponse,
   formatBatteryRange,
+  getAnalyzerResultPresentation,
+  getBatteryRefinementTitle,
+  getCustomerBillPresentation,
   monthlyValuesFromExtraction,
   SolarRecommendationResponse,
+  transitionAnalysisMode,
+  validateAnalysisSelection,
   validateAnalyzerBillFile,
 } from '@/lib/solar-analyzer';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 type AnalyzerStep = 'upload' | 'verify' | 'results';
 type BackupLevel = 'essential' | 'most' | 'entire';
+
+const PAKISTAN_UTILITIES = [
+  'FESCO', 'GEPCO', 'HAZECO', 'HESCO', 'IESCO', 'LESCO', 'MEPCO',
+  'PESCO', 'QESCO', 'SEPCO', 'TESCO', 'K-Electric',
+];
+
+const ANALYZER_ARCHITECTURES: Array<{ value: AnalyzerArchitecture; label: string; description: string }> = [
+  { value: 'on-grid-only', label: 'On-Grid Only', description: 'Grid-connected solar without battery storage, focused on bill reduction.' },
+  { value: 'hybrid-green-no-battery', label: 'Hybrid + Green Meter — No Battery', description: 'Hybrid inverter flexibility with approved export, without adding a battery initially.' },
+  { value: 'hybrid-green-battery', label: 'Hybrid + Green Meter + Battery', description: 'Solar export plus stored energy for backup and peak-period bill reduction.' },
+  { value: 'hybrid-no-green-no-battery', label: 'Hybrid Only — No Green Meter / No Battery', description: 'A zero-export setup that prioritizes direct daytime solar use.' },
+  { value: 'hybrid-no-green-battery', label: 'Hybrid + Battery — No Green Meter', description: 'Zero-export solar with stored energy for evening use and backup.' },
+  { value: 'off-grid', label: 'Off-Grid', description: 'A grid-independent system requiring battery storage and detailed autonomy sizing.' },
+];
+
+const ANALYSIS_OPTIONS: Array<{ value: AnalyzerAnalysisMode; label: string; description: string }> = [
+  {
+    value: 'recommend',
+    label: 'Recommend the Best System for Me',
+    description: 'We will compare all applicable solar architectures and recommend the configuration that can provide the maximum practical electricity-bill reduction for your usage.',
+  },
+  {
+    value: 'chosen',
+    label: 'Analyze a System I Choose',
+    description: 'Choose the solar architecture you are interested in and we will optimize the best practical configuration within that system.',
+  },
+  {
+    value: 'both',
+    label: 'Both',
+    description: 'See our best recommendation alongside the system you personally want to analyze.',
+  },
+];
 
 const PAKISTAN_CITIES = [
   'Islamabad', 'Rawalpindi', 'Lahore', 'Karachi', 'Peshawar', 'Faisalabad',
@@ -62,10 +103,13 @@ function formatNumber(value: number, digits = 0) {
 function SystemCard({
   system,
   best,
+  badgeLabel,
 }: {
   system: AnalyzerSystemRecommendation;
   best?: boolean;
+  badgeLabel?: string;
 }) {
+  const billPresentation = getCustomerBillPresentation(system);
   return (
     <div className={`rounded-3xl border p-6 flex flex-col gap-5 ${
       best
@@ -75,7 +119,7 @@ function SystemCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <span className={`text-[10px] font-extrabold uppercase tracking-wider ${best ? 'text-solix-badge' : 'text-solix-green'}`}>
-            {best ? 'Best match' : system.suitability}
+            {badgeLabel || (best ? 'Best Recommendation' : system.suitability)}
           </span>
           <h3 className="text-xl font-extrabold mt-1">{system.label}</h3>
         </div>
@@ -87,6 +131,8 @@ function SystemCard({
           <Sun className="w-6 h-6 text-amber-400" />
         )}
       </div>
+
+      <p className={`text-xs leading-relaxed ${best ? 'text-white/65' : 'text-solix-muted'}`}>{system.suitability}</p>
 
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className={`rounded-2xl p-3 ${best ? 'bg-white/8' : 'bg-solix-bg'}`}>
@@ -102,8 +148,12 @@ function SystemCard({
           <div className="font-extrabold text-base mt-1">{system.panelCount}</div>
         </div>
         <div className={`rounded-2xl p-3 ${best ? 'bg-white/8' : 'bg-solix-bg'}`}>
-          <span className={best ? 'text-white/60' : 'text-solix-muted'}>Consumption match</span>
-          <div className="font-extrabold text-base mt-1">{system.consumptionCoveragePercent}%</div>
+          <span className={best ? 'text-white/60' : 'text-solix-muted'}>{billPresentation.applicable ? 'Bill reduction' : 'Grid electricity bill'}</span>
+          <div className="font-extrabold text-base mt-1">
+            {billPresentation.applicable
+              ? `${billPresentation.billReductionPercent ?? system.consumptionCoveragePercent}%`
+              : 'Not applicable'}
+          </div>
         </div>
       </div>
 
@@ -123,10 +173,50 @@ function SystemCard({
           <span className={best ? 'text-white/60' : 'text-solix-muted'}>Annual generation</span>
           <strong>{formatNumber(system.annualGenerationKwh)} kWh</strong>
         </div>
+        {billPresentation.applicable && billPresentation.remainingBill !== null && (
+          <div className="flex justify-between gap-3">
+            <span className={best ? 'text-white/60' : 'text-solix-muted'}>Annual remaining bill</span>
+            <strong>Rs {formatNumber(billPresentation.remainingBill)}</strong>
+          </div>
+        )}
+        {!billPresentation.applicable && (
+          <div className="flex justify-between gap-3">
+            <span className={best ? 'text-white/60' : 'text-solix-muted'}>Grid electricity bill</span>
+            <strong className="text-right">{billPresentation.gridBillMessage}</strong>
+          </div>
+        )}
+        {system.annualGridImportKwh !== undefined && (
+          <div className="flex justify-between gap-3">
+            <span className={best ? 'text-white/60' : 'text-solix-muted'}>Grid import / export</span>
+            <strong className="text-right">
+              {billPresentation.applicable
+                ? `${formatNumber(system.annualGridImportKwh)} / ${formatNumber(system.annualGridExportKwh || 0)} kWh`
+                : 'Not applicable when disconnected'}
+            </strong>
+          </div>
+        )}
         <div className="flex justify-between gap-3">
           <span className={best ? 'text-white/60' : 'text-solix-muted'}>Seasonal match</span>
           <strong className="capitalize">{system.seasonalMatch}</strong>
         </div>
+        {system.confidence && (
+          <div className="flex justify-between gap-3">
+            <span className={best ? 'text-white/60' : 'text-solix-muted'}>Recommendation confidence</span>
+            <strong>{system.confidence}</strong>
+          </div>
+        )}
+        {system.utilityApprovalRequired && (
+          <>
+            <div className="flex justify-between gap-3">
+              <span className={best ? 'text-white/60' : 'text-solix-muted'}>NEPRA concurrence</span>
+              <strong>{system.nepraConcurrenceRequired ? 'Required' : 'Not required (≤25 kW)'}</strong>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className={best ? 'text-white/60' : 'text-solix-muted'}>Utility/interconnection</span>
+              <strong>Approval applies</strong>
+            </div>
+          </>
+        )}
       </div>
 
       {system.caution && (
@@ -149,6 +239,16 @@ export function SolarBillAnalyzer() {
   const [monthlyValues, setMonthlyValues] = useState(createEmptyMonthlyValues);
   const [monthConfidence, setMonthConfidence] = useState<Partial<Record<AnalyzerMonthKey, AnalyzerConfidence>>>({});
   const [city, setCity] = useState('');
+  const [utility, setUtility] = useState('LESCO');
+  const [tariffCategory, setTariffCategory] = useState<'residential' | 'commercial'>('residential');
+  const [protectedStatus, setProtectedStatus] = useState<'lifeline-50' | 'lifeline-100' | 'protected' | 'non-protected'>('non-protected');
+  const [tou, setTou] = useState(false);
+  const [sanctionedLoadKw, setSanctionedLoadKw] = useState('');
+  const [mdiKw, setMdiKw] = useState('');
+  const [greenMeter, setGreenMeter] = useState(false);
+  const [legacyAgreementStatus, setLegacyAgreementStatus] = useState<'valid' | 'expired' | 'none' | 'unknown'>('none');
+  const [analysisMode, setAnalysisMode] = useState<AnalyzerAnalysisMode | ''>('');
+  const [chosenArchitecture, setChosenArchitecture] = useState<AnalyzerArchitecture | ''>('');
   const [result, setResult] = useState<SolarRecommendationResponse | null>(null);
   const [backupLevel, setBackupLevel] = useState<BackupLevel>('essential');
   const [backupHours, setBackupHours] = useState<2 | 4 | 6 | 8>(4);
@@ -156,6 +256,40 @@ export function SolarBillAnalyzer() {
   const [showBatteryRefinement, setShowBatteryRefinement] = useState(false);
 
   const metrics = useMemo(() => calculateAnalyzerMetrics(monthlyValues), [monthlyValues]);
+  const analysisSelectionError = useMemo(
+    () => validateAnalysisSelection(analysisMode, chosenArchitecture),
+    [analysisMode, chosenArchitecture]
+  );
+  const chosenNeedsBattery = Boolean(
+    chosenArchitecture && ['hybrid-green-battery', 'hybrid-no-green-battery', 'off-grid'].includes(chosenArchitecture)
+  );
+  const presentedSystems = useMemo(
+    () => result ? getAnalyzerResultPresentation(result) : [],
+    [result]
+  );
+  const comparisonExplanation = useMemo(
+    () => result ? buildAnalyzerComparisonExplanation(result) : [],
+    [result]
+  );
+  const primaryBillPresentation = useMemo(
+    () => result ? getCustomerBillPresentation(result.bestMatch) : null,
+    [result]
+  );
+  const heroExplanation = useMemo(
+    () => result ? buildAnalyzerHeroExplanation(result) : '',
+    [result]
+  );
+  const batteryRefinementTitle = useMemo(
+    () => result ? getBatteryRefinementTitle(result) : 'Refine the Hybrid battery estimate',
+    [result]
+  );
+
+  const chooseAnalysisMode = (nextMode: AnalyzerAnalysisMode) => {
+    const next = transitionAnalysisMode(chosenArchitecture, nextMode);
+    setAnalysisMode(next.analysisMode);
+    setChosenArchitecture(next.chosenArchitecture);
+    setError('');
+  };
 
   const chooseFile = async (selected: File | null) => {
     if (!selected) return;
@@ -201,6 +335,12 @@ export function SolarBillAnalyzer() {
         }, {} as Partial<Record<AnalyzerMonthKey, AnalyzerConfidence>>)
       );
       setCity(extracted.extraction.city || '');
+      const provider = PAKISTAN_UTILITIES.find((item) =>
+        (extracted.extraction.provider || '').toUpperCase().includes(item.toUpperCase().replace('-', ''))
+      );
+      if (provider) setUtility(provider);
+      if (/commercial|a-?2/i.test(extracted.extraction.consumerCategory || '')) setTariffCategory('commercial');
+      setSanctionedLoadKw(extracted.extraction.sanctionedLoadKw ? String(extracted.extraction.sanctionedLoadKw) : '');
       setStep('verify');
     } catch (requestError) {
       const timedOut = requestError instanceof Error && requestError.name === 'AbortError';
@@ -234,6 +374,10 @@ export function SolarBillAnalyzer() {
       setError('Select or enter the Pakistani installation city.');
       return;
     }
+    if (analysisSelectionError) {
+      setError(analysisSelectionError);
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -244,9 +388,22 @@ export function SolarBillAnalyzer() {
           month: month.key,
           kwh: Number(monthlyValues[month.key]),
         })),
+        utility,
+        tariffCategory,
+        protectedStatus,
+        tou,
+        ...(sanctionedLoadKw && Number(sanctionedLoadKw) > 0
+          ? { sanctionedLoadKw: Number(sanctionedLoadKw) }
+          : {}),
+        ...(mdiKw && Number(mdiKw) >= 0 ? { mdiKw: Number(mdiKw) } : {}),
+        greenMeter,
+        legacyAgreementStatus: greenMeter ? legacyAgreementStatus : 'none',
+        analysisMode,
+        ...((analysisMode === 'chosen' || analysisMode === 'both') ? { chosenArchitecture } : {}),
+        billExtractionConfidence: extraction?.extraction.overallConfidence || 'manual',
       };
 
-      if (refineBattery) {
+      if (refineBattery || ((analysisMode === 'chosen' || analysisMode === 'both') && chosenNeedsBattery)) {
         payload.batteryPreferences = {
           backupLevel,
           backupHours,
@@ -291,6 +448,16 @@ export function SolarBillAnalyzer() {
     setMonthlyValues(createEmptyMonthlyValues());
     setMonthConfidence({});
     setCity('');
+    setUtility('LESCO');
+    setTariffCategory('residential');
+    setProtectedStatus('non-protected');
+    setTou(false);
+    setSanctionedLoadKw('');
+    setMdiKw('');
+    setGreenMeter(false);
+    setLegacyAgreementStatus('none');
+    setAnalysisMode('');
+    setChosenArchitecture('');
     setResult(null);
     setError('');
     setShowBatteryRefinement(false);
@@ -533,6 +700,185 @@ export function SolarBillAnalyzer() {
               </div>
             </div>
 
+            <div className="border-t border-solix-border pt-6 space-y-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Tariff and policy inputs</span>
+                <p className="text-xs text-solix-muted mt-1">Confirm the fields that cannot be determined safely from energy history alone.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <label className="space-y-2 text-xs font-bold">
+                  Utility
+                  <select value={utility} onChange={(event) => setUtility(event.target.value)} className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
+                    {PAKISTAN_UTILITIES.map((item) => <option key={item}>{item}</option>)}
+                  </select>
+                </label>
+                <label className="space-y-2 text-xs font-bold">
+                  Consumer tariff
+                  <select value={tariffCategory} onChange={(event) => setTariffCategory(event.target.value as 'residential' | 'commercial')} className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
+                    <option value="residential">Residential A-1</option>
+                    <option value="commercial">Commercial A-2</option>
+                  </select>
+                </label>
+                {tariffCategory === 'residential' && !tou && (
+                  <label className="space-y-2 text-xs font-bold">
+                    Residential status
+                    <select value={protectedStatus} onChange={(event) => setProtectedStatus(event.target.value as typeof protectedStatus)} className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
+                      <option value="non-protected">Non-protected</option>
+                      <option value="protected">Protected</option>
+                      <option value="lifeline-50">Lifeline ≤50</option>
+                      <option value="lifeline-100">Lifeline 51–100</option>
+                    </select>
+                  </label>
+                )}
+                <label className="space-y-2 text-xs font-bold">
+                  Sanctioned load (kW)
+                  <input type="number" min="0.1" step="0.1" value={sanctionedLoadKw} onChange={(event) => setSanctionedLoadKw(event.target.value)} placeholder="Required for exact fixed/DG limits" className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold" />
+                </label>
+                <label className="space-y-2 text-xs font-bold">
+                  Billing type
+                  <select value={tou ? 'tou' : 'non-tou'} onChange={(event) => setTou(event.target.value === 'tou')} className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
+                    <option value="non-tou">Non-TOU</option>
+                    <option value="tou">TOU</option>
+                  </select>
+                </label>
+                {(tou || tariffCategory === 'commercial') && (
+                  <label className="space-y-2 text-xs font-bold">
+                    Actual MDI (optional kW)
+                    <input type="number" min="0" step="0.1" value={mdiKw} onChange={(event) => setMdiKw(event.target.value)} placeholder="Never estimated" className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold" />
+                  </label>
+                )}
+                <label className="space-y-2 text-xs font-bold">
+                  Existing green meter
+                  <select value={greenMeter ? 'yes' : 'no'} onChange={(event) => {
+                    const enabled = event.target.value === 'yes';
+                    setGreenMeter(enabled);
+                    if (enabled) setLegacyAgreementStatus('unknown');
+                  }} className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                  </select>
+                </label>
+                {greenMeter && (
+                  <label className="space-y-2 text-xs font-bold">
+                    Old-framework agreement
+                    <select value={legacyAgreementStatus} onChange={(event) => setLegacyAgreementStatus(event.target.value as typeof legacyAgreementStatus)} className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
+                      <option value="valid">Valid and unexpired</option>
+                      <option value="expired">Expired</option>
+                      <option value="none">No old agreement</option>
+                      <option value="unknown">Unknown</option>
+                    </select>
+                  </label>
+                )}
+              </div>
+              <div className="border-t border-solix-border pt-6 space-y-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Analysis selection</span>
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-solix-dark mt-1">How would you like us to analyze your solar options?</h3>
+                  <p className="text-xs text-solix-muted mt-1">Select one option to continue.</p>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3" role="radiogroup" aria-label="Analysis mode">
+                  {ANALYSIS_OPTIONS.map((option) => {
+                    const selected = analysisMode === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => chooseAnalysisMode(option.value)}
+                        className={`min-w-0 rounded-2xl border p-5 text-left transition-all ${
+                          selected
+                            ? 'border-solix-green bg-emerald-50 shadow-solix'
+                            : 'border-solix-border bg-solix-bg hover:bg-white hover:border-solix-green/50'
+                        }`}
+                      >
+                        <span className="flex items-start gap-3">
+                          <span className={`mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center ${selected ? 'border-solix-green' : 'border-solix-muted/40'}`}>
+                            {selected && <span className="w-2.5 h-2.5 rounded-full bg-solix-green" />}
+                          </span>
+                          <span className="min-w-0">
+                            <strong className="block text-sm font-extrabold text-solix-dark uppercase tracking-wide">{option.label}</strong>
+                            <span className="block text-xs leading-relaxed text-solix-muted mt-2">{option.description}</span>
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {(analysisMode === 'chosen' || analysisMode === 'both') && (
+                  <div className="pt-4 space-y-4 animate-fadeIn">
+                    <div>
+                      <h4 className="text-lg sm:text-xl font-extrabold text-solix-dark">Which system would you like to analyze?</h4>
+                      <p className="text-xs text-solix-muted mt-1">Select exactly one architecture. We will optimize within that system.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3" role="radiogroup" aria-label="Chosen solar architecture">
+                      {ANALYZER_ARCHITECTURES.map((architecture, index) => {
+                        const selected = chosenArchitecture === architecture.value;
+                        return (
+                          <button
+                            key={architecture.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => {
+                              setChosenArchitecture(architecture.value);
+                              setError('');
+                            }}
+                            className={`min-w-0 rounded-2xl border p-4 text-left transition-all ${
+                              selected
+                                ? 'border-solix-green bg-emerald-50 shadow-solix'
+                                : 'border-solix-border bg-white hover:border-solix-green/50'
+                            }`}
+                          >
+                            <span className="flex items-start gap-3">
+                              <span className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-extrabold ${selected ? 'bg-solix-green text-white' : 'bg-solix-bg text-solix-muted'}`}>{index + 1}</span>
+                              <span className="min-w-0">
+                                <strong className="block text-sm font-extrabold text-solix-dark">{architecture.label}</strong>
+                                <span className="block text-xs leading-relaxed text-solix-muted mt-1">{architecture.description}</span>
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {chosenNeedsBattery && (
+                      <div className="rounded-2xl border border-solix-border bg-solix-bg p-4 sm:p-5 space-y-4">
+                        <div>
+                          <strong className="text-sm font-extrabold text-solix-dark">Battery and autonomy preferences</strong>
+                          <p className="text-xs text-solix-muted mt-1">These short answers improve storage sizing for the architecture you selected.</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <label className="space-y-2 text-xs font-bold">
+                            Loads to support
+                            <select value={backupLevel} onChange={(event) => setBackupLevel(event.target.value as BackupLevel)} className="w-full bg-white border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
+                              <option value="essential">Essential loads</option>
+                              <option value="most">Most property loads</option>
+                              <option value="entire">Entire property</option>
+                            </select>
+                          </label>
+                          <label className="space-y-2 text-xs font-bold">
+                            Backup duration
+                            <select value={backupHours} onChange={(event) => setBackupHours(Number(event.target.value) as 2 | 4 | 6 | 8)} className="w-full bg-white border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
+                              <option value={2}>2 hours</option>
+                              <option value={4}>4 hours</option>
+                              <option value={6}>6 hours</option>
+                              <option value={8}>8+ hours</option>
+                            </select>
+                          </label>
+                          <label className="space-y-2 text-xs font-bold">
+                            Known backup load (optional kW)
+                            <input type="number" min="0.1" step="0.1" value={knownBackupLoadKw} onChange={(event) => setKnownBackupLoadKw(event.target.value)} placeholder="e.g. 3.5" className="w-full bg-white border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold" />
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {!metrics.complete && (
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl p-3">
                 {12 - metrics.validMonthCount} month{12 - metrics.validMonthCount === 1 ? '' : 's'} still need verification. Missing values are never estimated or fabricated.
@@ -550,11 +896,11 @@ export function SolarBillAnalyzer() {
               <button
                 type="button"
                 onClick={() => void requestRecommendation()}
-                disabled={!metrics.complete || city.trim().length < 2 || loading}
+                disabled={!metrics.complete || city.trim().length < 2 || Boolean(analysisSelectionError) || loading}
                 className="inline-flex items-center justify-center gap-2 bg-solix-dark hover:bg-black disabled:opacity-50 text-white text-sm font-bold px-7 py-3.5 rounded-full transition-colors"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sun className="w-4 h-4" />}
-                {loading ? 'Calculating...' : 'Compare Solar Systems'}
+                {loading ? 'Calculating...' : analysisMode === 'chosen' ? 'Analyze Selected System' : 'Calculate Solar Options'}
                 {!loading && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
@@ -569,13 +915,31 @@ export function SolarBillAnalyzer() {
             <div className="relative grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 items-center">
               <div>
                 <span className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-solix-badge">
-                  <Sparkles className="w-4 h-4" /> Best match
+                  <Sparkles className="w-4 h-4" /> {
+                    result.bestMatch.architecture === 'off-grid'
+                      ? 'Preliminary Off-Grid Independence Option'
+                      : result.analysisMode === 'chosen'
+                      ? 'Your Selected System'
+                      : result.analysisMode === 'both'
+                        ? 'Best Recommended System'
+                        : 'Estimated Maximum Practical Bill Reduction'
+                  }
                 </span>
                 <h2 className="text-3xl sm:text-5xl font-extrabold mt-3 tracking-tight">
-                  {result.bestMatch.actualPvCapacityKw} kWp {result.bestMatch.label}
+                  {primaryBillPresentation?.applicable
+                    ? `${primaryBillPresentation.billReductionPercent ?? 0}%`
+                    : 'Grid-independent configuration'}
                 </h2>
+                <p className="text-xl sm:text-2xl font-extrabold mt-2">
+                  {primaryBillPresentation?.applicable
+                    ? `Estimated Remaining Electricity Bill (annual): Rs ${formatNumber(primaryBillPresentation.remainingBill ?? 0)}`
+                    : `Grid Electricity Bill: ${primaryBillPresentation?.gridBillMessage}`}
+                </p>
+                <p className="text-sm font-bold text-solix-badge mt-3">
+                  {result.bestMatch.actualPvCapacityKw} kWp {result.bestMatch.label}
+                </p>
                 <p className="text-sm sm:text-base text-white/70 leading-relaxed mt-4 max-w-3xl">
-                  {result.explanation}
+                  {heroExplanation}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -599,11 +963,26 @@ export function SolarBillAnalyzer() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <SystemCard system={result.systems.onGrid} best />
-            <SystemCard system={result.systems.hybrid} />
-            <SystemCard system={result.systems.offGrid} />
+          <div className={`grid grid-cols-1 ${presentedSystems.length > 1 ? 'lg:grid-cols-2' : 'max-w-3xl'} gap-5`}>
+            {presentedSystems.map((presented) => (
+              <SystemCard
+                key={`${presented.role}-${presented.system.architecture || presented.system.label}`}
+                system={presented.system}
+                best={presented.role === 'best' || (result.analysisMode === 'chosen' && presented.role === 'selected')}
+                badgeLabel={presented.title}
+              />
+            ))}
           </div>
+
+          {result.analysisMode === 'both' && comparisonExplanation.length > 0 && (
+            <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix">
+              <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Deterministic comparison</span>
+              <h3 className="text-2xl font-extrabold text-solix-dark mt-1">Which performs better for you?</h3>
+              <div className="mt-4 space-y-2 text-sm leading-relaxed text-solix-muted">
+                {comparisonExplanation.map((sentence) => <p key={sentence}>{sentence}</p>)}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix space-y-5">
@@ -632,6 +1011,18 @@ export function SolarBillAnalyzer() {
                     : `${result.location.profileCity} monthly solar profile applied.`}
                 </span>
               </div>
+              {result.confidence && (
+                <div className="grid grid-cols-3 gap-2 text-[10px] border-t border-solix-border pt-4">
+                  <div><span className="text-solix-muted">Bill extraction</span><strong className="block mt-1">{result.confidence.billExtraction}</strong></div>
+                  <div><span className="text-solix-muted">Tariff / policy</span><strong className="block mt-1">{result.confidence.tariffPolicy}</strong></div>
+                  <div><span className="text-solix-muted">Recommendation</span><strong className="block mt-1">{result.confidence.recommendation}</strong></div>
+                </div>
+              )}
+              {primaryBillPresentation?.applicable && result.billing?.excludedComponents.length ? (
+                <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                  Base tariff estimate excludes dynamic {result.billing.excludedComponents.join(', ')} because verified values are not configured.
+                </p>
+              ) : null}
             </div>
 
             <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix space-y-5">
@@ -665,19 +1056,24 @@ export function SolarBillAnalyzer() {
             </div>
           </div>
 
+          {(result.bestMatch.battery || result.selectedSystem?.battery) && (
           <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Optional</span>
-                <h3 className="text-xl font-extrabold mt-1">Refine the Hybrid battery estimate</h3>
-                <p className="text-xs text-solix-muted mt-1">A bill cannot reveal your exact backup load. Two short choices improve the preliminary range.</p>
+                <h3 className="text-xl font-extrabold mt-1">{batteryRefinementTitle}</h3>
+                <p className="text-xs text-solix-muted mt-1">
+                  {batteryRefinementTitle.includes('Autonomy')
+                    ? 'A bill cannot reveal exact loads, surge demand or autonomy needs. These choices improve the preliminary battery range.'
+                    : 'A bill cannot reveal your exact backup load. Two short choices improve the preliminary range.'}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowBatteryRefinement((visible) => !visible)}
                 className="inline-flex items-center justify-center gap-2 border border-solix-border bg-solix-bg hover:bg-white text-solix-dark text-xs font-bold px-5 py-3 rounded-full"
               >
-                <BatteryCharging className="w-4 h-4 text-solix-green" /> Refine Battery Estimate
+                <BatteryCharging className="w-4 h-4 text-solix-green" /> {batteryRefinementTitle.includes('Autonomy') ? 'Refine Autonomy Estimate' : 'Refine Battery Estimate'}
               </button>
             </div>
 
@@ -732,6 +1128,7 @@ export function SolarBillAnalyzer() {
               </div>
             )}
           </div>
+          )}
 
           <div className="bg-solix-dark text-white rounded-3xl p-7 sm:p-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>

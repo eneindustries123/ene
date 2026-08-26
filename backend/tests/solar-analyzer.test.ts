@@ -318,13 +318,39 @@ describe('solar analyzer API', () => {
       .send({ city: 'Lahore', monthlyConsumption: completeConsumption.slice(0, 11) });
     const valid = await request(app)
       .post('/api/solar-analyzer/recommend')
-      .send({ city: 'Lahore', monthlyConsumption: completeConsumption });
+      .send({ city: 'Lahore', monthlyConsumption: completeConsumption, analysisMode: 'recommend' });
 
     expect(invalid.status).toBe(400);
     expect(valid.status).toBe(200);
     expect(valid.body.systems.onGrid.type).toBe('on-grid');
     expect(valid.body.systems.hybrid.type).toBe('hybrid');
     expect(valid.body.systems.offGrid.type).toBe('off-grid');
+  });
+
+  it('requires analysis mode and conditionally requires one chosen architecture', async () => {
+    const missingMode = await request(app)
+      .post('/api/solar-analyzer/recommend')
+      .send({ city: 'Lahore', monthlyConsumption: completeConsumption });
+    const chosenWithoutArchitecture = await request(app)
+      .post('/api/solar-analyzer/recommend')
+      .send({ city: 'Lahore', monthlyConsumption: completeConsumption, analysisMode: 'chosen' });
+    const bothWithoutArchitecture = await request(app)
+      .post('/api/solar-analyzer/recommend')
+      .send({ city: 'Lahore', monthlyConsumption: completeConsumption, analysisMode: 'both' });
+    const chosenValid = await request(app)
+      .post('/api/solar-analyzer/recommend')
+      .send({ city: 'Lahore', monthlyConsumption: completeConsumption, analysisMode: 'chosen', chosenArchitecture: 'off-grid' });
+    const bothValid = await request(app)
+      .post('/api/solar-analyzer/recommend')
+      .send({ city: 'Lahore', monthlyConsumption: completeConsumption, analysisMode: 'both', chosenArchitecture: 'hybrid-green-battery' });
+
+    expect(missingMode.status).toBe(400);
+    expect(chosenWithoutArchitecture.status).toBe(400);
+    expect(bothWithoutArchitecture.status).toBe(400);
+    expect(chosenValid.status).toBe(200);
+    expect(chosenValid.body.scenarios).toHaveLength(1);
+    expect(bothValid.status).toBe(200);
+    expect(bothValid.body.selectedSystem.architecture).toBe('hybrid-green-battery');
   });
 
   it('rejects corrupt uploads before any Gemini request', async () => {

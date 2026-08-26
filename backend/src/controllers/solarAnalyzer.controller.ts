@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { SOLAR_ENGINEERING_CONFIG, SOLAR_MODEL_BASIS } from '../solar/config';
 import { recommendSolarSystems } from '../solar/calculator';
 import { SUPPORTED_PAKISTAN_CITIES } from '../solar/profiles';
+import { POLICY_REFERENCE_DATE, PROSUMER_REFERENCE_VALUES_2026 } from '../solar/policy';
+import { PAKISTAN_UTILITIES } from '../solar/types';
 import { extractSolarBill } from '../services/solarAnalyzerGemini.service';
 import {
   getSolarAnalyzerMaxFileBytes,
@@ -24,6 +26,12 @@ export class SolarAnalyzerController {
         standardInverterSizesKw: SOLAR_ENGINEERING_CONFIG.standardInverterSizesKw,
         batteryModuleKwh: SOLAR_ENGINEERING_CONFIG.batteryModuleKwh,
         profileBasis: SOLAR_MODEL_BASIS,
+      },
+      policy: {
+        referenceDate: POLICY_REFERENCE_DATE,
+        utilities: PAKISTAN_UTILITIES,
+        currentProsumerExportRate: PROSUMER_REFERENCE_VALUES_2026.find((value) => value.id === 'NAEPP')?.exportRate,
+        dynamicComponentsConfigured: false,
       },
     });
   }

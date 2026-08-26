@@ -21,6 +21,23 @@ export type CitySource =
   | 'provider-or-disco'
   | 'unknown';
 export type SystemType = 'on-grid' | 'hybrid' | 'off-grid';
+export const PAKISTAN_UTILITIES = [
+  'FESCO', 'GEPCO', 'HAZECO', 'HESCO', 'IESCO', 'LESCO', 'MEPCO',
+  'PESCO', 'QESCO', 'SEPCO', 'TESCO', 'K-Electric',
+] as const;
+export type PakistanUtility = (typeof PAKISTAN_UTILITIES)[number];
+export type TariffCategory = 'residential' | 'commercial';
+export type ProtectedStatus = 'lifeline-50' | 'lifeline-100' | 'protected' | 'non-protected';
+export type AnalysisMode = 'recommend' | 'chosen' | 'both';
+export type ScenarioArchitecture =
+  | 'on-grid-only'
+  | 'hybrid-green-no-battery'
+  | 'hybrid-green-battery'
+  | 'hybrid-no-green-no-battery'
+  | 'hybrid-no-green-battery'
+  | 'off-grid';
+export type ProsumerRegime = 'not-applicable' | 'current-2026' | 'legacy' | 'uncertain';
+export type ResultConfidence = 'High' | 'Medium' | 'Preliminary';
 
 export interface MonthlyConsumption {
   month: MonthKey;
@@ -99,6 +116,24 @@ export interface SystemRecommendation {
   battery: BatteryEstimate | null;
   suitability: string;
   caution?: string;
+  architecture?: ScenarioArchitecture;
+  annualGridImportKwh?: number;
+  annualGridExportKwh?: number;
+  annualDirectConsumptionKwh?: number;
+  annualUnusableSurplusKwh?: number;
+  currentEstimatedBill?: number;
+  postSolarEstimatedBill?: number;
+  billReduction?: number;
+  billReductionPercent?: number;
+  prosumerRegime?: ProsumerRegime;
+  nepraConcurrenceRequired?: boolean;
+  utilityApprovalRequired?: boolean;
+  loadFlowStudyRequired?: boolean;
+  regulatoryValid?: boolean;
+  confidence?: ResultConfidence;
+  policyConfidence?: ResultConfidence;
+  recommendationConfidence?: ResultConfidence;
+  qualifications?: string[];
 }
 
 export interface SolarProfileResolution {
@@ -129,4 +164,29 @@ export interface SolarRecommendationResult {
   };
   dataCompleteness: 'complete' | 'incomplete';
   disclaimer: string;
+  scenarios?: SystemRecommendation[];
+  selectedSystem?: SystemRecommendation | null;
+  analysisMode?: AnalysisMode;
+  billing?: {
+    currentEstimatedBill: number;
+    postSolarEstimatedBill: number;
+    billReduction: number;
+    billReductionPercent: number;
+    dynamicComponentsConfigured: boolean;
+    excludedComponents: string[];
+    fixedChargeConfidence: ResultConfidence;
+  };
+  confidence?: {
+    billExtraction: ResultConfidence;
+    tariffPolicy: ResultConfidence;
+    recommendation: ResultConfidence;
+  };
+  policy?: {
+    utility: PakistanUtility;
+    tariffCategory: TariffCategory;
+    prosumerRegime: ProsumerRegime;
+    referenceDate: string;
+    tariffSource: string;
+    prosumerSource: string;
+  };
 }
