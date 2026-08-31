@@ -12,13 +12,18 @@ type ProjectFetchOptions = RequestInit & {
   next?: { revalidate?: number };
 };
 
+export const PUBLIC_PROJECTS_REVALIDATE_SECONDS = 300;
+const PUBLIC_PROJECTS_FETCH_TIMEOUT_MS = 3_500;
+
 /**
  * Fetches the backend's ordered public project list without using local seed data.
  * Intended for surfaces that must never display stale hard-coded projects.
  */
 export async function fetchPublishedProjectsFromApi(
-  options: ProjectFetchOptions = { cache: 'no-store' },
-  timeoutMs?: number
+  options: ProjectFetchOptions = {
+    next: { revalidate: PUBLIC_PROJECTS_REVALIDATE_SECONDS },
+  },
+  timeoutMs = PUBLIC_PROJECTS_FETCH_TIMEOUT_MS
 ): Promise<Project[]> {
   const res = await apiFetchWithTimeout(
     getApiUrl('/api/projects?status=published'),

@@ -1,14 +1,21 @@
-import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import {
   getAllProjects,
   getPublishedProjects,
   getProjectBySlug,
+  fetchPublishedProjectsFromApi,
   createProject,
   updateProject,
   deleteProject,
   isSlugUnique,
+  PUBLIC_PROJECTS_REVALIDATE_SECONDS,
   selectHomepageProjects,
 } from '../lib/projects-store';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('Admin Projects Store & CRUD Unit Tests', () => {
   it('loads all existing projects', async () => {
@@ -40,6 +47,35 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
       'featured-next',
       'newest',
     ]);
+  });
+
+  it('caches the homepage public-project request for five minutes', async () => {
+    const projects = [{ id: 'cached-project', slug: 'cached-project' }];
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json(projects)
+    );
+
+    await expect(fetchPublishedProjectsFromApi()).resolves.toEqual(projects);
+    expect(PUBLIC_PROJECTS_REVALIDATE_SECONDS).toBe(300);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/projects?status=published'),
+      expect.objectContaining({
+        next: { revalidate: 300 },
+        signal: expect.any(AbortSignal),
+      })
+    );
+  });
+
+  it('keeps the homepage ISR-compatible without uncached dynamic rendering flags', () => {
+    const source = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
+
+    expect(source).not.toContain("dynamic = 'force-dynamic'");
+    expect(source).not.toContain("cache: 'no-store'");
+    expect(source).not.toContain('12_000');
+    expect(source).toContain('fetchPublishedProjectsFromApi()');
+    expect(source).toContain("preserveCachedHomepage = process.env.NODE_ENV === 'production' && !isProductionBuild()");
+    expect(source).toContain('Published projects unavailable during homepage regeneration.');
   });
 
   it('creates a new project and validates slug uniqueness', async () => {
