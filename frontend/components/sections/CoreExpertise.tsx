@@ -41,7 +41,7 @@ export function CoreExpertise() {
       title: 'AI Solar Bill Analyzer',
       href: '/solar-bill-analyzer',
       description: 'Upload your electricity bill and receive preliminary On-Grid, Hybrid, and Off-Grid solar system recommendations based on your actual consumption.',
-      image: '/images/solar-engineer-tablet.jpg',
+      image: '/images/solar-bill-analyzer.webp',
       cta: 'Analyze My Bill',
       imageLeft: false,
     },
