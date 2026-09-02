@@ -5,7 +5,13 @@ import { createProjectSchema, updateProjectSchema } from '../validators/project.
 export class ProjectsController {
   static async getAll(req: Request, res: Response) {
     try {
-      const { status } = req.query;
+      const { status, featured, limit } = req.query;
+      const parsedLimit = limit ? Math.max(1, Math.min(50, parseInt(String(limit), 10) || 0)) : undefined;
+
+      if (status === 'published' && featured === 'true') {
+        const projects = await ProjectsService.getFeaturedPublishedProjects(parsedLimit || 3);
+        return res.status(200).json(projects);
+      }
       if (status === 'published') {
         const projects = await ProjectsService.getPublishedProjects();
         return res.status(200).json(projects);
@@ -45,6 +51,16 @@ export class ProjectsController {
         return res.status(409).json({ error: 'A project with this URL slug already exists' });
       }
 
+      // Enforce maximum 3 published featured projects
+      if (parsedData.isFeatured && (parsedData.status === 'published' || !parsedData.status)) {
+        const currentFeaturedCount = await ProjectsService.countPublishedFeaturedProjects();
+        if (currentFeaturedCount >= 3) {
+          return res.status(409).json({
+            error: 'You can feature a maximum of 3 projects. Unfeature another project first.',
+          });
+        }
+      }
+
       const created = await ProjectsService.createProject(parsedData);
       return res.status(201).json(created);
     } catch (err: any) {
@@ -64,6 +80,26 @@ export class ProjectsController {
         const isUnique = await ProjectsService.isSlugUnique(parsedUpdates.slug, id);
         if (!isUnique) {
           return res.status(409).json({ error: 'A project with this URL slug already exists' });
+        }
+      }
+
+      const existing = await ProjectsService.getProjectById(id);
+      if (!existing) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      const willBeFeatured =
+        parsedUpdates.isFeatured !== undefined ? Boolean(parsedUpdates.isFeatured) : existing.isFeatured;
+      const willBePublished =
+        (parsedUpdates.status !== undefined ? parsedUpdates.status : existing.status) === 'published';
+
+      // Enforce maximum 3 published featured projects
+      if (willBeFeatured && willBePublished) {
+        const otherFeaturedCount = await ProjectsService.countPublishedFeaturedProjects(id);
+        if (otherFeaturedCount >= 3) {
+          return res.status(409).json({
+            error: 'You can feature a maximum of 3 projects. Unfeature another project first.',
+          });
         }
       }
 

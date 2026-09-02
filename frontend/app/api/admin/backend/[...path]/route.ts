@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import {
   ADMIN_SESSION_COOKIE_NAME,
   getAdminSessionCookieOptions,
   getBackendApiUrl,
   isSameOriginRequest,
 } from '../../../../../lib/admin-auth';
+import { FEATURED_PROJECTS_CACHE_TAG } from '../../../../../lib/projects-store';
 
 const BACKEND_REQUEST_TIMEOUT_MS = 30000;
 
@@ -90,6 +92,20 @@ async function forwardProtectedRequest(request: NextRequest, context: RouteConte
         maxAge: 0,
         expires: new Date(0),
       });
+    }
+
+    // On-demand cache invalidation after confirmed successful project mutation
+    if (
+      backendResponse.ok &&
+      path[0] === 'projects' &&
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+    ) {
+      try {
+        revalidateTag(FEATURED_PROJECTS_CACHE_TAG);
+        revalidatePath('/');
+      } catch (revalidateError) {
+        console.warn('[admin-bff] Failed to revalidate featured projects cache:', revalidateError);
+      }
     }
 
     return response;

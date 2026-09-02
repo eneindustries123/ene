@@ -491,7 +491,11 @@ export default function AdminProjectsPage() {
                   : 'bg-white text-solix-muted border border-solix-border hover:text-solix-dark'
               }`}
             >
-              {tab === 'all' ? 'All Projects' : tab}
+              {tab === 'all'
+                ? 'All Projects'
+                : tab === 'featured'
+                ? `Featured (${projects.filter((p) => p.isFeatured && p.status === 'published').length}/3)`
+                : tab}
             </button>
           ))}
 
@@ -997,7 +1001,7 @@ export default function AdminProjectsPage() {
                     className="w-4 h-4 rounded text-solix-green focus:ring-emerald-500 bg-solix-bg border-solix-border"
                   />
                   <label htmlFor="isFeatured" className="text-xs font-bold text-solix-dark cursor-pointer">
-                    Feature on Homepage Showcase (Optional, defaults to false)
+                    Feature on Homepage Showcase (Maximum 3 published projects allowed)
                   </label>
                 </div>
 

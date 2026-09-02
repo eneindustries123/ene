@@ -34,34 +34,62 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
     });
   });
 
-  it('selects three homepage projects using featured status and public ordering', () => {
-    const projects = [
-      { id: '1', slug: 'newest', isFeatured: false },
-      { id: '2', slug: 'featured-newest', isFeatured: true },
-      { id: '3', slug: 'featured-next', isFeatured: true },
-      { id: '4', slug: 'older', isFeatured: false },
-    ] as Awaited<ReturnType<typeof getPublishedProjects>>;
+  it('selects ONLY published and featured projects (max 3) without substituting non-featured projects', () => {
+    const mixedProjects = [
+      { id: '1', slug: 'featured-1', isFeatured: true, status: 'published' },
+      { id: '2', slug: 'regular-1', isFeatured: false, status: 'published' },
+      { id: '3', slug: 'featured-2', isFeatured: true, status: 'published' },
+      { id: '4', slug: 'draft-featured', isFeatured: true, status: 'draft' },
+      { id: '5', slug: 'archived-featured', isFeatured: true, status: 'archived' },
+      { id: '6', slug: 'featured-3', isFeatured: true, status: 'published' },
+      { id: '7', slug: 'featured-4', isFeatured: true, status: 'published' },
+    ] as any;
 
-    expect(selectHomepageProjects(projects).map((project) => project.slug)).toEqual([
-      'featured-newest',
-      'featured-next',
-      'newest',
-    ]);
+    const selected = selectHomepageProjects(mixedProjects);
+    expect(selected.map((p) => p.slug)).toEqual(['featured-1', 'featured-2', 'featured-3']);
+    expect(selected.length).toBe(3);
   });
 
-  it('caches the homepage public-project request for five minutes', async () => {
-    const projects = [{ id: 'cached-project', slug: 'cached-project' }];
+  it('returns exactly the qualifying count if fewer than 3 featured projects exist', () => {
+    const twoFeatured = [
+      { id: '1', slug: 'feat-1', isFeatured: true, status: 'published' },
+      { id: '2', slug: 'regular-1', isFeatured: false, status: 'published' },
+      { id: '3', slug: 'feat-2', isFeatured: true, status: 'published' },
+    ] as any;
+
+    expect(selectHomepageProjects(twoFeatured).map((p) => p.slug)).toEqual(['feat-1', 'feat-2']);
+
+    const zeroFeatured = [
+      { id: '1', slug: 'regular-1', isFeatured: false, status: 'published' },
+      { id: '2', slug: 'regular-2', isFeatured: false, status: 'published' },
+    ] as any;
+
+    expect(selectHomepageProjects(zeroFeatured)).toEqual([]);
+  });
+
+  it('caches the homepage featured-projects request with tag and 300s TTL', async () => {
+    const {
+      fetchFeaturedProjectsFromApi,
+      FEATURED_PROJECTS_CACHE_TAG,
+      FEATURED_PROJECTS_REVALIDATE_SECONDS,
+    } = await import('../lib/projects-store');
+
+    const featuredMock = [{ id: 'feat-1', slug: 'feat-1', isFeatured: true, status: 'published' }];
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      Response.json(projects)
+      Response.json(featuredMock)
     );
 
-    await expect(fetchPublishedProjectsFromApi()).resolves.toEqual(projects);
-    expect(PUBLIC_PROJECTS_REVALIDATE_SECONDS).toBe(300);
+    await expect(fetchFeaturedProjectsFromApi()).resolves.toEqual(featuredMock);
+    expect(FEATURED_PROJECTS_CACHE_TAG).toBe('featured-projects');
+    expect(FEATURED_PROJECTS_REVALIDATE_SECONDS).toBe(300);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/projects?status=published'),
+      expect.stringContaining('/api/projects?status=published&featured=true&limit=3'),
       expect.objectContaining({
-        next: { revalidate: 300 },
+        next: {
+          revalidate: 300,
+          tags: ['featured-projects'],
+        },
         signal: expect.any(AbortSignal),
       })
     );
@@ -73,9 +101,23 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
     expect(source).not.toContain("dynamic = 'force-dynamic'");
     expect(source).not.toContain("cache: 'no-store'");
     expect(source).not.toContain('12_000');
-    expect(source).toContain('fetchPublishedProjectsFromApi()');
+    expect(source).toContain('fetchFeaturedProjectsFromApi()');
     expect(source).toContain("preserveCachedHomepage = process.env.NODE_ENV === 'production' && !isProductionBuild()");
-    expect(source).toContain('Published projects unavailable during homepage regeneration.');
+    expect(source).toContain('Featured projects unavailable during homepage regeneration.');
+  });
+
+  it('verifies admin BFF includes on-demand cache revalidation for project mutations', () => {
+    const bffSource = readFileSync(
+      new URL('../app/api/admin/backend/[...path]/route.ts', import.meta.url),
+      'utf8'
+    );
+
+    expect(bffSource).toContain("import { revalidateTag, revalidatePath } from 'next/cache'");
+    expect(bffSource).toContain('FEATURED_PROJECTS_CACHE_TAG');
+    expect(bffSource).toContain('backendResponse.ok');
+    expect(bffSource).toContain("path[0] === 'projects'");
+    expect(bffSource).toContain('revalidateTag(FEATURED_PROJECTS_CACHE_TAG)');
+    expect(bffSource).toContain("revalidatePath('/')");
   });
 
   it('creates a new project and validates slug uniqueness', async () => {

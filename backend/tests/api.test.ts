@@ -186,6 +186,183 @@ describe('E&E Industries Backend API Endpoints', () => {
       expect(res.body.error).toBe('Validation failed');
     });
 
+    it('GET /api/projects?status=published&featured=true&limit=3 returns only published featured projects (max 3)', async () => {
+      const res = await request(app).get('/api/projects?status=published&featured=true&limit=3');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeLessThanOrEqual(3);
+      res.body.forEach((p: any) => {
+        expect(p.isFeatured).toBe(true);
+        expect(p.status === 'published' || p.status === undefined).toBe(true);
+      });
+    });
+
+    it('POST /api/projects rejects creating a 4th featured project with 409 Conflict', async () => {
+      const res = await request(app)
+        .post('/api/projects')
+        .set('Cookie', [adminCookie])
+        .send({
+          title: 'Fourth Featured Solar Project',
+          slug: `fourth-featured-${Date.now()}`,
+          client: 'Test Enterprise',
+          location: 'Lahore, Pakistan',
+          capacity: '300 kW',
+          category: 'Commercial Solar',
+          completionYear: 2026,
+          summary: 'Attempting to add a fourth featured project when 3 already exist.',
+          mainImage: '/images/test-project.jpg',
+          gallery: ['/images/test-supporting-1.jpg'],
+          isFeatured: true,
+          status: 'published',
+        });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toContain('You can feature a maximum of 3 projects');
+    });
+
+    it('PUT /api/projects/:id rejects featuring an unfeatured project when 3 are already featured', async () => {
+      // proj-4 is unfeatured
+      const res = await request(app)
+        .put('/api/projects/proj-4')
+        .set('Cookie', [adminCookie])
+        .send({
+          isFeatured: true,
+          status: 'published',
+        });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toContain('You can feature a maximum of 3 projects');
+    });
+
+    it('PUT /api/projects/:id succeeds when updating existing featured project while retaining featured status', async () => {
+      // proj-1 is already featured
+      const res = await request(app)
+        .put('/api/projects/proj-1')
+        .set('Cookie', [adminCookie])
+        .send({
+          capacity: 'High-Capacity Synchronized Array',
+          isFeatured: true,
+          status: 'published',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.capacity).toBe('High-Capacity Synchronized Array');
+      expect(res.body.isFeatured).toBe(true);
+    });
+
+    it('PUT /api/projects/:id succeeds when unfeaturing a featured project', async () => {
+      // unfeature proj-3
+      const res = await request(app)
+        .put('/api/projects/proj-3')
+        .set('Cookie', [adminCookie])
+        .send({
+          isFeatured: false,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.isFeatured).toBe(false);
+
+      // Now featuring proj-4 should succeed because count is now 2
+      const res2 = await request(app)
+        .put('/api/projects/proj-4')
+        .set('Cookie', [adminCookie])
+        .send({
+          isFeatured: true,
+          status: 'published',
+        });
+
+      expect(res2.status).toBe(200);
+      expect(res2.body.isFeatured).toBe(true);
+
+      // Revert back for consistency
+      await request(app)
+        .put('/api/projects/proj-4')
+        .set('Cookie', [adminCookie])
+        .send({ isFeatured: false });
+      await request(app)
+        .put('/api/projects/proj-3')
+        .set('Cookie', [adminCookie])
+        .send({ isFeatured: true });
+    });
+
+    it('Transition A: PUT /api/projects/:id rejects publishing a draft project that is already marked featured when 3 published featured projects exist', async () => {
+      // Step 1: Create a draft project with isFeatured = true (allowed because it is draft, not published)
+      const draftSlug = `draft-featured-${Date.now()}`;
+      const createRes = await request(app)
+        .post('/api/projects')
+        .set('Cookie', [adminCookie])
+        .send({
+          title: 'Draft Featured Project',
+          slug: draftSlug,
+          client: 'Test Client',
+          location: 'Lahore, Pakistan',
+          capacity: '100 kW',
+          category: 'Commercial Solar',
+          completionYear: 2026,
+          summary: 'A draft project marked as featured.',
+          mainImage: '/images/test-project.jpg',
+          gallery: ['/images/test-supporting-1.jpg'],
+          isFeatured: true,
+          status: 'draft',
+        });
+
+      expect(createRes.status).toBe(201);
+      const draftId = createRes.body.id;
+
+      // Step 2: Admin attempts to publish this draft project without unfeaturing an existing one
+      const publishRes = await request(app)
+        .put(`/api/projects/${draftId}`)
+        .set('Cookie', [adminCookie])
+        .send({
+          status: 'published',
+        });
+
+      expect(publishRes.status).toBe(409);
+      expect(publishRes.body.error).toContain('You can feature a maximum of 3 projects');
+
+      // Cleanup
+      await request(app).delete(`/api/projects/${draftId}`).set('Cookie', [adminCookie]);
+    });
+
+    it('Transition B: PUT /api/projects/:id rejects publishing an archived project that is already marked featured when 3 published featured projects exist', async () => {
+      // Step 1: Create an archived project with isFeatured = true
+      const archivedSlug = `archived-featured-${Date.now()}`;
+      const createRes = await request(app)
+        .post('/api/projects')
+        .set('Cookie', [adminCookie])
+        .send({
+          title: 'Archived Featured Project',
+          slug: archivedSlug,
+          client: 'Test Client',
+          location: 'Lahore, Pakistan',
+          capacity: '150 kW',
+          category: 'Commercial Solar',
+          completionYear: 2026,
+          summary: 'An archived project marked as featured.',
+          mainImage: '/images/test-project.jpg',
+          gallery: ['/images/test-supporting-1.jpg'],
+          isFeatured: true,
+          status: 'archived',
+        });
+
+      expect(createRes.status).toBe(201);
+      const archivedId = createRes.body.id;
+
+      // Step 2: Admin attempts to publish this archived project
+      const publishRes = await request(app)
+        .put(`/api/projects/${archivedId}`)
+        .set('Cookie', [adminCookie])
+        .send({
+          status: 'published',
+        });
+
+      expect(publishRes.status).toBe(409);
+      expect(publishRes.body.error).toContain('You can feature a maximum of 3 projects');
+
+      // Cleanup
+      await request(app).delete(`/api/projects/${archivedId}`).set('Cookie', [adminCookie]);
+    });
+
     it('PUT /api/projects/:id updates an existing project', async () => {
       if (!createdProjectId) return;
 

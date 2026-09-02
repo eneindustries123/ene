@@ -337,7 +337,7 @@ export const INITIAL_PROJECTS: Project[] = [
       '/images/projects/p4-2.jpg',
       '/images/projects/p4-3.jpg',
     ],
-    isFeatured: true,
+    isFeatured: false,
   },
   {
     id: 'proj-5',
@@ -355,7 +355,7 @@ export const INITIAL_PROJECTS: Project[] = [
       '/images/projects/p5-2.jpg',
       '/images/projects/p5-3.jpg',
     ],
-    isFeatured: true,
+    isFeatured: false,
   },
   {
     id: 'proj-6',
@@ -373,7 +373,7 @@ export const INITIAL_PROJECTS: Project[] = [
       '/images/projects/p6-2.jpg',
       '/images/projects/p6-3.jpg',
     ],
-    isFeatured: true,
+    isFeatured: false,
   },
 ];
 

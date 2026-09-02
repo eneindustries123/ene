@@ -12,8 +12,42 @@ type ProjectFetchOptions = RequestInit & {
   next?: { revalidate?: number };
 };
 
+export const FEATURED_PROJECTS_CACHE_TAG = 'featured-projects';
+export const FEATURED_PROJECTS_REVALIDATE_SECONDS = 300;
 export const PUBLIC_PROJECTS_REVALIDATE_SECONDS = 300;
 const PUBLIC_PROJECTS_FETCH_TIMEOUT_MS = 3_500;
+const FEATURED_PROJECTS_FETCH_TIMEOUT_MS = 3_500;
+
+/**
+ * Fetches the backend's published and featured projects with Next.js ISR caching.
+ * Exclusively consumed by the homepage Featured Projects showcase.
+ */
+export async function fetchFeaturedProjectsFromApi(
+  options: ProjectFetchOptions = {
+    next: {
+      revalidate: FEATURED_PROJECTS_REVALIDATE_SECONDS,
+      tags: [FEATURED_PROJECTS_CACHE_TAG],
+    },
+  },
+  timeoutMs = FEATURED_PROJECTS_FETCH_TIMEOUT_MS
+): Promise<Project[]> {
+  const res = await apiFetchWithTimeout(
+    getApiUrl('/api/projects?status=published&featured=true&limit=3'),
+    options,
+    timeoutMs
+  );
+
+  if (!res.ok) {
+    throw new Error('Featured projects are temporarily unavailable.');
+  }
+
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    throw new Error('The featured projects response is invalid.');
+  }
+
+  return data;
+}
 
 /**
  * Fetches the backend's ordered public project list without using local seed data.
@@ -44,12 +78,14 @@ export async function fetchPublishedProjectsFromApi(
 }
 
 /**
- * Uses the existing featured flag and preserves backend ordering within each group.
+ * Strictly filters for Published + Featured projects up to the specified limit (max 3).
+ * Does NOT substitute non-featured projects into unfilled slots.
  */
 export function selectHomepageProjects(projects: Project[], limit = 3): Project[] {
-  const featured = projects.filter((project) => project.isFeatured);
-  const remaining = projects.filter((project) => !project.isFeatured);
-  return [...featured, ...remaining].slice(0, limit);
+  const featured = projects.filter(
+    (project) => Boolean(project.isFeatured) && project.status === 'published'
+  );
+  return featured.slice(0, limit);
 }
 
 /**

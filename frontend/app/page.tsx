@@ -13,7 +13,7 @@ import { GetInTouchForm } from '@/components/sections/GetInTouchForm';
 import { Footer } from '@/components/layout/Footer';
 import { isProductionBuild } from '@/lib/api-client';
 import {
-  fetchPublishedProjectsFromApi,
+  fetchFeaturedProjectsFromApi,
   selectHomepageProjects,
 } from '@/lib/projects-store';
 import type { Project } from '@/lib/data';
@@ -23,19 +23,19 @@ export default async function HomePage() {
   let projectsLoadFailed = false;
 
   try {
-    const publishedProjects = await fetchPublishedProjectsFromApi();
-    featuredProjects = selectHomepageProjects(publishedProjects);
+    const fetchedProjects = await fetchFeaturedProjectsFromApi();
+    featuredProjects = selectHomepageProjects(fetchedProjects);
   } catch (error) {
     const reason = error instanceof Error && error.name === 'AbortError'
       ? 'timed out'
       : 'failed';
     const preserveCachedHomepage = process.env.NODE_ENV === 'production' && !isProductionBuild();
     console.warn(
-      `[homepage] Published projects request ${reason}; ${preserveCachedHomepage ? 'preserving cached homepage' : 'rendering without project cards'}.`
+      `[homepage] Featured projects request ${reason}; ${preserveCachedHomepage ? 'preserving cached homepage' : 'rendering without project cards'}.`
     );
 
     if (preserveCachedHomepage) {
-      throw new Error('Published projects unavailable during homepage regeneration.');
+      throw new Error('Featured projects unavailable during homepage regeneration.');
     }
 
     projectsLoadFailed = true;

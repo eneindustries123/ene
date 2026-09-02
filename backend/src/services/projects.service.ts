@@ -100,7 +100,7 @@ let inMemoryProjects: Project[] = [
       '/images/projects/p4-2.jpg',
       '/images/projects/p4-3.jpg',
     ],
-    isFeatured: true,
+    isFeatured: false,
     status: 'published',
   },
   {
@@ -119,7 +119,7 @@ let inMemoryProjects: Project[] = [
       '/images/projects/p5-2.jpg',
       '/images/projects/p5-3.jpg',
     ],
-    isFeatured: true,
+    isFeatured: false,
     status: 'published',
   },
   {
@@ -138,7 +138,7 @@ let inMemoryProjects: Project[] = [
       '/images/projects/p6-2.jpg',
       '/images/projects/p6-3.jpg',
     ],
-    isFeatured: true,
+    isFeatured: false,
     status: 'published',
   },
 ];
@@ -221,6 +221,62 @@ export class ProjectsService {
     }
 
     return inMemoryProjects.filter((p) => p.status === 'published' || p.status === undefined);
+  }
+
+  static async getFeaturedPublishedProjects(limit = 3): Promise<Project[]> {
+    const supabase = getSupabaseAnonClient() || getSupabaseAdminClient();
+    if (supabase && isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('status', 'published')
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+
+        if (!error && data) {
+          return data.map(mapProjectRow);
+        }
+      } catch (err) {
+        console.warn('ProjectsService.getFeaturedPublishedProjects error, falling back:', err);
+      }
+    }
+
+    return inMemoryProjects
+      .filter((p) => p.status === 'published' && p.isFeatured === true)
+      .slice(0, limit);
+  }
+
+  static async countPublishedFeaturedProjects(excludeId?: string): Promise<number> {
+    const adminClient = getSupabaseAdminClient();
+    if (adminClient && isSupabaseConfigured()) {
+      try {
+        let query = adminClient
+          .from('projects')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'published')
+          .eq('is_featured', true);
+
+        if (excludeId && isValidUuid(excludeId)) {
+          query = query.neq('id', excludeId);
+        }
+
+        const { count, error } = await query;
+        if (!error && typeof count === 'number') {
+          return count;
+        }
+      } catch (err) {
+        console.warn('countPublishedFeaturedProjects check error:', err);
+      }
+    }
+
+    return inMemoryProjects.filter(
+      (p) =>
+        p.status === 'published' &&
+        p.isFeatured === true &&
+        p.id !== excludeId
+    ).length;
   }
 
   static async getProjectById(id: string): Promise<Project | null> {
