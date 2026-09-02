@@ -243,6 +243,18 @@ export function Header() {
             </Link>
 
             <Link
+              href="/blogs"
+              className={cn(
+                'transition-colors hover:text-white',
+                pathname === '/blogs' || pathname.startsWith('/blogs/')
+                  ? 'text-white font-bold'
+                  : 'text-white/80'
+              )}
+            >
+              Blogs
+            </Link>
+
+            <Link
               href="/contact"
               className={cn(
                 'transition-colors hover:text-white',
@@ -402,6 +414,19 @@ export function Header() {
                   )}
                 >
                   <span>Projects</span>
+                </Link>
+
+                <Link
+                  href="/blogs"
+                  onClick={closeMobile}
+                  className={cn(
+                    'flex items-center justify-between px-4 py-3 rounded-2xl text-base font-bold transition-colors',
+                    pathname === '/blogs' || pathname.startsWith('/blogs/')
+                      ? 'bg-solix-green text-white'
+                      : 'text-white/90 hover:bg-white/10 hover:text-white'
+                  )}
+                >
+                  <span>Blogs</span>
                 </Link>
 
                 <Link

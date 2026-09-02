@@ -11,12 +11,18 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@portabletext/react": "3.1.0",
+    "@sanity/client": "7.6.0",
+    "@sanity/image-url": "1.1.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.28",
+    "groq": "3.99.0",
     "lucide-react": "^0.428.0",
     "next": "^14.2.35",
+    "next-sanity": "9.12.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "sharp": "0.35.4",
     "tailwind-merge": "^2.5.2",
     "zod": "^3.23.8"
   },

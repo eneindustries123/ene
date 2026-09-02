@@ -8,6 +8,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.sanity.io',
+        pathname: '/images/kjz2jmxz/production/**',
+      },
     ],
   },
   experimental: {
@@ -19,12 +24,12 @@ const nextConfig = {
     return [
       {
         source: '/blog',
-        destination: '/',
+        destination: '/blogs',
         permanent: true,
       },
       {
         source: '/blog/:slug*',
-        destination: '/',
+        destination: '/blogs/:slug*',
         permanent: true,
       },
     ];
