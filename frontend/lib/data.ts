@@ -38,6 +38,30 @@ export interface Project {
   status?: 'published' | 'draft' | 'archived';
 }
 
+export interface HomepageShowcaseProject {
+  title: string;
+  image: string;
+  href: string;
+}
+
+export const HOMEPAGE_FEATURED_PROJECTS: HomepageShowcaseProject[] = [
+  {
+    title: 'MNS University of Agriculture Multan',
+    image: '/images/projects/p1-1.jpg',
+    href: '/projects/mns-university-of-agriculture-multan',
+  },
+  {
+    title: 'Chakdara Swat Site',
+    image: '/images/projects/p2-1.jpg',
+    href: '/projects/chakdara-swat-25kw',
+  },
+  {
+    title: 'Punjab Pharmacy Commercial Complex',
+    image: '/images/projects/p3-1.jpg',
+    href: '/projects/punjab-pharmacy',
+  },
+];
+
 export interface Testimonial {
   id: string;
   quote: string;

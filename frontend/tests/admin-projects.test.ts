@@ -67,7 +67,61 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
     expect(selectHomepageProjects(zeroFeatured)).toEqual([]);
   });
 
-  it('caches the homepage featured-projects request with tag and 300s TTL', async () => {
+  it('defines exactly the 3 static homepage showcase projects with valid detail hrefs and images', async () => {
+    const { HOMEPAGE_FEATURED_PROJECTS } = await import('../lib/data');
+
+    expect(HOMEPAGE_FEATURED_PROJECTS).toHaveLength(3);
+
+    expect(HOMEPAGE_FEATURED_PROJECTS[0]).toEqual({
+      title: 'MNS University of Agriculture Multan',
+      image: '/images/projects/p1-1.jpg',
+      href: '/projects/mns-university-of-agriculture-multan',
+    });
+
+    expect(HOMEPAGE_FEATURED_PROJECTS[1]).toEqual({
+      title: 'Chakdara Swat Site',
+      image: '/images/projects/p2-1.jpg',
+      href: '/projects/chakdara-swat-25kw',
+    });
+
+    expect(HOMEPAGE_FEATURED_PROJECTS[2]).toEqual({
+      title: 'Punjab Pharmacy Commercial Complex',
+      image: '/images/projects/p3-1.jpg',
+      href: '/projects/punjab-pharmacy',
+    });
+
+    // Verify detail routes correspond to real published projects in data
+    const published = await getPublishedProjects();
+    const publishedSlugs = published.map((p) => p.slug);
+
+    HOMEPAGE_FEATURED_PROJECTS.forEach((item) => {
+      const slug = item.href.replace('/projects/', '');
+      expect(publishedSlugs).toContain(slug);
+    });
+  });
+
+  it('keeps homepage completely free of runtime project API calls, timeouts, and failure states', () => {
+    const source = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
+    const featuredComponent = readFileSync(
+      new URL('../components/sections/FeaturedProjects.tsx', import.meta.url),
+      'utf8'
+    );
+
+    // No dynamic flags
+    expect(source).not.toContain("dynamic = 'force-dynamic'");
+    expect(source).not.toContain("cache: 'no-store'");
+    expect(source).not.toContain('revalidate: 0');
+    expect(source).not.toContain('fetchFeaturedProjectsFromApi');
+    expect(source).not.toContain('fetchPublishedProjectsFromApi');
+    expect(source).not.toContain('loadFailed');
+
+    // Failure message completely removed from homepage
+    expect(featuredComponent).not.toContain('Current projects are temporarily unavailable.');
+    expect(featuredComponent).not.toContain('No published projects are available yet.');
+    expect(featuredComponent).toContain('HOMEPAGE_FEATURED_PROJECTS');
+  });
+
+  it('caches the API featured-projects request for admin/standalone callers with tag and 300s TTL', async () => {
     const {
       fetchFeaturedProjectsFromApi,
       FEATURED_PROJECTS_CACHE_TAG,
@@ -93,17 +147,6 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
         signal: expect.any(AbortSignal),
       })
     );
-  });
-
-  it('keeps the homepage ISR-compatible without uncached dynamic rendering flags', () => {
-    const source = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
-
-    expect(source).not.toContain("dynamic = 'force-dynamic'");
-    expect(source).not.toContain("cache: 'no-store'");
-    expect(source).not.toContain('12_000');
-    expect(source).toContain('fetchFeaturedProjectsFromApi()');
-    expect(source).toContain("preserveCachedHomepage = process.env.NODE_ENV === 'production' && !isProductionBuild()");
-    expect(source).toContain('Featured projects unavailable during homepage regeneration.');
   });
 
   it('verifies admin BFF includes on-demand cache revalidation for project mutations', () => {

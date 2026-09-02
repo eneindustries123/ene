@@ -11,36 +11,8 @@ import { FeaturedProjects } from '@/components/sections/FeaturedProjects';
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
 import { GetInTouchForm } from '@/components/sections/GetInTouchForm';
 import { Footer } from '@/components/layout/Footer';
-import { isProductionBuild } from '@/lib/api-client';
-import {
-  fetchFeaturedProjectsFromApi,
-  selectHomepageProjects,
-} from '@/lib/projects-store';
-import type { Project } from '@/lib/data';
 
-export default async function HomePage() {
-  let featuredProjects: Project[] = [];
-  let projectsLoadFailed = false;
-
-  try {
-    const fetchedProjects = await fetchFeaturedProjectsFromApi();
-    featuredProjects = selectHomepageProjects(fetchedProjects);
-  } catch (error) {
-    const reason = error instanceof Error && error.name === 'AbortError'
-      ? 'timed out'
-      : 'failed';
-    const preserveCachedHomepage = process.env.NODE_ENV === 'production' && !isProductionBuild();
-    console.warn(
-      `[homepage] Featured projects request ${reason}; ${preserveCachedHomepage ? 'preserving cached homepage' : 'rendering without project cards'}.`
-    );
-
-    if (preserveCachedHomepage) {
-      throw new Error('Featured projects unavailable during homepage regeneration.');
-    }
-
-    projectsLoadFailed = true;
-  }
-
+export default function HomePage() {
   return (
     <main className="min-h-screen bg-solix-bg overflow-hidden flex flex-col justify-between">
       {/* 1. Header */}
@@ -68,7 +40,7 @@ export default async function HomePage() {
       <WhyChooseUs />
 
       {/* 9. Featured Projects */}
-      <FeaturedProjects projects={featuredProjects} loadFailed={projectsLoadFailed} />
+      <FeaturedProjects />
 
       {/* 10. Testimonials / Client Proof */}
       <TestimonialsSection />

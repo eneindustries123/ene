@@ -4,16 +4,14 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, MapPin, Zap } from 'lucide-react';
-import { Project } from '@/lib/data';
+import { ArrowUpRight } from 'lucide-react';
+import { HOMEPAGE_FEATURED_PROJECTS, HomepageShowcaseProject } from '@/lib/data';
 
 interface FeaturedProjectsProps {
-  projects: Project[];
-  loadFailed?: boolean;
+  projects?: HomepageShowcaseProject[];
 }
 
-export function FeaturedProjects({ projects, loadFailed = false }: FeaturedProjectsProps) {
-
+export function FeaturedProjects({ projects = HOMEPAGE_FEATURED_PROJECTS }: FeaturedProjectsProps) {
   return (
     <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto space-y-12">
       {/* Section Header */}
@@ -42,77 +40,48 @@ export function FeaturedProjects({ projects, loadFailed = false }: FeaturedProje
       </div>
 
       {/* 3 Featured Projects Cards Grid */}
-      {projects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {projects.map((proj, idx) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {projects.map((proj, idx) => (
           <motion.div
-            key={proj.id || proj.slug}
+            key={proj.href}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: idx * 0.15 }}
-            className="bg-white rounded-3xl overflow-hidden border border-solix-border shadow-solix hover:shadow-solix-lg transition-all flex flex-col justify-between group"
+            className="bg-white rounded-3xl overflow-hidden border border-solix-border shadow-solix hover:shadow-solix-lg transition-all group flex flex-col justify-between"
           >
-            {/* Project Image */}
-            <div className="relative w-full h-[220px] overflow-hidden">
-              <Image
-                src={proj.mainImage}
-                alt={proj.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
-              />
-              <div className="absolute top-4 left-4 bg-solix-dark/90 backdrop-blur text-white text-[11px] font-bold px-3 py-1 rounded-full">
-                {proj.category}
+            <Link
+              href={proj.href}
+              className="flex flex-col h-full justify-between focus:outline-none focus:ring-2 focus:ring-solix-green/50 rounded-3xl"
+            >
+              {/* Project Image */}
+              <div className="relative w-full h-[240px] overflow-hidden bg-solix-bg">
+                <Image
+                  src={proj.image}
+                  alt={proj.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                />
               </div>
-            </div>
 
-            {/* Project Details */}
-            <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-4 text-xs text-solix-muted">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-solix-green" />
-                    <span>{proj.location}</span>
-                  </span>
-                  <span className="flex items-center gap-1 font-bold text-solix-dark">
-                    <Zap className="w-3.5 h-3.5 text-amber-500" />
-                    <span>{proj.capacity}</span>
-                  </span>
-                </div>
-
-                <h3 className="text-xl font-extrabold text-solix-dark group-hover:text-solix-green transition-colors">
+              {/* Project Details */}
+              <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                <h3 className="text-xl font-extrabold text-solix-dark group-hover:text-solix-green transition-colors leading-snug">
                   {proj.title}
                 </h3>
 
-                <p className="text-xs text-solix-muted leading-relaxed">
-                  {proj.summary}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-solix-border/50">
-                <Link
-                  href={`/projects/${proj.slug}`}
-                  className="inline-flex items-center gap-2 text-xs font-bold text-solix-dark group-hover:text-solix-green transition-colors"
-                >
+                <div className="pt-4 border-t border-solix-border/50 flex items-center justify-between text-xs font-bold text-solix-dark group-hover:text-solix-green transition-colors">
                   <span>Explore Project Case Study</span>
-                  <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-                </Link>
+                  <div className="w-6 h-6 rounded-full bg-solix-bg group-hover:bg-solix-green group-hover:text-white flex items-center justify-center transition-colors">
+                    <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                  </div>
+                </div>
               </div>
-            </div>
+            </Link>
           </motion.div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-3xl border border-solix-border shadow-solix px-6 py-12 text-center space-y-3">
-          <p className="text-sm font-bold text-solix-dark">
-            {loadFailed ? 'Current projects are temporarily unavailable.' : 'No published projects are available yet.'}
-          </p>
-          <p className="text-xs text-solix-muted">
-            Visit the complete projects directory to try again.
-          </p>
-        </div>
-      )}
+        ))}
+      </div>
     </section>
   );
 }
