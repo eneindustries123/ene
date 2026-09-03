@@ -6,7 +6,10 @@ import {
   getBackendApiUrl,
   isSameOriginRequest,
 } from '../../../../../lib/admin-auth';
-import { FEATURED_PROJECTS_CACHE_TAG } from '../../../../../lib/projects-store';
+import {
+  FEATURED_PROJECTS_CACHE_TAG,
+  PUBLIC_PROJECTS_CACHE_TAG,
+} from '../../../../../lib/projects-store';
 
 const BACKEND_REQUEST_TIMEOUT_MS = 30000;
 
@@ -102,9 +105,12 @@ async function forwardProtectedRequest(request: NextRequest, context: RouteConte
     ) {
       try {
         revalidateTag(FEATURED_PROJECTS_CACHE_TAG);
+        revalidateTag(PUBLIC_PROJECTS_CACHE_TAG);
         revalidatePath('/');
+        revalidatePath('/projects');
+        revalidatePath('/projects/[slug]', 'page');
       } catch (revalidateError) {
-        console.warn('[admin-bff] Failed to revalidate featured projects cache:', revalidateError);
+        console.warn('[admin-bff] Failed to revalidate projects cache:', revalidateError);
       }
     }
 

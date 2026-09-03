@@ -155,12 +155,88 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
       'utf8'
     );
 
-    expect(bffSource).toContain("import { revalidateTag, revalidatePath } from 'next/cache'");
+    expect(bffSource).toContain("import {");
     expect(bffSource).toContain('FEATURED_PROJECTS_CACHE_TAG');
+    expect(bffSource).toContain('PUBLIC_PROJECTS_CACHE_TAG');
     expect(bffSource).toContain('backendResponse.ok');
     expect(bffSource).toContain("path[0] === 'projects'");
     expect(bffSource).toContain('revalidateTag(FEATURED_PROJECTS_CACHE_TAG)');
+    expect(bffSource).toContain('revalidateTag(PUBLIC_PROJECTS_CACHE_TAG)');
     expect(bffSource).toContain("revalidatePath('/')");
+    expect(bffSource).toContain("revalidatePath('/projects')");
+    expect(bffSource).toContain("revalidatePath('/projects/[slug]', 'page')");
+  });
+
+  it('renders all published projects without an arbitrary 6-project limit', async () => {
+    const published = await getPublishedProjects();
+    // Must contain all 8 published projects in seed / API
+    expect(published.length).toBeGreaterThanOrEqual(8);
+
+    const titles = published.map((p) => p.title);
+    expect(titles).toContain('Ayyub Hockey Stadium 200 kW Solar Parking Lot');
+    expect(titles).toContain('Kashf Foundation Regional Offices Solarization  Slug');
+    expect(titles).toContain('MNS University of Agriculture Multan');
+    expect(titles).toContain('Chakdara Swat Site');
+    expect(titles).toContain('Punjab Pharmacy Commercial Complex');
+    expect(titles).toContain('Chitral Remote Site Deployment');
+    expect(titles).toContain('Punjab Group of Pharmacies Central Hub');
+    expect(titles).toContain('Bareeze DHA Elevated Shed Structure');
+
+    // No duplicate slugs
+    const slugs = published.map((p) => p.slug);
+    const uniqueSlugs = new Set(slugs);
+    expect(uniqueSlugs.size).toBe(slugs.length);
+
+    // Draft & Archived projects are excluded
+    published.forEach((p) => {
+      expect(p.status).toBe('published');
+    });
+  });
+
+  it('re-throws on API failure in production runtime so Next.js ISR preserves previously cached page without stale seed fallback', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalNextPhase = process.env.NEXT_PHASE;
+
+    try {
+      (process.env as any).NODE_ENV = 'production';
+      delete (process.env as any).NEXT_PHASE;
+
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network timeout / 500 error'));
+
+      await expect(getPublishedProjects()).rejects.toThrow(
+        /Network timeout \/ 500 error|Published projects unavailable/
+      );
+    } finally {
+      (process.env as any).NODE_ENV = originalEnv;
+      if (originalNextPhase !== undefined) {
+        (process.env as any).NEXT_PHASE = originalNextPhase;
+      } else {
+        delete (process.env as any).NEXT_PHASE;
+      }
+    }
+  });
+
+  it('re-throws on project detail API failure in production runtime so Next.js ISR preserves previously cached detail page', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalNextPhase = process.env.NEXT_PHASE;
+
+    try {
+      (process.env as any).NODE_ENV = 'production';
+      delete (process.env as any).NEXT_PHASE;
+
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Upstream timeout'));
+
+      await expect(getProjectBySlug('mns-university-of-agriculture-multan')).rejects.toThrow(
+        /Upstream timeout|unavailable during production ISR regeneration/
+      );
+    } finally {
+      (process.env as any).NODE_ENV = originalEnv;
+      if (originalNextPhase !== undefined) {
+        (process.env as any).NEXT_PHASE = originalNextPhase;
+      } else {
+        delete (process.env as any).NEXT_PHASE;
+      }
+    }
   });
 
   it('creates a new project and validates slug uniqueness', async () => {

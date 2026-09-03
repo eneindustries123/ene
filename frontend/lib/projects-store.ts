@@ -13,10 +13,11 @@ type ProjectFetchOptions = RequestInit & {
 };
 
 export const FEATURED_PROJECTS_CACHE_TAG = 'featured-projects';
+export const PUBLIC_PROJECTS_CACHE_TAG = 'published-projects';
 export const FEATURED_PROJECTS_REVALIDATE_SECONDS = 300;
-export const PUBLIC_PROJECTS_REVALIDATE_SECONDS = 300;
-const PUBLIC_PROJECTS_FETCH_TIMEOUT_MS = 3_500;
-const FEATURED_PROJECTS_FETCH_TIMEOUT_MS = 3_500;
+export const PUBLIC_PROJECTS_REVALIDATE_SECONDS = 60;
+const PUBLIC_PROJECTS_FETCH_TIMEOUT_MS = 15_000;
+const FEATURED_PROJECTS_FETCH_TIMEOUT_MS = 15_000;
 
 /**
  * Fetches the backend's published and featured projects with Next.js ISR caching.
@@ -55,7 +56,10 @@ export async function fetchFeaturedProjectsFromApi(
  */
 export async function fetchPublishedProjectsFromApi(
   options: ProjectFetchOptions = {
-    next: { revalidate: PUBLIC_PROJECTS_REVALIDATE_SECONDS },
+    next: {
+      revalidate: PUBLIC_PROJECTS_REVALIDATE_SECONDS,
+      tags: [PUBLIC_PROJECTS_CACHE_TAG],
+    },
   },
   timeoutMs = PUBLIC_PROJECTS_FETCH_TIMEOUT_MS
 ): Promise<Project[]> {
@@ -116,19 +120,32 @@ export async function getAllProjects(): Promise<Project[]> {
  * Retrieves only published projects for public display.
  */
 export async function getPublishedProjects(): Promise<Project[]> {
-  if (isProductionBuild()) {
-    return inMemoryProjects.filter((p) => p.status === 'published' || p.status === undefined);
-  }
-
   try {
     const data = await fetchPublishedProjectsFromApi({
-      next: { revalidate: 60 },
+      next: {
+        revalidate: PUBLIC_PROJECTS_REVALIDATE_SECONDS,
+        tags: [PUBLIC_PROJECTS_CACHE_TAG],
+      },
     });
-    if (data.length > 0) {
+    if (Array.isArray(data) && data.length > 0) {
       return data;
     }
-  } catch {
-    // Local fallback
+  } catch (err) {
+    const preserveCachedPage = process.env.NODE_ENV === 'production' && !isProductionBuild();
+    if (preserveCachedPage) {
+      console.warn(
+        '[projects-store] Published projects API request failed during production runtime/ISR; re-throwing to preserve cached page:',
+        err
+      );
+      throw err instanceof Error
+        ? err
+        : new Error('Published projects unavailable during production ISR regeneration.');
+    }
+
+    console.warn(
+      '[projects-store] Published projects API request unavailable; using local development/build fallback seed:',
+      err
+    );
   }
 
   return inMemoryProjects.filter((p) => p.status === 'published' || p.status === undefined);
@@ -138,22 +155,34 @@ export async function getPublishedProjects(): Promise<Project[]> {
  * Retrieves a single project by URL slug.
  */
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
-  if (isProductionBuild()) {
-    return inMemoryProjects.find((p) => p.slug === slug) || null;
-  }
-
   try {
-    const res = await apiFetchWithTimeout(getApiUrl(`/api/projects/${slug}`), {
-      next: { revalidate: 60 },
-    });
+    const res = await apiFetchWithTimeout(
+      getApiUrl(`/api/projects/${slug}`),
+      {
+        next: {
+          revalidate: PUBLIC_PROJECTS_REVALIDATE_SECONDS,
+          tags: [PUBLIC_PROJECTS_CACHE_TAG],
+        },
+      },
+      PUBLIC_PROJECTS_FETCH_TIMEOUT_MS
+    );
     if (res.ok) {
       const data = await res.json();
       if (data && data.slug) {
         return data;
       }
     }
-  } catch {
-    // Local fallback
+  } catch (err) {
+    const preserveCachedPage = process.env.NODE_ENV === 'production' && !isProductionBuild();
+    if (preserveCachedPage) {
+      console.warn(
+        `[projects-store] Project detail API request for "${slug}" failed during production runtime/ISR; re-throwing to preserve cached page:`,
+        err
+      );
+      throw err instanceof Error
+        ? err
+        : new Error(`Project "${slug}" unavailable during production ISR regeneration.`);
+    }
   }
 
   const found = inMemoryProjects.find((p) => p.slug === slug);
@@ -164,15 +193,15 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
  * Retrieves a single project by ID.
  */
 export async function getProjectById(id: string): Promise<Project | null> {
-  if (isProductionBuild()) {
-    return inMemoryProjects.find((p) => p.id === id) || null;
-  }
-
   try {
-    const res = await apiFetchWithTimeout(getApiUrl(`/api/projects/${id}`), {
-      cache: 'no-store',
-      credentials: 'include',
-    });
+    const res = await apiFetchWithTimeout(
+      getApiUrl(`/api/projects/${id}`),
+      {
+        cache: 'no-store',
+        credentials: 'include',
+      },
+      PUBLIC_PROJECTS_FETCH_TIMEOUT_MS
+    );
     if (res.ok) {
       const data = await res.json();
       if (data && data.id) {
