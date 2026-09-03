@@ -239,6 +239,28 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
     }
   });
 
+  it('assigns correct distinct cover images to Ayyub Stadium and Kashf Foundation without cross-project inheritance', async () => {
+    const published = await getPublishedProjects();
+
+    const ayyub = published.find((p) => p.slug === 'ayyub-hockey-stadium-200kw-solar-parking-lot');
+    const kashf = published.find((p) => p.slug === 'kashf-foundation-regional-offices-solarization');
+    const bareeze = published.find((p) => p.slug === 'bareeze-dha-40kw-elevated-shed');
+    const mns = published.find((p) => p.slug === 'mns-university-of-agriculture-multan');
+
+    expect(ayyub).toBeDefined();
+    expect(kashf).toBeDefined();
+    expect(bareeze).toBeDefined();
+    expect(mns).toBeDefined();
+
+    // Ayyub must have its own image and NOT inherit Bareeze's image
+    expect(ayyub?.mainImage).not.toBe(bareeze?.mainImage);
+    expect(ayyub?.mainImage).toMatch(/p7-1\.png|data:image/);
+
+    // Kashf must have its own image and NOT inherit MNS University's image
+    expect(kashf?.mainImage).not.toBe(mns?.mainImage);
+    expect(kashf?.mainImage).toMatch(/p8-1\.jpg|data:image/);
+  });
+
   it('creates a new project and validates slug uniqueness', async () => {
     const newSlug = `test-solar-project-${Date.now()}`;
     expect(await isSlugUnique(newSlug)).toBe(true);
