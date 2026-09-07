@@ -188,13 +188,13 @@ export default async function BlogArticlePage({ params }: BlogPageProps) {
 
         {post.featuredImage?.asset && (
           <figure className="mx-auto w-full max-w-7xl px-4 sm:px-8">
-            <div className="overflow-hidden rounded-3xl border border-solix-border bg-solix-dark shadow-solix-lg sm:rounded-4xl">
+            <div className="relative aspect-[16/9] max-h-[580px] w-full overflow-hidden rounded-2xl border border-solix-border bg-solix-dark shadow-solix-lg sm:aspect-[2/1] sm:rounded-3xl lg:rounded-[32px]">
               <SanityImage
                 image={post.featuredImage}
-                width={1800}
-                height={1013}
+                width={1600}
+                height={900}
                 sizes="(max-width: 1280px) 100vw, 1216px"
-                className="h-auto w-full object-cover"
+                className="h-full w-full object-cover"
                 priority
               />
             </div>
