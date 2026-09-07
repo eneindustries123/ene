@@ -7,8 +7,10 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { BlogPortableText } from '@/components/blog/BlogPortableText';
 import { SanityImage } from '@/components/blog/SanityImage';
+import { BlogSolarAnalyzerCTA } from '@/components/blog/BlogSolarAnalyzerCTA';
 import { getBlogPostBySlug } from '@/lib/sanity/data';
 import { buildSanityImageUrl } from '@/lib/sanity/image';
+import { partitionBlogBody } from '@/lib/sanity/partition-body';
 import { calculateReadingTime } from '@/lib/sanity/reading-time';
 import { absoluteSiteUrl } from '@/lib/site';
 import type { BlogPost } from '@/lib/sanity/types';
@@ -209,11 +211,24 @@ export default async function BlogArticlePage({ params }: BlogPageProps) {
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 px-4 py-12 sm:px-8 sm:py-16 lg:grid-cols-12 lg:gap-14">
           <div className="min-w-0 lg:col-span-8 lg:col-start-3">
             {Array.isArray(post.body) && post.body.length > 0 ? (
-              <BlogPortableText value={post.body} />
+              (() => {
+                const { firstChunk, secondChunk, showInlineCTA } = partitionBlogBody(post.body);
+                return (
+                  <>
+                    <BlogPortableText value={firstChunk} />
+                    {showInlineCTA && <BlogSolarAnalyzerCTA variant="inline" />}
+                    {secondChunk.length > 0 && <BlogPortableText value={secondChunk} />}
+                    <BlogSolarAnalyzerCTA variant="primary" />
+                  </>
+                );
+              })()
             ) : (
-              <p className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm leading-6 text-solix-muted">
-                This article&apos;s content is temporarily unavailable.
-              </p>
+              <>
+                <p className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm leading-6 text-solix-muted">
+                  This article&apos;s content is temporarily unavailable.
+                </p>
+                <BlogSolarAnalyzerCTA variant="primary" />
+              </>
             )}
 
             {post.author && (post.author.bio || post.author.role) && (
