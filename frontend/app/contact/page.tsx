@@ -40,7 +40,7 @@ export default function ContactPage() {
     });
     if (res.success) {
       setStatus('success');
-      setResponseMsg(res.message || 'Submitted successfully!');
+      setResponseMsg(res.message || 'Your inquiry has been successfully sent. Our engineering team will get back to you within 24 hours.');
       setFormData({
         fullName: '',
         email: '',
@@ -55,7 +55,7 @@ export default function ContactPage() {
       });
     } else {
       setStatus('error');
-      setResponseMsg('Failed to send message. Please check required fields.');
+      setResponseMsg(res.message || 'Unable to submit your enquiry right now. Please try again.');
     }
   };
 
@@ -202,11 +202,12 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label htmlFor="contact-phone" className="text-xs font-bold text-solix-dark">Phone Number *</label>
+                    <label htmlFor="contact-phone" className="text-xs font-bold text-solix-dark">
+                      Phone Number <span className="text-solix-muted font-normal text-[11px]">(Optional)</span>
+                    </label>
                     <input
                       id="contact-phone"
                       type="tel"
-                      required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+92 3XX XXXXXXX"

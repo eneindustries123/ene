@@ -25,13 +25,56 @@ describe('Solix Unit Tests', () => {
 
   it('validates contact form fields and rejects invalid data', async () => {
     const { submitContactForm } = await import('../app/actions/contact');
-    const res = await submitContactForm({
-      fullName: 'A',
-      email: 'invalid-email',
-      message: 'short',
+
+    // Missing full name
+    const missingNameRes = await submitContactForm({
+      fullName: '',
+      email: 'valid@example.com',
+      serviceRequired: 'Solar Energy',
+      message: 'This is a valid 10+ character message.',
     });
-    expect(res.success).toBe(false);
-    expect(res.message).toBeDefined();
+    expect(missingNameRes.success).toBe(false);
+    expect(missingNameRes.message).toContain('Full name');
+
+    // Missing email
+    const missingEmailRes = await submitContactForm({
+      fullName: 'John Doe',
+      email: '',
+      serviceRequired: 'Solar Energy',
+      message: 'This is a valid 10+ character message.',
+    });
+    expect(missingEmailRes.success).toBe(false);
+    expect(missingEmailRes.message).toContain('Email address');
+
+    // Invalid email
+    const invalidEmailRes = await submitContactForm({
+      fullName: 'John Doe',
+      email: 'not-an-email',
+      serviceRequired: 'Solar Energy',
+      message: 'This is a valid 10+ character message.',
+    });
+    expect(invalidEmailRes.success).toBe(false);
+    expect(invalidEmailRes.message).toContain('valid email');
+
+    // Missing service
+    const missingServiceRes = await submitContactForm({
+      fullName: 'John Doe',
+      email: 'valid@example.com',
+      serviceRequired: '',
+      message: 'This is a valid 10+ character message.',
+    });
+    expect(missingServiceRes.success).toBe(false);
+    expect(missingServiceRes.message).toContain('select a service');
+
+    // Missing / too short message
+    const shortMessageRes = await submitContactForm({
+      fullName: 'John Doe',
+      email: 'valid@example.com',
+      serviceRequired: 'Solar Energy',
+      message: 'Short',
+    });
+    expect(shortMessageRes.success).toBe(false);
+    expect(shortMessageRes.message).toContain('10 characters');
   });
 
   it('validates quote request fields and rejects invalid data', async () => {

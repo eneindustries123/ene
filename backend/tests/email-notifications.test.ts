@@ -54,7 +54,7 @@ describe('Transactional Email Notifications via Resend', () => {
   });
 
   describe('2. Homepage Get In Touch Form Email Trigger', () => {
-    it('sends structured notification email with Reply-To header when homepage enquiry is submitted', async () => {
+    it('sends structured notification email with Reply-To header when homepage enquiry is submitted with phone', async () => {
       const payload = {
         fullName: 'Ali Raza',
         email: 'ali.raza@industrial-client.pk',
@@ -62,7 +62,7 @@ describe('Transactional Email Notifications via Resend', () => {
         company: 'Homepage Lead (Solar Energy)',
         subject: 'Homepage Lead for Solar Energy',
         serviceRequired: 'Solar Energy',
-        message: 'Service Type: Solar Energy\nMessage: Interested in 100kW rooftop solar system.',
+        message: 'Interested in 100kW rooftop solar system for industrial textile facility.',
       };
 
       const res = await request(app).post('/api/enquiries').send(payload);
@@ -83,8 +83,51 @@ describe('Transactional Email Notifications via Resend', () => {
       expect(emailArg.html).toContain('ali.raza@industrial-client.pk');
       expect(emailArg.html).toContain('+92 300 9876543');
       expect(emailArg.html).toContain('Solar Energy');
-      expect(emailArg.html).toContain('Interested in 100kW rooftop solar system.');
+      expect(emailArg.html).toContain('Interested in 100kW rooftop solar system');
       expect(emailArg.html).toContain('Homepage &quot;Get In Touch&quot; Lead');
+    });
+
+    it('succeeds and sends notification email when optional phone is omitted', async () => {
+      mockSend.mockClear();
+      const payload = {
+        fullName: 'Zubair Qureshi',
+        email: 'zubair@contracting.pk',
+        serviceRequired: 'Trading & Contracting',
+        message: 'Need quotation for high-voltage industrial switchgear procurement.',
+      };
+
+      const res = await request(app).post('/api/enquiries').send(payload);
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const emailArg = mockSend.mock.calls[0][0];
+      expect(emailArg.replyTo).toBe('zubair@contracting.pk');
+      expect(emailArg.html).toContain('Zubair Qureshi');
+      expect(emailArg.html).toContain('Trading &amp; Contracting');
+    });
+
+    it('accepts all legitimate service dropdown values', async () => {
+      const services = [
+        'Solar Energy',
+        'Trading & Contracting',
+        'Fabrication & Design',
+        'General Enquiry',
+      ];
+
+      for (const service of services) {
+        mockSend.mockClear();
+        const res = await request(app).post('/api/enquiries').send({
+          fullName: 'Test Client',
+          email: 'test@client.com',
+          serviceRequired: service,
+          message: `Testing submission for service: ${service} with adequate message length.`,
+        });
+
+        expect(res.status).toBe(201);
+        expect(res.body.success).toBe(true);
+      }
     });
   });
 
@@ -214,6 +257,39 @@ describe('Transactional Email Notifications via Resend', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
+      expect(res.body.details.fullName).toBeDefined();
+      expect(res.body.details.email).toBeDefined();
+      expect(res.body.details.serviceRequired).toBeDefined();
+      expect(res.body.details.message).toBeDefined();
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('rejects enquiry submission when email is missing or invalid', async () => {
+      mockSend.mockClear();
+      const res = await request(app).post('/api/enquiries').send({
+        fullName: 'Ali Raza',
+        email: 'invalid-email-address',
+        serviceRequired: 'Solar Energy',
+        message: 'Valid message content exceeding ten characters.',
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.details.email).toBeDefined();
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('rejects enquiry submission when project message is less than 10 characters', async () => {
+      mockSend.mockClear();
+      const res = await request(app).post('/api/enquiries').send({
+        fullName: 'Ali Raza',
+        email: 'ali@example.com',
+        serviceRequired: 'Solar Energy',
+        message: 'Too short',
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.details.message[0]).toContain('10 characters');
       expect(mockSend).not.toHaveBeenCalled();
     });
 

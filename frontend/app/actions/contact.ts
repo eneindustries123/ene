@@ -8,16 +8,16 @@ const newsletterSchema = z.object({
 });
 
 const contactFormSchema = z.object({
-  fullName: z.string().min(2, 'Name is required'),
-  email: z.string().email('Valid email is required'),
-  phone: z.string().optional(),
-  city: z.string().optional(),
-  address: z.string().optional(),
-  serviceRequired: z.string().min(2, 'Service is required'),
-  monthlyBill: z.string().optional(),
-  solarType: z.string().optional(),
-  subject: z.string().optional(),
-  message: z.string().min(10, 'Message must be at least 10 characters'),
+  fullName: z.string().trim().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().trim().min(1, 'Email address is required').email('Please enter a valid email address'),
+  phone: z.string().trim().optional().or(z.literal('')),
+  city: z.string().trim().optional().or(z.literal('')),
+  address: z.string().trim().optional().or(z.literal('')),
+  serviceRequired: z.string().trim().min(2, 'Please select a service'),
+  monthlyBill: z.string().trim().optional().or(z.literal('')),
+  solarType: z.string().trim().optional().or(z.literal('')),
+  subject: z.string().trim().optional().or(z.literal('')),
+  message: z.string().trim().min(10, 'Project details must contain at least 10 characters'),
 });
 
 const quoteRequestSchema = z.object({
@@ -51,7 +51,7 @@ export async function submitContactForm(formData: Record<string, any>) {
   if (!result.success) {
     const errorMap = result.error.flatten().fieldErrors;
     const firstErrorMessage =
-      Object.values(errorMap).flat()[0] || 'Invalid form input.';
+      Object.values(errorMap).flat()[0] || 'Please check the required fields.';
     return { success: false, message: firstErrorMessage, errors: errorMap };
   }
 
@@ -76,17 +76,24 @@ export async function submitContactForm(formData: Record<string, any>) {
       };
     }
 
+    let errorMessage = data.error || 'Unable to submit your enquiry right now. Please try again.';
+    if (data.details && typeof data.details === 'object') {
+      const firstDetail = Object.values(data.details).flat()[0];
+      if (typeof firstDetail === 'string') {
+        errorMessage = firstDetail;
+      }
+    }
+
     return {
       success: false,
-      message: data.error || `Failed to submit inquiry (Status ${res.status}).`,
+      message: errorMessage,
+      errors: data.details,
     };
   } catch (err: any) {
     console.error('Failed to submit contact enquiry to backend API:', err);
     return {
       success: false,
-      message:
-        err?.message ||
-        'Network error while submitting inquiry. Please try again.',
+      message: 'Unable to submit your enquiry right now. Please try again.',
     };
   }
 }

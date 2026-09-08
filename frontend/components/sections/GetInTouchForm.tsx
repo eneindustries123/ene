@@ -19,16 +19,46 @@ export function GetInTouchForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email || !formData.phone) return;
+    const fullName = formData.fullName.trim();
+    const email = formData.email.trim();
+    const serviceRequired = formData.serviceType.trim();
+    const message = formData.message.trim();
+
+    if (!fullName) {
+      setStatus('error');
+      setResponseMsg('Please enter your full name.');
+      return;
+    }
+
+    if (!email) {
+      setStatus('error');
+      setResponseMsg('Please enter your email address.');
+      return;
+    }
+
+    if (!serviceRequired) {
+      setStatus('error');
+      setResponseMsg('Please select a service.');
+      return;
+    }
+
+    if (!message || message.length < 10) {
+      setStatus('error');
+      setResponseMsg('Project details must contain at least 10 characters.');
+      return;
+    }
 
     setStatus('loading');
+    setResponseMsg('');
+
     const res = await submitContactForm({
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      company: `Homepage Lead (${formData.serviceType})`,
-      subject: `Homepage Lead for ${formData.serviceType}`,
-      message: `Service Type: ${formData.serviceType}\nMessage: ${formData.message}`,
+      fullName,
+      email,
+      phone: formData.phone.trim() || undefined,
+      serviceRequired,
+      company: `Homepage Lead (${serviceRequired})`,
+      subject: `Homepage Lead for ${serviceRequired}`,
+      message,
     });
 
     if (res.success) {
@@ -43,7 +73,7 @@ export function GetInTouchForm() {
       });
     } else {
       setStatus('error');
-      setResponseMsg('Failed to send message. Please check required fields.');
+      setResponseMsg(res.message || 'Unable to submit your enquiry right now. Please try again.');
     }
   };
 
@@ -109,13 +139,14 @@ export function GetInTouchForm() {
                 />
               </div>
 
-              {/* Phone */}
+              {/* Phone (Optional) */}
               <div className="space-y-1.5">
-                <label htmlFor="home-contact-phone" className="text-xs font-bold text-solix-dark">Phone Number *</label>
+                <label htmlFor="home-contact-phone" className="text-xs font-bold text-solix-dark">
+                  Phone Number <span className="text-solix-muted font-normal text-[11px]">(Optional)</span>
+                </label>
                 <input
                   id="home-contact-phone"
                   type="tel"
-                  required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+92 3XX XXXXXXX"
@@ -129,6 +160,7 @@ export function GetInTouchForm() {
               <label htmlFor="home-contact-service" className="text-xs font-bold text-solix-dark">Service Required *</label>
               <select
                 id="home-contact-service"
+                required
                 value={formData.serviceType}
                 onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs font-semibold text-solix-dark focus:outline-none focus:border-solix-dark"
@@ -140,12 +172,14 @@ export function GetInTouchForm() {
               </select>
             </div>
 
-            {/* Message */}
+            {/* Message / Scope */}
             <div className="space-y-1.5">
-              <label htmlFor="home-contact-message" className="text-xs font-bold text-solix-dark">Project Details / Scope</label>
+              <label htmlFor="home-contact-message" className="text-xs font-bold text-solix-dark">Project Details / Scope *</label>
               <textarea
                 id="home-contact-message"
                 rows={3}
+                required
+                minLength={10}
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="Briefly describe system capacity, site location, or material specifications..."
