@@ -481,5 +481,21 @@ describe('E&E Industries Backend API Endpoints', () => {
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
     });
+
+    it('POST /api/quote-requests succeeds when optional phone is omitted or empty', async () => {
+      const res = await request(app)
+        .post('/api/quote-requests')
+        .send({
+          fullName: 'Kamran Ali',
+          email: 'kamran@logistics.com',
+          phone: '',
+          country: 'Pakistan',
+          solutionType: 'solar',
+          projectType: 'commercial',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+    });
   });
 });

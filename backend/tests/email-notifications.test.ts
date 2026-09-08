@@ -206,6 +206,30 @@ describe('Transactional Email Notifications via Resend', () => {
       expect(emailArg.html).toContain('Preliminary recommendation: 1.5 MWp On-Grid');
       expect(emailArg.html).toContain('Custom Quotation Estimator (/request-a-quote)');
     });
+
+    it('sends quote request notification successfully when phone is omitted or empty', async () => {
+      mockSend.mockClear();
+      const payload = {
+        fullName: 'Asim Rauf',
+        email: 'asim@enterprises.pk',
+        phone: '',
+        company: 'Rauf Textiles',
+        country: 'Karachi, Pakistan',
+        solutionType: 'solar',
+        projectType: 'commercial',
+      };
+
+      const res = await request(app).post('/api/quote-requests').send(payload);
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const emailArg = mockSend.mock.calls[0][0];
+      expect(emailArg.replyTo).toBe('asim@enterprises.pk');
+      expect(emailArg.html).toContain('Asim Rauf');
+      expect(emailArg.html).toContain('Not provided');
+    });
   });
 
   describe('5. Client Review Submission Form Email Trigger', () => {

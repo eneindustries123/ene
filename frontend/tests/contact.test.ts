@@ -75,17 +75,44 @@ describe('Solix Unit Tests', () => {
     });
     expect(shortMessageRes.success).toBe(false);
     expect(shortMessageRes.message).toContain('10 characters');
+
+    // Allows empty phone number
+    const noPhoneRes = await submitContactForm({
+      fullName: 'John Doe',
+      email: 'valid@example.com',
+      phone: '',
+      serviceRequired: 'Solar Energy',
+      message: 'This is a valid 10+ character message.',
+    });
+    // In test environment without backend running, submitContactForm calls fetch to backend.
+    // If backend isn't up, it fails on network or validation, but client-side zod passes.
   });
 
   it('validates quote request fields and rejects invalid data', async () => {
     const { submitQuoteRequest } = await import('../app/actions/contact');
+
+    // Missing / invalid fields
     const res = await submitQuoteRequest({
       fullName: 'A',
       email: 'invalid-email',
-      phone: '123',
+      phone: '',
+      country: '',
+      solutionType: 'solar',
+      projectType: 'commercial',
     });
     expect(res.success).toBe(false);
     expect(res.message).toBeDefined();
+
+    // Invalid email format
+    const invalidEmailRes = await submitQuoteRequest({
+      fullName: 'Valid Name',
+      email: 'not-an-email',
+      country: 'Pakistan',
+      solutionType: 'solar',
+      projectType: 'commercial',
+    });
+    expect(invalidEmailRes.success).toBe(false);
+    expect(invalidEmailRes.message).toContain('valid email');
   });
 });
 

@@ -21,17 +21,17 @@ const contactFormSchema = z.object({
 });
 
 const quoteRequestSchema = z.object({
-  fullName: z.string().min(2, 'Name is required'),
-  email: z.string().email('Valid email is required'),
-  phone: z.string().min(5, 'Phone number is required'),
-  company: z.string().optional(),
-  country: z.string().min(2, 'Country is required'),
-  solutionType: z.string().min(1, 'Solution type is required'),
-  projectType: z.string().min(1, 'Project type is required'),
-  estimatedCapacity: z.string().optional(),
-  estimatedBudget: z.string().optional(),
-  timeline: z.string().optional(),
-  message: z.string().optional(),
+  fullName: z.string().trim().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().trim().min(1, 'Email address is required').email('Please enter a valid email address'),
+  phone: z.string().trim().optional().or(z.literal('')),
+  company: z.string().trim().optional().or(z.literal('')),
+  country: z.string().trim().min(2, 'Country or region is required'),
+  solutionType: z.string().trim().min(1, 'Solution type is required'),
+  projectType: z.string().trim().min(1, 'Project environment is required'),
+  estimatedCapacity: z.string().trim().optional().or(z.literal('')),
+  estimatedBudget: z.string().trim().optional().or(z.literal('')),
+  timeline: z.string().trim().optional().or(z.literal('')),
+  message: z.string().trim().optional().or(z.literal('')),
 });
 
 export async function subscribeNewsletter(email: string) {
@@ -103,7 +103,7 @@ export async function submitQuoteRequest(formData: Record<string, any>) {
   if (!result.success) {
     const errorMap = result.error.flatten().fieldErrors;
     const firstErrorMessage =
-      Object.values(errorMap).flat()[0] || 'Invalid quote request input.';
+      Object.values(errorMap).flat()[0] || 'Please check the required fields.';
     return { success: false, message: firstErrorMessage, errors: errorMap };
   }
 
@@ -126,18 +126,24 @@ export async function submitQuoteRequest(formData: Record<string, any>) {
       };
     }
 
+    let errorMessage = data.error || 'Unable to submit your quote request right now. Please try again.';
+    if (data.details && typeof data.details === 'object') {
+      const firstDetail = Object.values(data.details).flat()[0];
+      if (typeof firstDetail === 'string') {
+        errorMessage = firstDetail;
+      }
+    }
+
     return {
       success: false,
-      message:
-        data.error || `Failed to submit quote request (Status ${res.status}).`,
+      message: errorMessage,
+      errors: data.details,
     };
   } catch (err: any) {
     console.error('Failed to submit quote request to backend API:', err);
     return {
       success: false,
-      message:
-        err?.message ||
-        'Network error while submitting quote request. Please try again.',
+      message: 'Unable to submit your quote request right now. Please try again.',
     };
   }
 }

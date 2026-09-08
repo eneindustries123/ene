@@ -230,7 +230,7 @@ export class EmailService {
     id: string;
     fullName: string;
     email: string;
-    phone: string;
+    phone?: string;
     company?: string;
     country: string;
     solutionType: string;
@@ -259,7 +259,7 @@ export class EmailService {
         ${renderFieldRow('Form Source', 'Custom Quotation Estimator (/request-a-quote)', true)}
         ${renderFieldRow('Client Name', data.fullName)}
         ${renderFieldRow('Business Email', data.email)}
-        ${renderFieldRow('Phone Number', data.phone)}
+        ${renderFieldRow('Phone Number', data.phone || 'Not provided')}
         ${renderFieldRow('Company / Organization', data.company || 'Not provided')}
         ${renderFieldRow('Country / Region', data.country)}
         ${renderFieldRow('Technology / Solution Type', data.solutionType.toUpperCase())}

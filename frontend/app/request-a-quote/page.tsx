@@ -70,19 +70,43 @@ export default function RequestQuotePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.country) {
-      setErrorMsg('Please fill in all required fields (Name, Email, Phone, Country).');
+    const fullName = formData.fullName.trim();
+    const email = formData.email.trim();
+    const country = formData.country.trim();
+
+    if (!fullName) {
+      setErrorMsg('Please enter your full name.');
+      return;
+    }
+
+    if (!email) {
+      setErrorMsg('Please enter your business email address.');
+      return;
+    }
+
+    if (!country) {
+      setErrorMsg('Please enter your country or region.');
       return;
     }
 
     setLoading(true);
     setErrorMsg('');
-    const res = await submitQuoteRequest(formData);
+
+    const res = await submitQuoteRequest({
+      ...formData,
+      fullName,
+      email,
+      phone: formData.phone.trim() || undefined,
+      company: formData.company.trim() || undefined,
+      country,
+      message: formData.message.trim() || undefined,
+    });
+
     setLoading(false);
     if (res.success) {
       router.push('/thank-you');
     } else {
-      setErrorMsg(res.message || 'Failed to submit quote request. Please check required fields.');
+      setErrorMsg(res.message || 'Unable to submit your quote request right now. Please try again.');
     }
   };
 
@@ -249,11 +273,12 @@ export default function RequestQuotePage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label htmlFor="quote-phone" className="text-xs font-bold text-solix-dark">Phone Number *</label>
+                    <label htmlFor="quote-phone" className="text-xs font-bold text-solix-dark">
+                      Phone Number <span className="text-solix-muted font-normal text-[11px]">(Optional)</span>
+                    </label>
                     <input
                       id="quote-phone"
                       type="tel"
-                      required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+92 3XX XXXXXXX"

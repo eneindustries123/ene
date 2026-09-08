@@ -127,19 +127,61 @@ export function TestimonialsSection() {
     e.preventDefault();
     setSubmitError('');
     setSubmitStatusMessage('');
+
+    const name = submitForm.name.trim();
+    const email = submitForm.email.trim();
+    const service = submitForm.service.trim();
+    const review = submitForm.review.trim();
+
+    if (!name) {
+      setSubmitError('Please enter your full name.');
+      return;
+    }
+    if (!email) {
+      setSubmitError('Please enter your email address.');
+      return;
+    }
+    if (!service) {
+      setSubmitError('Please enter the service or project delivered.');
+      return;
+    }
+    if (!review || review.length < 10) {
+      setSubmitError('Review must contain at least 10 characters.');
+      return;
+    }
+    if (!submitForm.consent) {
+      setSubmitError('Please accept the consent checkbox to submit your review.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const res = await apiFetchWithTimeout(getApiUrl('/api/reviews/submit'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submitForm),
+        body: JSON.stringify({
+          ...submitForm,
+          name,
+          email,
+          company: submitForm.company.trim() || undefined,
+          role: submitForm.role.trim() || undefined,
+          service,
+          review,
+        }),
       }, 10000);
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setSubmitError(data.error || 'Failed to submit review');
+        let errorText = data.error || 'Unable to submit review right now. Please try again.';
+        if (data.details && typeof data.details === 'object') {
+          const firstDetail = Object.values(data.details).flat()[0];
+          if (typeof firstDetail === 'string') {
+            errorText = firstDetail;
+          }
+        }
+        setSubmitError(errorText);
         setSubmitting(false);
         return;
       }
@@ -161,7 +203,7 @@ export function TestimonialsSection() {
         setSubmitStatusMessage('');
       }, 2500);
     } catch {
-      setSubmitError('Network error while submitting review');
+      setSubmitError('Unable to submit review right now. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -169,7 +211,7 @@ export function TestimonialsSection() {
 
   return (
     <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto overflow-x-clip">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
         {/* Left Column: Heading & Carousel Controls */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}

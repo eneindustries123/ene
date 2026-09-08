@@ -5,7 +5,7 @@ export interface QuoteRequest {
   id: string;
   fullName: string;
   email: string;
-  phone: string;
+  phone?: string;
   company?: string;
   country: string;
   solutionType: string;
@@ -24,7 +24,7 @@ export class QuotesService {
   static async submitQuoteRequest(data: {
     fullName: string;
     email: string;
-    phone: string;
+    phone?: string;
     company?: string;
     country: string;
     solutionType: string;
@@ -44,7 +44,7 @@ export class QuotesService {
           .insert({
             full_name: data.fullName,
             email: data.email,
-            phone: data.phone,
+            phone: data.phone || null,
             company: data.company || null,
             country: data.country,
             solution_type: data.solutionType,
