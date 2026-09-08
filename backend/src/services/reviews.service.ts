@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient, isSupabaseConfigured } from '../lib/supabase/admin';
 import { getSupabaseAnonClient } from '../lib/supabase/client';
+import { EmailService } from './email.service';
 
 export interface Review {
   id: string;
@@ -236,6 +237,24 @@ export class ReviewsService {
           const createdReview = mapReviewRow(inserted);
           inMemoryReviews.unshift(createdReview);
 
+          // Attempt transactional notification email (non-blocking for response)
+          try {
+            await EmailService.sendReviewNotification({
+              id: createdReview.id,
+              name: createdReview.name,
+              email: createdReview.email,
+              company: createdReview.company,
+              role: createdReview.role,
+              service: createdReview.service,
+              rating: createdReview.rating,
+              review: createdReview.review,
+              status: createdReview.status,
+              createdAt: createdReview.createdAt,
+            });
+          } catch (emailErr: any) {
+            console.error('[reviews-service] Failed to dispatch review email notification:', emailErr?.message || emailErr);
+          }
+
           const message =
             initialStatus === 'pending'
               ? 'Thank you for your feedback! Your review has been submitted for moderation.'
@@ -268,6 +287,24 @@ export class ReviewsService {
     };
 
     inMemoryReviews.unshift(fallbackReview);
+
+    // Attempt transactional notification email in fallback mode
+    try {
+      await EmailService.sendReviewNotification({
+        id: fallbackId,
+        name: fallbackReview.name,
+        email: fallbackReview.email,
+        company: fallbackReview.company,
+        role: fallbackReview.role,
+        service: fallbackReview.service,
+        rating: fallbackReview.rating,
+        review: fallbackReview.review,
+        status: fallbackReview.status,
+        createdAt: now,
+      });
+    } catch (emailErr: any) {
+      console.error('[reviews-service] Failed to dispatch fallback review email notification:', emailErr?.message || emailErr);
+    }
 
     const message =
       initialStatus === 'pending'

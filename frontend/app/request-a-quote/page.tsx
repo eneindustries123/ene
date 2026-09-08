@@ -25,6 +25,7 @@ export default function RequestQuotePage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -69,11 +70,19 @@ export default function RequestQuotePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.country) {
+      setErrorMsg('Please fill in all required fields (Name, Email, Phone, Country).');
+      return;
+    }
+
     setLoading(true);
+    setErrorMsg('');
     const res = await submitQuoteRequest(formData);
     setLoading(false);
     if (res.success) {
       router.push('/thank-you');
+    } else {
+      setErrorMsg(res.message || 'Failed to submit quote request. Please check required fields.');
     }
   };
 
@@ -277,6 +286,10 @@ export default function RequestQuotePage() {
                     className="w-full px-4 py-3 rounded-xl bg-solix-bg border border-solix-border text-base sm:text-xs focus:outline-none focus:border-solix-dark"
                   />
                 </div>
+
+                {errorMsg && (
+                  <p className="text-xs text-rose-500 font-bold">{errorMsg}</p>
+                )}
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                   <button

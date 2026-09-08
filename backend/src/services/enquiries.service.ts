@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient, isSupabaseConfigured } from '../lib/supabase/admin';
+import { EmailService } from './email.service';
 
 export interface ContactEnquiry {
   id: string;
@@ -54,6 +55,26 @@ export class EnquiriesService {
           .single();
 
         if (!error && inserted) {
+          // Attempt transactional notification email (non-blocking for response)
+          try {
+            await EmailService.sendEnquiryNotification({
+              id: inserted.id,
+              fullName: data.fullName,
+              email: data.email,
+              phone: data.phone,
+              city: data.city,
+              address: data.address,
+              serviceRequired: data.serviceRequired,
+              monthlyBill: data.monthlyBill,
+              solarType: data.solarType,
+              subject: data.subject,
+              message: data.message,
+              createdAt: now,
+            });
+          } catch (emailErr: any) {
+            console.error('[enquiries-service] Failed to dispatch enquiry email notification:', emailErr?.message || emailErr);
+          }
+
           return {
             success: true,
             id: inserted.id,
@@ -72,6 +93,17 @@ export class EnquiriesService {
       ...data,
       createdAt: now,
     });
+
+    // Attempt transactional notification email in fallback mode
+    try {
+      await EmailService.sendEnquiryNotification({
+        id: fallbackId,
+        ...data,
+        createdAt: now,
+      });
+    } catch (emailErr: any) {
+      console.error('[enquiries-service] Failed to dispatch fallback enquiry email notification:', emailErr?.message || emailErr);
+    }
 
     return {
       success: true,

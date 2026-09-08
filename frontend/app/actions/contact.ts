@@ -49,53 +49,88 @@ export async function subscribeNewsletter(email: string) {
 export async function submitContactForm(formData: Record<string, any>) {
   const result = contactFormSchema.safeParse(formData);
   if (!result.success) {
-    return { success: false, errors: result.error.flatten().fieldErrors };
+    const errorMap = result.error.flatten().fieldErrors;
+    const firstErrorMessage =
+      Object.values(errorMap).flat()[0] || 'Invalid form input.';
+    return { success: false, message: firstErrorMessage, errors: errorMap };
   }
 
   try {
-    const res = await apiFetchWithTimeout(getApiUrl('/api/enquiries'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    }, 10000);
+    const res = await apiFetchWithTimeout(
+      getApiUrl('/api/enquiries'),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result.data),
+      },
+      10000
+    );
 
+    const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      const data = await res.json();
-      return { success: true, message: data.message };
+      return {
+        success: true,
+        message:
+          data.message ||
+          'Your inquiry has been successfully sent. Our engineering team will get back to you within 24 hours.',
+      };
     }
-  } catch (err) {
-    console.error('Failed to submit contact enquiry to backend API:', err);
-  }
 
-  return {
-    success: true,
-    message: 'Your inquiry has been successfully sent. Our engineering team will get back to you within 24 hours.',
-  };
+    return {
+      success: false,
+      message: data.error || `Failed to submit inquiry (Status ${res.status}).`,
+    };
+  } catch (err: any) {
+    console.error('Failed to submit contact enquiry to backend API:', err);
+    return {
+      success: false,
+      message:
+        err?.message ||
+        'Network error while submitting inquiry. Please try again.',
+    };
+  }
 }
 
 export async function submitQuoteRequest(formData: Record<string, any>) {
   const result = quoteRequestSchema.safeParse(formData);
   if (!result.success) {
-    return { success: false, errors: result.error.flatten().fieldErrors };
+    const errorMap = result.error.flatten().fieldErrors;
+    const firstErrorMessage =
+      Object.values(errorMap).flat()[0] || 'Invalid quote request input.';
+    return { success: false, message: firstErrorMessage, errors: errorMap };
   }
 
   try {
-    const res = await apiFetchWithTimeout(getApiUrl('/api/quote-requests'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    }, 10000);
+    const res = await apiFetchWithTimeout(
+      getApiUrl('/api/quote-requests'),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result.data),
+      },
+      10000
+    );
 
+    const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      const data = await res.json();
-      return { success: true, message: data.message };
+      return {
+        success: true,
+        message: data.message || 'Quote request submitted successfully!',
+      };
     }
-  } catch (err) {
-    console.error('Failed to submit quote request to backend API:', err);
-  }
 
-  return {
-    success: true,
-    message: 'Quote request submitted successfully!',
-  };
+    return {
+      success: false,
+      message:
+        data.error || `Failed to submit quote request (Status ${res.status}).`,
+    };
+  } catch (err: any) {
+    console.error('Failed to submit quote request to backend API:', err);
+    return {
+      success: false,
+      message:
+        err?.message ||
+        'Network error while submitting quote request. Please try again.',
+    };
+  }
 }

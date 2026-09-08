@@ -22,5 +22,27 @@ describe('Solix Unit Tests', () => {
     const validRes = await subscribeNewsletter('investor@cleanenergy.com');
     expect(validRes.success).toBe(true);
   });
+
+  it('validates contact form fields and rejects invalid data', async () => {
+    const { submitContactForm } = await import('../app/actions/contact');
+    const res = await submitContactForm({
+      fullName: 'A',
+      email: 'invalid-email',
+      message: 'short',
+    });
+    expect(res.success).toBe(false);
+    expect(res.message).toBeDefined();
+  });
+
+  it('validates quote request fields and rejects invalid data', async () => {
+    const { submitQuoteRequest } = await import('../app/actions/contact');
+    const res = await submitQuoteRequest({
+      fullName: 'A',
+      email: 'invalid-email',
+      phone: '123',
+    });
+    expect(res.success).toBe(false);
+    expect(res.message).toBeDefined();
+  });
 });
 

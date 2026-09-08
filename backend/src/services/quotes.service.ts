@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient, isSupabaseConfigured } from '../lib/supabase/admin';
+import { EmailService } from './email.service';
 
 export interface QuoteRequest {
   id: string;
@@ -59,6 +60,28 @@ export class QuotesService {
           .single();
 
         if (!error && inserted) {
+          // Attempt transactional notification email (non-blocking for response)
+          try {
+            await EmailService.sendQuoteNotification({
+              id: inserted.id,
+              fullName: data.fullName,
+              email: data.email,
+              phone: data.phone,
+              company: data.company,
+              country: data.country,
+              solutionType: data.solutionType,
+              projectType: data.projectType,
+              estimatedCapacity: data.estimatedCapacity,
+              estimatedBudget: data.estimatedBudget,
+              timeline: data.timeline,
+              message: data.message,
+              status: 'pending',
+              createdAt: now,
+            });
+          } catch (emailErr: any) {
+            console.error('[quotes-service] Failed to dispatch quote email notification:', emailErr?.message || emailErr);
+          }
+
           return {
             success: true,
             id: inserted.id,
@@ -77,6 +100,18 @@ export class QuotesService {
       status: 'pending',
       createdAt: now,
     });
+
+    // Attempt transactional notification email in fallback mode
+    try {
+      await EmailService.sendQuoteNotification({
+        id: fallbackId,
+        ...data,
+        status: 'pending',
+        createdAt: now,
+      });
+    } catch (emailErr: any) {
+      console.error('[quotes-service] Failed to dispatch fallback quote email notification:', emailErr?.message || emailErr);
+    }
 
     return {
       success: true,
