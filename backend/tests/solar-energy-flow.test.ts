@@ -374,4 +374,31 @@ describe('Phase 2 — Solar Energy Flow, Optimization & Regulatory Verification'
       }
     });
   });
+
+  describe('9. Result Transparency & Simulated Battery Capacity Reconciliation', () => {
+    it('exposes simulatedKwh on all battery estimates and reconciles financial breakdown components', () => {
+      const result = recommendSolarSystems({
+        city: 'Lahore',
+        monthlyConsumption: SAMPLE_12_MONTHS,
+        sanctionedLoadKw: 20,
+        analysisMode: 'chosen',
+        chosenArchitecture: 'hybrid-green-battery',
+      });
+
+      const hybrid = result.bestMatch;
+      expect(hybrid.battery).toBeDefined();
+      expect(hybrid.battery?.simulatedKwh).toBeDefined();
+      expect(hybrid.battery?.simulatedKwh).toBe(hybrid.battery?.minKwh);
+      expect(hybrid.battery?.simulatedKwh).toBeGreaterThan(0);
+
+      const fin = hybrid.financialAnalysis!;
+      expect(fin).toBeDefined();
+      expect(fin.fixedChargeSavingsPkr).toBeDefined();
+
+      // Check mathematical reconciliation:
+      // Modeled Annual Bill Reduction == Avoided Grid Purchase + Export Credit + Fixed Charge Savings (within rounding tolerance)
+      const reconciledSum = fin.avoidedGridPurchaseValuePkr + fin.exportCreditValuePkr + (fin.fixedChargeSavingsPkr || 0);
+      expect(Math.abs(fin.annualBillReductionPkr - reconciledSum)).toBeLessThanOrEqual(5); // rounding tolerance
+    });
+  });
 });

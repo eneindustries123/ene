@@ -311,6 +311,7 @@ export function calculateBatteryEstimate(
     return {
       minKwh: rounded,
       maxKwh: rounded + SOLAR_ENGINEERING_CONFIG.batteryModuleKwh,
+      simulatedKwh: rounded,
       basis: 'refined-backup-selection',
     };
   }
@@ -325,6 +326,7 @@ export function calculateBatteryEstimate(
     return {
       minKwh: roundBatteryToModule(min),
       maxKwh: roundBatteryToModule(max),
+      simulatedKwh: roundBatteryToModule(min),
       basis: 'preliminary-bill-profile',
     };
   }
@@ -335,6 +337,9 @@ export function calculateBatteryEstimate(
     ),
     maxKwh: roundBatteryToModule(
       (averageDailyKwh * SOLAR_ENGINEERING_CONFIG.offGridAutonomyDays.max) / usableFactor
+    ),
+    simulatedKwh: roundBatteryToModule(
+      (averageDailyKwh * SOLAR_ENGINEERING_CONFIG.offGridAutonomyDays.min) / usableFactor
     ),
     basis: 'off-grid-autonomy',
   };
@@ -726,6 +731,7 @@ function buildEconomicRecommendation(
   const postEnergyCharges = postBill.energyImportCharges + postBill.peakImportCharges + postBill.offPeakImportCharges;
   const avoidedGridPurchaseValuePkr = round(Math.max(0, currentEnergyCharges - postEnergyCharges), 0);
   const exportCreditValuePkr = round(postBill.exportCredit, 0);
+  const fixedChargeSavingsPkr = round(currentBill.fixedCharges - postBill.fixedCharges, 0);
   const annualBillReductionPkr = round(Math.max(0, currentBill.total - postBill.total), 0);
   const annualBillReductionPercent = currentBill.total > 0
     ? round((annualBillReductionPkr / currentBill.total) * 100, 1)
@@ -738,6 +744,7 @@ function buildEconomicRecommendation(
     annualBillReductionPercent,
     avoidedGridPurchaseValuePkr,
     exportCreditValuePkr,
+    fixedChargeSavingsPkr,
     batteryEnergyShiftValuePkr: battery ? round(roundedBatteryDischarge * (account.tou ? 40 : 33), 0) : 0,
     estimatedCapexPkr: null,
     simplePaybackYears: null,

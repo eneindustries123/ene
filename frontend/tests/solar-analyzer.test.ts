@@ -15,6 +15,7 @@ import {
   AnalyzerArchitecture,
   SolarRecommendationResponse,
   transitionAnalysisMode,
+  USER_OBJECTIVE_OPTIONS,
   validateAnalysisSelection,
   validateAnalyzerBillFile,
 } from '../lib/solar-analyzer';
@@ -366,5 +367,28 @@ describe('frontend solar analyzer helpers', () => {
     expect(source).toContain('Curtailed Surplus');
     expect(source).toContain('Transparent Financial Standards');
     expect(source).toContain('All Solar Options Evaluated');
+  });
+
+  it('contains Result Transparency and UX updates', () => {
+    const source = readFileSync(
+      new URL('../components/solar-analyzer/SolarBillAnalyzer.tsx', import.meta.url),
+      'utf8'
+    );
+    expect(source).toContain('Highest Modeled Annual Utility-Bill Reduction');
+    expect(source).toContain('Monthly Generation Coverage');
+    expect(source).toContain('Capacity within current sanctioned-load limit');
+    expect(source).toContain('Bill Reduction Reconciliation:');
+    expect(source).toContain('Battery Charge Input');
+    expect(source).toContain('N/A — No Grid Bill');
+    expect(source).toContain('nominal simulation');
+  });
+
+  it('provides comprehensive and honest maximum-savings objective description without CAPEX/ROI claims', () => {
+    const maxSavings = USER_OBJECTIVE_OPTIONS.find((o) => o.value === 'maximum-savings');
+    expect(maxSavings).toBeDefined();
+    expect(maxSavings?.description).toBe(
+      'Prioritize the strongest modeled annual utility-bill reduction through solar self-consumption, battery energy shifting where beneficial, and applicable grid export credits.'
+    );
+    expect(maxSavings?.description).not.toMatch(/capex|equipment cost|roi|payback/i);
   });
 });

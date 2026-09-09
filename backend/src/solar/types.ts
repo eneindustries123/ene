@@ -183,6 +183,7 @@ export interface MonthlySimulation {
 export interface BatteryEstimate {
   minKwh: number;
   maxKwh: number;
+  simulatedKwh?: number;
   basis: 'preliminary-bill-profile' | 'refined-backup-selection' | 'off-grid-autonomy';
 }
 
@@ -257,6 +258,7 @@ export interface FinancialBreakdown {
   avoidedGridPurchaseValuePkr: number;
   exportCreditValuePkr: number;
   batteryEnergyShiftValuePkr: number;
+  fixedChargeSavingsPkr?: number;
   estimatedCapexPkr: number | null;
   simplePaybackYears: number | null;
   roiPercent: number | null;

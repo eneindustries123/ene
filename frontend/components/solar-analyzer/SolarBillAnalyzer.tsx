@@ -129,7 +129,7 @@ function SystemCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <span className={`text-[10px] font-extrabold uppercase tracking-wider ${best ? 'text-solix-badge' : 'text-solix-green'}`}>
-            {badgeLabel || (best ? 'Best Recommendation' : system.suitability)}
+            {badgeLabel || (best ? 'Best Modeled Bill-Reduction Option' : system.suitability)}
           </span>
           <h3 className="text-xl font-extrabold mt-1">{system.label}</h3>
         </div>
@@ -171,7 +171,9 @@ function SystemCard({
         <div className={`rounded-2xl border p-3 text-xs ${
           best ? 'border-white/15 bg-white/5' : 'border-solix-border bg-solix-bg'
         }`}>
-          <span className={best ? 'text-white/60' : 'text-solix-muted'}>Preliminary battery range</span>
+          <span className={best ? 'text-white/60' : 'text-solix-muted'}>
+            Preliminary battery range {system.battery.simulatedKwh ? `(${system.battery.simulatedKwh} kWh nominal simulation)` : ''}
+          </span>
           <div className="font-extrabold text-base mt-1">
             {formatBatteryRange(system.battery.minKwh, system.battery.maxKwh)}
           </div>
@@ -1214,7 +1216,7 @@ export function SolarBillAnalyzer() {
                       ? 'Your Selected System'
                       : result.analysisMode === 'both'
                         ? 'Best Recommended System'
-                        : 'Estimated Maximum Practical Bill Reduction'
+                        : 'Highest Modeled Annual Utility-Bill Reduction'
                   }
                 </span>
                 <h2 className="text-3xl sm:text-5xl font-extrabold mt-3 tracking-tight">
@@ -1320,7 +1322,7 @@ export function SolarBillAnalyzer() {
             <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix space-y-5">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Monthly energy model</span>
-                <h3 className="text-2xl font-extrabold mt-1">Consumption vs solar</h3>
+                <h3 className="text-2xl font-extrabold mt-1">Monthly Generation Coverage</h3>
               </div>
               <div className="space-y-2.5">
                 {result.bestMatch.monthlySimulation.map((month) => {
@@ -1345,6 +1347,9 @@ export function SolarBillAnalyzer() {
                 <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-solix-dark" /> Consumption</span>
                 <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-solix-green" /> Solar generation</span>
               </div>
+              <p className="text-[10px] text-solix-muted pt-2 border-t border-solix-border">
+                * Monthly generation coverage reflects the ratio of modeled solar generation to monthly consumption. Months with ≥100% coverage still require grid imports or battery storage during non-sunlight hours.
+              </p>
             </div>
           </div>
 
@@ -1400,7 +1405,7 @@ export function SolarBillAnalyzer() {
                   <p className="text-[10px] text-solix-muted mt-1">
                     {activeRegulatoryStatus.connectionPhase === 'single-phase' && activeRegulatoryStatus.gridExportAllowed
                       ? 'Single-phase may require upgrade/verification'
-                      : 'Immediate export eligibility'}
+                      : 'Capacity within current sanctioned-load limit'}
                   </p>
                 </div>
 
@@ -1526,9 +1531,9 @@ export function SolarBillAnalyzer() {
                   </div>
                   <p className="text-[10px] text-solix-muted mt-1">
                     {result.bestMatch.prosumerRegime === 'legacy'
-                      ? 'Legacy Net Metering (Rs 25.32/kWh NAPPP)'
+                      ? 'Legacy reference: Rs 25.32/kWh (NAPPP CY2026)'
                       : result.bestMatch.regulatoryStatus?.gridExportAllowed
-                      ? 'NAEPP Buyback (Rs 8.13/kWh S.R.O. 251)'
+                      ? 'NAEPP reference: Rs 8.13/kWh (CY2026 reference)'
                       : '0 PKR (Zero-Export / No Export Credit)'}
                   </p>
                 </div>
@@ -1542,6 +1547,17 @@ export function SolarBillAnalyzer() {
                     Exact pricing requires site survey & bill verification
                   </p>
                 </div>
+              </div>
+
+              {/* Explicit Financial Reconciliation */}
+              <div className="rounded-2xl border border-solix-border bg-emerald-50/50 p-4 text-xs text-solix-dark space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-solix-green shrink-0" />
+                  <strong className="font-extrabold">Bill Reduction Reconciliation:</strong>
+                </div>
+                <p className="text-solix-muted leading-relaxed">
+                  Modeled Annual Bill Reduction ({formatCurrencyPkr(result.bestMatch.financialAnalysis.annualBillReductionPkr)}) = Avoided Retail Grid Purchases ({formatCurrencyPkr(result.bestMatch.financialAnalysis.avoidedGridPurchaseValuePkr)}) + Export Credit Value ({formatCurrencyPkr(result.bestMatch.financialAnalysis.exportCreditValuePkr)}){result.bestMatch.financialAnalysis.fixedChargeSavingsPkr !== undefined && result.bestMatch.financialAnalysis.fixedChargeSavingsPkr !== 0 ? ` + Fixed Charge Adjustment (${formatCurrencyPkr(result.bestMatch.financialAnalysis.fixedChargeSavingsPkr)})` : ''}.
+                </p>
               </div>
 
               {/* Energy Conservation Breakdown Grid */}
@@ -1575,12 +1591,14 @@ export function SolarBillAnalyzer() {
                   </div>
 
                   <div className="bg-white border border-solix-border rounded-xl p-3">
-                    <span className="text-[10px] uppercase text-solix-muted font-bold block">Battery Stored</span>
+                    <span className="text-[10px] uppercase text-solix-muted font-bold block">Battery Charge Input</span>
                     <strong className="text-sm sm:text-base font-extrabold text-solix-dark block mt-1">
                       {formatEnergyKwh(result.bestMatch.energyFlow.batteryChargeKwh)}
                     </strong>
                     <span className="text-[10px] text-solix-muted block mt-0.5">
-                      {result.bestMatch.battery ? 'Discharges ' + formatEnergyKwh(result.bestMatch.energyFlow.batteryDischargeKwh) : 'No battery'}
+                      {result.bestMatch.battery
+                        ? `Delivers ${formatEnergyKwh(result.bestMatch.energyFlow.batteryDischargeKwh)} (${formatEnergyKwh(result.bestMatch.energyFlow.batteryChargeKwh - result.bestMatch.energyFlow.batteryDischargeKwh)} loss)`
+                        : 'No battery'}
                     </span>
                   </div>
 
@@ -1673,18 +1691,31 @@ export function SolarBillAnalyzer() {
                           <td className="py-3 px-2">{formatEnergyKwh(sc.energyFlow?.curtailedKwh)}</td>
                           <td className="py-3 px-2">{formatEnergyKwh(sc.energyFlow?.gridImportKwh)}</td>
                           <td className="py-3 px-2">
-                            <span className="text-emerald-700 font-bold">
-                              {formatCurrencyPkr(sc.financialAnalysis?.annualBillReductionPkr)}
-                            </span>{' '}
-                            ({sc.financialAnalysis?.annualBillReductionPercent ?? sc.billReductionPercent}%)
+                            {sc.type === 'off-grid' ? (
+                              <div>
+                                <span className="font-bold text-slate-700">N/A — No Grid Bill</span>
+                                <span className="block text-[10px] text-solix-muted">
+                                  {sc.energyFlow?.loadCoveragePercent}% load coverage ({formatEnergyKwh(sc.energyFlow?.unmetLoadKwh)} unmet)
+                                </span>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-emerald-700 font-bold">
+                                  {formatCurrencyPkr(sc.financialAnalysis?.annualBillReductionPkr)}
+                                </span>{' '}
+                                ({sc.financialAnalysis?.annualBillReductionPercent ?? sc.billReductionPercent}%)
+                              </>
+                            )}
                           </td>
                           <td className="py-3 px-2">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              sc.utilityApprovalRequired
+                              sc.type === 'off-grid'
+                                ? 'bg-amber-50 text-amber-800'
+                                : sc.utilityApprovalRequired
                                 ? 'bg-blue-50 text-blue-700'
                                 : 'bg-slate-100 text-slate-700'
                             }`}>
-                              {sc.utilityApprovalRequired ? 'Export / DISCO Approval' : 'Zero Export / Standalone'}
+                              {sc.type === 'off-grid' ? 'Standalone Off-Grid' : sc.utilityApprovalRequired ? 'Export / DISCO Approval' : 'Zero Export / Standalone'}
                             </span>
                           </td>
                         </tr>

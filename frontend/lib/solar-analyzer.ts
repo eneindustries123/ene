@@ -222,6 +222,7 @@ export interface AnalyzerFinancialBreakdown {
   avoidedGridPurchaseValuePkr: number;
   exportCreditValuePkr: number;
   batteryEnergyShiftValuePkr: number;
+  fixedChargeSavingsPkr?: number;
   estimatedCapexPkr: number | null;
   simplePaybackYears: number | null;
   roiPercent: number | null;
@@ -272,6 +273,7 @@ export interface AnalyzerSystemRecommendation {
   battery: {
     minKwh: number;
     maxKwh: number;
+    simulatedKwh?: number;
     basis: string;
   } | null;
   suitability: string;
@@ -674,7 +676,7 @@ export const USER_OBJECTIVE_OPTIONS: Array<{
   {
     value: 'maximum-savings',
     label: 'Maximum Bill Savings',
-    description: 'Prioritize lowest equipment cost and maximum bill reduction from direct solar generation.',
+    description: 'Prioritize the strongest modeled annual utility-bill reduction through solar self-consumption, battery energy shifting where beneficial, and applicable grid export credits.',
   },
   {
     value: 'balanced-backup',

@@ -478,9 +478,9 @@ export function buildRegulatoryStatus(input: {
         code: 'SANCTIONED_LOAD_EXCEEDED',
         severity: 'warning',
         message: `Engineering PV requirement (${actualPvCapacityKw} kWp) exceeds verified sanctioned load (${sanctionedLoadKw} kW).`,
-        actionableGuidance: `Apply for sanctioned-load extension to at least ${Math.ceil(actualPvCapacityKw)} kW with your DISCO, or operate with zero-export / export-limiting until load extension is approved.`,
+        actionableGuidance: `Apply for sanctioned-load extension to match the proposed system capacity (${actualPvCapacityKw} kWp) with your DISCO, or operate with zero-export / export-limiting until load extension is approved.`,
       });
-      userNotes.push(`Sanctioned load extension from ${sanctionedLoadKw} kW to at least ${Math.ceil(actualPvCapacityKw)} kW is required for full export interconnection.`);
+      userNotes.push(`Sanctioned load extension from ${sanctionedLoadKw} kW to at least ${actualPvCapacityKw} kWp (or DISCO technical verification) is required for full export interconnection.`);
     }
 
     if (phaseStatus.status === 'upgrade-recommended') {
