@@ -82,10 +82,46 @@ describe('Solix Unit Tests', () => {
       email: 'valid@example.com',
       phone: '',
       serviceRequired: 'Solar Energy',
+      solarType: 'On-Grid Only',
       message: 'This is a valid 10+ character message.',
     });
     // In test environment without backend running, submitContactForm calls fetch to backend.
     // If backend isn't up, it fails on network or validation, but client-side zod passes.
+  });
+
+  it('provides the exact 6 canonical solar system categories from the solar analyzer', async () => {
+    const { ANALYZER_ARCHITECTURES, SOLAR_SYSTEM_TYPE_LABELS } = await import('../lib/solar-analyzer');
+
+    expect(ANALYZER_ARCHITECTURES).toHaveLength(6);
+    expect(SOLAR_SYSTEM_TYPE_LABELS).toHaveLength(6);
+
+    const expectedLabels = [
+      'On-Grid Only',
+      'Hybrid + Green Meter — No Battery',
+      'Hybrid + Green Meter + Battery',
+      'Hybrid Only — No Green Meter / No Battery',
+      'Hybrid + Battery — No Green Meter',
+      'Off-Grid',
+    ];
+
+    expect(SOLAR_SYSTEM_TYPE_LABELS).toEqual(expectedLabels);
+
+    // Verify each category can be used in contact form submission validation
+    const { submitContactForm } = await import('../app/actions/contact');
+    for (const label of expectedLabels) {
+      const res = await submitContactForm({
+        fullName: 'Solar Client',
+        email: 'client@solarenergy.pk',
+        serviceRequired: 'Solar Energy',
+        solarType: label,
+        message: `Inquiry for solar system category: ${label} with sufficient text length.`,
+      });
+      // Verification that Zod validation did not reject the solarType
+      if (!res.success) {
+        // If it failed, it must NOT be due to solarType validation
+        expect(res.errors?.solarType).toBeUndefined();
+      }
+    }
   });
 
   it('validates quote request fields and rejects invalid data', async () => {

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { submitContactForm } from '@/app/actions/contact';
+import { ANALYZER_ARCHITECTURES } from '@/lib/solar-analyzer';
 import { Mail, Phone, MapPin, Send, CheckCircle2, Clock } from 'lucide-react';
 
 export default function ContactPage() {
@@ -15,7 +16,7 @@ export default function ContactPage() {
     address: '',
     serviceRequired: '',
     monthlyBill: 'PKR 50,000 – 100,000 / month',
-    solarType: 'On-Grid Net Metering',
+    solarType: 'On-Grid Only',
     subject: '',
     message: '',
   });
@@ -49,7 +50,7 @@ export default function ContactPage() {
         address: '',
         serviceRequired: '',
         monthlyBill: 'PKR 50,000 – 100,000 / month',
-        solarType: 'On-Grid Net Metering',
+        solarType: 'On-Grid Only',
         subject: '',
         message: '',
       });
@@ -275,10 +276,11 @@ export default function ContactPage() {
                         onChange={(e) => setFormData({ ...formData, solarType: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-xl bg-white border border-solix-border text-base sm:text-xs text-solix-dark"
                       >
-                        <option value="On-Grid Net Metering">On-Grid Net Metering</option>
-                        <option value="Hybrid (Battery Storage + Grid)">Hybrid (Battery Storage + Grid)</option>
-                        <option value="Off-Grid Standalone System">Off-Grid Standalone System</option>
-                        <option value="Agricultural Solar Tubewell">Agricultural Solar Tubewell</option>
+                        {ANALYZER_ARCHITECTURES.map((arch) => (
+                          <option key={arch.value} value={arch.label}>
+                            {arch.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

@@ -27,6 +27,21 @@ export type AnalyzerArchitecture =
   | 'hybrid-no-green-battery'
   | 'off-grid';
 
+export const ANALYZER_ARCHITECTURES: Array<{
+  value: AnalyzerArchitecture;
+  label: string;
+  description: string;
+}> = [
+  { value: 'on-grid-only', label: 'On-Grid Only', description: 'Grid-connected solar without battery storage, focused on bill reduction.' },
+  { value: 'hybrid-green-no-battery', label: 'Hybrid + Green Meter — No Battery', description: 'Hybrid inverter flexibility with approved export, without adding a battery initially.' },
+  { value: 'hybrid-green-battery', label: 'Hybrid + Green Meter + Battery', description: 'Solar export plus stored energy for backup and peak-period bill reduction.' },
+  { value: 'hybrid-no-green-no-battery', label: 'Hybrid Only — No Green Meter / No Battery', description: 'A zero-export setup that prioritizes direct daytime solar use.' },
+  { value: 'hybrid-no-green-battery', label: 'Hybrid + Battery — No Green Meter', description: 'Zero-export solar with stored energy for evening use and backup.' },
+  { value: 'off-grid', label: 'Off-Grid', description: 'A grid-independent system requiring battery storage and detailed autonomy sizing.' },
+];
+
+export const SOLAR_SYSTEM_TYPE_LABELS = ANALYZER_ARCHITECTURES.map((arch) => arch.label);
+
 export interface ExtractionResponse {
   extraction: {
     provider: string | null;

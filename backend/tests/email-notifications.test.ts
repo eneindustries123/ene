@@ -166,6 +166,27 @@ describe('Transactional Email Notifications via Resend', () => {
       expect(emailArg.html).toContain('Industrial Solar Survey Request');
       expect(emailArg.html).toContain('Contact Page Enquiry Form');
     });
+
+    it('sends contact enquiry notification with new solar architecture category', async () => {
+      mockSend.mockClear();
+      const payload = {
+        fullName: 'Hamza Malik',
+        email: 'hamza@agro-logistics.pk',
+        serviceRequired: 'Solar Energy',
+        monthlyBill: 'PKR 250,000+ / month',
+        solarType: 'Hybrid + Green Meter + Battery',
+        message: 'Looking for 50kW hybrid system with green meter export and battery bank.',
+      };
+
+      const res = await request(app).post('/api/enquiries').send(payload);
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const emailArg = mockSend.mock.calls[0][0];
+      expect(emailArg.html).toContain('Hybrid + Green Meter + Battery');
+    });
   });
 
   describe('4. Custom Quotation Request Form Email Trigger', () => {
