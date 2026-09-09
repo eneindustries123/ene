@@ -186,6 +186,95 @@ export interface BatteryEstimate {
   basis: 'preliminary-bill-profile' | 'refined-backup-selection' | 'off-grid-autonomy';
 }
 
+export type ConsumptionProfileType =
+  | 'daytime'
+  | 'balanced'
+  | 'evening'
+  | 'custom'
+  | 'not-sure';
+
+export type ConsumptionProfileSource =
+  | 'user-specified'
+  | 'preset-profile'
+  | 'fallback-assumption';
+
+export type UserPrimaryObjective =
+  | 'maximum-savings'
+  | 'balanced-backup'
+  | 'maximum-backup'
+  | 'grid-independence';
+
+export interface ConsumptionProfileInput {
+  profileType?: ConsumptionProfileType;
+  customDaytimeSharePercent?: number | null;
+}
+
+export interface ConsumptionProfileResolution {
+  profileType: ConsumptionProfileType;
+  daytimeSharePercent: number;
+  daytimeShareFraction: number;
+  source: ConsumptionProfileSource;
+  description: string;
+}
+
+export interface MonthlyEnergyFlow {
+  month: MonthKey;
+  consumptionKwh: number;
+  generationKwh: number;
+  selfConsumedKwh: number;
+  batteryChargeKwh: number;
+  batteryDischargeKwh: number;
+  gridExportKwh: number;
+  curtailedKwh: number;
+  gridImportKwh: number;
+  selfConsumptionRatio: number;
+  exportRatio: number;
+  unmetLoadKwh?: number;
+}
+
+export interface AnnualEnergyFlow {
+  annualGenerationKwh: number;
+  annualConsumptionKwh: number;
+  selfConsumedKwh: number;
+  batteryChargeKwh: number;
+  batteryDischargeKwh: number;
+  gridExportKwh: number;
+  curtailedKwh: number;
+  gridImportKwh: number;
+  selfConsumptionRatio: number;
+  exportRatio: number;
+  curtailmentRatio: number;
+  gridIndependenceRatio: number;
+  loadCoveragePercent: number;
+  unmetLoadKwh: number;
+}
+
+export interface FinancialBreakdown {
+  currentAnnualBillPkr: number;
+  postSolarAnnualBillPkr: number;
+  annualBillReductionPkr: number;
+  annualBillReductionPercent: number;
+  avoidedGridPurchaseValuePkr: number;
+  exportCreditValuePkr: number;
+  batteryEnergyShiftValuePkr: number;
+  estimatedCapexPkr: number | null;
+  simplePaybackYears: number | null;
+  roiPercent: number | null;
+  capexStatus: string;
+  financialModelVersion: string;
+}
+
+export interface FinancialAssumptions {
+  modelVersion: string;
+  profileSource: ConsumptionProfileSource;
+  daytimeSharePercent: number;
+  exportCreditMechanism: string;
+  applicableExportRatePkrPerKwh: number;
+  excludedDynamicCharges: string[];
+  capexAvailable: boolean;
+  capexNotice: string;
+}
+
 export interface SystemRecommendation {
   type: SystemType;
   label: string;
@@ -223,6 +312,9 @@ export interface SystemRecommendation {
   recommendationConfidence?: ResultConfidence;
   qualifications?: string[];
   regulatoryStatus?: RegulatoryStatus;
+  energyFlow?: AnnualEnergyFlow;
+  monthlyEnergyFlows?: MonthlyEnergyFlow[];
+  financialAnalysis?: FinancialBreakdown;
 }
 
 export interface SolarProfileResolution {
@@ -278,4 +370,6 @@ export interface SolarRecommendationResult {
     tariffSource: string;
     prosumerSource: string;
   };
+  consumptionProfile?: ConsumptionProfileResolution;
+  financialAssumptions?: FinancialAssumptions;
 }

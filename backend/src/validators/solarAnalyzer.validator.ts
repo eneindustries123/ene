@@ -102,6 +102,18 @@ export const solarRecommendationSchema = z.object({
     ]).nullable().optional(),
   }).optional(),
   peakConsumptionShare: z.number().min(0).max(1).optional(),
+  consumptionProfile: z.object({
+    profileType: z.enum(['daytime', 'balanced', 'evening', 'custom', 'not-sure']).optional(),
+    customDaytimeSharePercent: z.number().min(0).max(100).nullable().optional(),
+    peakKwh: z.number().min(0).max(10_000_000).nullable().optional(),
+    offPeakKwh: z.number().min(0).max(10_000_000).nullable().optional(),
+  }).optional(),
+  primaryObjective: z.enum([
+    'maximum-savings',
+    'balanced-backup',
+    'maximum-backup',
+    'grid-independence',
+  ]).optional(),
   analysisMode: z.enum(['recommend', 'chosen', 'both']),
   chosenArchitecture: z.enum([
     'on-grid-only',

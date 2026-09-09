@@ -18,6 +18,12 @@ import {
   UploadCloud,
   X,
   Zap,
+  TrendingUp,
+  Coins,
+  Gauge,
+  PieChart,
+  Info,
+  Scale,
 } from 'lucide-react';
 import { apiFetchWithTimeout, getApiUrl } from '@/lib/api-client';
 import {
@@ -28,10 +34,14 @@ import {
   AnalyzerArchitecture,
   AnalyzerConfidence,
   AnalyzerConnectionPhase,
+  AnalyzerConsumptionProfileType,
   AnalyzerIntendedModification,
   AnalyzerLegacyAgreementStatus,
   AnalyzerMonthKey,
   AnalyzerSystemRecommendation,
+  AnalyzerUserPrimaryObjective,
+  CONSUMPTION_PROFILE_OPTIONS,
+  USER_OBJECTIVE_OPTIONS,
   buildAnalyzerComparisonExplanation,
   buildAnalyzerHeroExplanation,
   buildAnalyzerQuoteUrl,
@@ -40,6 +50,9 @@ import {
   createEmptyMonthlyValues,
   ExtractionResponse,
   formatBatteryRange,
+  formatCurrencyPkr,
+  formatEnergyKwh,
+  formatPercent,
   getAnalyzerResultPresentation,
   getBatteryRefinementTitle,
   getCustomerBillPresentation,
@@ -263,6 +276,9 @@ export function SolarBillAnalyzer() {
   const [intendedChange, setIntendedChange] = useState<AnalyzerIntendedModification>('analysis-only');
   const [greenMeter, setGreenMeter] = useState(false);
   const [legacyAgreementStatus, setLegacyAgreementStatus] = useState<AnalyzerLegacyAgreementStatus>('not-applicable');
+  const [consumptionProfileType, setConsumptionProfileType] = useState<AnalyzerConsumptionProfileType>('not-sure');
+  const [customDaytimeShare, setCustomDaytimeShare] = useState('50');
+  const [primaryObjective, setPrimaryObjective] = useState<AnalyzerUserPrimaryObjective>('maximum-savings');
   const [analysisMode, setAnalysisMode] = useState<AnalyzerAnalysisMode | ''>('');
   const [chosenArchitecture, setChosenArchitecture] = useState<AnalyzerArchitecture | ''>('');
   const [result, setResult] = useState<SolarRecommendationResponse | null>(null);
@@ -398,6 +414,9 @@ export function SolarBillAnalyzer() {
     setIntendedChange('analysis-only');
     setGreenMeter(false);
     setLegacyAgreementStatus('not-applicable');
+    setConsumptionProfileType('not-sure');
+    setCustomDaytimeShare('50');
+    setPrimaryObjective('maximum-savings');
     setError('');
     setStep('verify');
   };
@@ -450,6 +469,13 @@ export function SolarBillAnalyzer() {
           agreementDate: hasExistingSolar && agreementDate.trim() ? agreementDate.trim() : null,
           intendedChange: hasExistingSolar ? intendedChange : null,
         },
+        consumptionProfile: {
+          profileType: consumptionProfileType,
+          ...(consumptionProfileType === 'custom' && customDaytimeShare && Number(customDaytimeShare) >= 0
+            ? { customDaytimeSharePercent: Number(customDaytimeShare) }
+            : {}),
+        },
+        primaryObjective,
         analysisMode,
         ...((analysisMode === 'chosen' || analysisMode === 'both') ? { chosenArchitecture } : {}),
         billExtractionConfidence: extraction?.extraction.overallConfidence || 'manual',
@@ -515,6 +541,9 @@ export function SolarBillAnalyzer() {
     setIntendedChange('analysis-only');
     setGreenMeter(false);
     setLegacyAgreementStatus('not-applicable');
+    setConsumptionProfileType('not-sure');
+    setCustomDaytimeShare('50');
+    setPrimaryObjective('maximum-savings');
     setAnalysisMode('');
     setChosenArchitecture('');
     setResult(null);
@@ -936,6 +965,103 @@ export function SolarBillAnalyzer() {
                   </div>
                 )}
               </div>
+
+              <div className="border-t border-solix-border pt-6 space-y-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Electricity Usage Timing & Self-Consumption</span>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-solix-dark mt-1">When do you consume most of your electricity?</h3>
+                  <p className="text-xs text-solix-muted mt-1">
+                    Under Pakistan&apos;s 2026 gross-billing prosumer framework, daytime self-consumption directly replaces retail electricity purchases (saving up to Rs 47+/kWh), while surplus exported power is credited at the NAEPP buyback rate (~Rs 8.13/kWh).
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2 space-y-2">
+                    <label className="block text-xs font-bold text-solix-dark">
+                      Usage Timing Profile
+                    </label>
+                    <select
+                      value={consumptionProfileType}
+                      onChange={(event) => setConsumptionProfileType(event.target.value as AnalyzerConsumptionProfileType)}
+                      className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                    >
+                      {CONSUMPTION_PROFILE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label} — {opt.sublabel}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {consumptionProfileType === 'custom' ? (
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-solix-dark">
+                        Daytime Share (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={customDaytimeShare}
+                        onChange={(event) => setCustomDaytimeShare(event.target.value)}
+                        placeholder="e.g. 60"
+                        className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                      />
+                    </div>
+                  ) : (
+                    <div className="bg-solix-bg border border-solix-border rounded-xl p-3 flex flex-col justify-center">
+                      <span className="text-[10px] uppercase font-bold text-solix-muted">Applied Daytime Share</span>
+                      <span className="text-sm font-extrabold text-solix-dark mt-0.5">
+                        {consumptionProfileType === 'daytime'
+                          ? '65% daytime'
+                          : consumptionProfileType === 'balanced'
+                          ? '50% daytime'
+                          : consumptionProfileType === 'evening'
+                          ? '25% daytime'
+                          : tariffCategory === 'residential'
+                          ? '38% daytime (Residential default)'
+                          : '50% daytime (Commercial default)'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-solix-border pt-6 space-y-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-solix-green">System Goal & Priority</span>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-solix-dark mt-1">What is your primary objective for solar?</h3>
+                  <p className="text-xs text-solix-muted mt-1">
+                    Select the key priority that best matches your budget and operational expectations.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" role="radiogroup" aria-label="Primary objective">
+                  {USER_OBJECTIVE_OPTIONS.map((obj) => {
+                    const selected = primaryObjective === obj.value;
+                    return (
+                      <button
+                        key={obj.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setPrimaryObjective(obj.value)}
+                        className={`min-w-0 rounded-2xl border p-4 text-left transition-all ${
+                          selected
+                            ? 'border-solix-green bg-emerald-50 shadow-solix'
+                            : 'border-solix-border bg-solix-bg hover:bg-white hover:border-solix-green/50'
+                        }`}
+                      >
+                        <strong className="block text-xs font-extrabold text-solix-dark uppercase tracking-wide">
+                          {obj.label}
+                        </strong>
+                        <span className="block text-[11px] leading-relaxed text-solix-muted mt-1.5">
+                          {obj.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="border-t border-solix-border pt-6 space-y-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Analysis selection</span>
@@ -1351,6 +1477,225 @@ export function SolarBillAnalyzer() {
             </div>
           )}
 
+          {/* TIER 3: FINANCIAL & ENERGY FLOW ANALYSIS */}
+          {result.bestMatch.energyFlow && result.bestMatch.financialAnalysis && (
+            <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-solix-green">
+                    Financial & Energy-Flow Economics (Model {result.financialAssumptions?.modelVersion || '2026.1'})
+                  </span>
+                  <h3 className="text-2xl font-extrabold text-solix-dark mt-1">
+                    Energy Flow Balance & Value Separation
+                  </h3>
+                  <p className="text-xs sm:text-sm text-solix-muted mt-1">
+                    Clear physical accounting of generated solar units, avoided retail tariff value, and grid export credits.
+                  </p>
+                </div>
+                <span className="self-start px-3.5 py-1.5 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-800 border-emerald-200">
+                  {result.consumptionProfile?.daytimeSharePercent ?? 50}% Daytime Profile ({result.consumptionProfile?.source === 'preset-profile' ? 'Preset' : result.consumptionProfile?.source === 'user-specified' ? 'Custom' : 'Benchmark'})
+                </span>
+              </div>
+
+              {/* Top Financial Breakdown Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="bg-solix-bg rounded-2xl p-4">
+                  <span className="text-[10px] uppercase text-solix-muted font-bold">Annual Bill Reduction</span>
+                  <div className="font-extrabold text-xl text-solix-dark mt-1">
+                    {formatCurrencyPkr(result.bestMatch.financialAnalysis.annualBillReductionPkr)} / yr
+                  </div>
+                  <p className="text-[10px] text-emerald-700 font-semibold mt-1">
+                    {result.bestMatch.financialAnalysis.annualBillReductionPercent}% total bill reduction
+                  </p>
+                </div>
+
+                <div className="bg-solix-bg rounded-2xl p-4">
+                  <span className="text-[10px] uppercase text-solix-muted font-bold">Avoided Grid Purchases</span>
+                  <div className="font-extrabold text-xl text-emerald-800 mt-1">
+                    {formatCurrencyPkr(result.bestMatch.financialAnalysis.avoidedGridPurchaseValuePkr)} / yr
+                  </div>
+                  <p className="text-[10px] text-solix-muted mt-1">
+                    Self-consumed solar displacing retail grid units
+                  </p>
+                </div>
+
+                <div className="bg-solix-bg rounded-2xl p-4">
+                  <span className="text-[10px] uppercase text-solix-muted font-bold">Export Credit Value</span>
+                  <div className="font-extrabold text-xl text-solix-dark mt-1">
+                    {formatCurrencyPkr(result.bestMatch.financialAnalysis.exportCreditValuePkr)} / yr
+                  </div>
+                  <p className="text-[10px] text-solix-muted mt-1">
+                    {result.bestMatch.prosumerRegime === 'legacy'
+                      ? 'Legacy Net Metering (Rs 25.32/kWh NAPPP)'
+                      : result.bestMatch.regulatoryStatus?.gridExportAllowed
+                      ? 'NAEPP Buyback (Rs 8.13/kWh S.R.O. 251)'
+                      : '0 PKR (Zero-Export / No Export Credit)'}
+                  </p>
+                </div>
+
+                <div className="bg-solix-bg rounded-2xl p-4 border border-dashed border-solix-border">
+                  <span className="text-[10px] uppercase text-solix-muted font-bold">Estimated CAPEX / Payback</span>
+                  <div className="font-extrabold text-sm text-slate-700 mt-1">
+                    Project-Specific Proposal
+                  </div>
+                  <p className="text-[10px] text-solix-muted mt-1">
+                    Exact pricing requires site survey & bill verification
+                  </p>
+                </div>
+              </div>
+
+              {/* Energy Conservation Breakdown Grid */}
+              <div className="rounded-2xl border border-solix-border bg-slate-50/60 p-4 sm:p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <strong className="text-xs uppercase font-extrabold text-solix-dark tracking-wider">
+                    Annual Physical Energy Conservation (kWh/year)
+                  </strong>
+                  <span className="text-[11px] text-solix-muted">
+                    Total Generation = Self-Consumed + Battery-Charged + Exported + Curtailed
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-center">
+                  <div className="bg-white border border-solix-border rounded-xl p-3">
+                    <span className="text-[10px] uppercase text-solix-muted font-bold block">Solar Generated</span>
+                    <strong className="text-sm sm:text-base font-extrabold text-solix-dark block mt-1">
+                      {formatEnergyKwh(result.bestMatch.energyFlow.annualGenerationKwh)}
+                    </strong>
+                    <span className="text-[10px] text-solix-green font-bold block mt-0.5">100% total solar</span>
+                  </div>
+
+                  <div className="bg-white border border-solix-border rounded-xl p-3">
+                    <span className="text-[10px] uppercase text-solix-muted font-bold block">Direct Self-Use</span>
+                    <strong className="text-sm sm:text-base font-extrabold text-emerald-800 block mt-1">
+                      {formatEnergyKwh(result.bestMatch.energyFlow.selfConsumedKwh)}
+                    </strong>
+                    <span className="text-[10px] text-solix-muted font-semibold block mt-0.5">
+                      {formatPercent(result.bestMatch.energyFlow.selfConsumptionRatio)} of solar
+                    </span>
+                  </div>
+
+                  <div className="bg-white border border-solix-border rounded-xl p-3">
+                    <span className="text-[10px] uppercase text-solix-muted font-bold block">Battery Stored</span>
+                    <strong className="text-sm sm:text-base font-extrabold text-solix-dark block mt-1">
+                      {formatEnergyKwh(result.bestMatch.energyFlow.batteryChargeKwh)}
+                    </strong>
+                    <span className="text-[10px] text-solix-muted block mt-0.5">
+                      {result.bestMatch.battery ? 'Discharges ' + formatEnergyKwh(result.bestMatch.energyFlow.batteryDischargeKwh) : 'No battery'}
+                    </span>
+                  </div>
+
+                  <div className="bg-white border border-solix-border rounded-xl p-3">
+                    <span className="text-[10px] uppercase text-solix-muted font-bold block">Exported to Grid</span>
+                    <strong className="text-sm sm:text-base font-extrabold text-blue-800 block mt-1">
+                      {formatEnergyKwh(result.bestMatch.energyFlow.gridExportKwh)}
+                    </strong>
+                    <span className="text-[10px] text-solix-muted font-semibold block mt-0.5">
+                      {formatPercent(result.bestMatch.energyFlow.exportRatio)} of solar
+                    </span>
+                  </div>
+
+                  <div className="bg-white border border-solix-border rounded-xl p-3">
+                    <span className="text-[10px] uppercase text-solix-muted font-bold block">Curtailed Surplus</span>
+                    <strong className="text-sm sm:text-base font-extrabold text-amber-800 block mt-1">
+                      {formatEnergyKwh(result.bestMatch.energyFlow.curtailedKwh)}
+                    </strong>
+                    <span className="text-[10px] text-solix-muted font-semibold block mt-0.5">
+                      {formatPercent(result.bestMatch.energyFlow.curtailmentRatio)} of solar
+                    </span>
+                  </div>
+
+                  <div className="bg-white border border-solix-border rounded-xl p-3">
+                    <span className="text-[10px] uppercase text-solix-muted font-bold block">Remaining Import</span>
+                    <strong className="text-sm sm:text-base font-extrabold text-slate-800 block mt-1">
+                      {formatEnergyKwh(result.bestMatch.energyFlow.gridImportKwh)}
+                    </strong>
+                    <span className="text-[10px] text-solix-muted block mt-0.5">Grid purchases</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transparent CAPEX Notice */}
+              <div className="rounded-xl border border-solix-border bg-solix-bg p-3.5 text-xs text-solix-muted flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-solix-green shrink-0 mt-0.5" />
+                <span>
+                  <strong>Transparent Financial Standards:</strong> {result.financialAssumptions?.capexNotice || 'Investment payback and return require a project-specific installed system price. Request an exact proposal for a complete financial and payback analysis.'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* ALL SIX SCENARIOS DETAILED COMPARISON TABLE */}
+          {result.scenarios && result.scenarios.length > 0 && (
+            <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix space-y-5">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Architecture Comparison</span>
+                <h3 className="text-2xl font-extrabold text-solix-dark mt-1">All Solar Options Evaluated</h3>
+                <p className="text-xs sm:text-sm text-solix-muted mt-1">
+                  Side-by-side technical, financial, and regulatory metrics across all standard configurations for your verified load.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto -mx-6 sm:mx-0 px-6 sm:px-0">
+                <table className="w-full text-xs text-left border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="border-b border-solix-border text-solix-muted uppercase text-[10px] font-bold">
+                      <th className="py-3 px-2">Architecture</th>
+                      <th className="py-3 px-2">PV (kWp)</th>
+                      <th className="py-3 px-2">Battery</th>
+                      <th className="py-3 px-2">Self-Use (kWh)</th>
+                      <th className="py-3 px-2">Export (kWh)</th>
+                      <th className="py-3 px-2">Curtailed</th>
+                      <th className="py-3 px-2">Grid Import</th>
+                      <th className="py-3 px-2">Bill Savings</th>
+                      <th className="py-3 px-2">Grid Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-solix-border">
+                    {result.scenarios.map((sc, idx) => {
+                      const isBest = sc.architecture === result.bestMatch.architecture;
+                      return (
+                        <tr
+                          key={idx}
+                          className={`transition-colors ${
+                            isBest ? 'bg-emerald-50/60 font-semibold' : 'hover:bg-solix-bg/50'
+                          }`}
+                        >
+                          <td className="py-3 px-2">
+                            <div className="flex items-center gap-1.5">
+                              {isBest && <span className="w-2 h-2 rounded-full bg-solix-green shrink-0" />}
+                              <strong className="text-solix-dark">{sc.label}</strong>
+                            </div>
+                          </td>
+                          <td className="py-3 px-2">{sc.actualPvCapacityKw} kWp</td>
+                          <td className="py-3 px-2">{sc.battery ? `${sc.battery.minKwh}–${sc.battery.maxKwh} kWh` : 'None'}</td>
+                          <td className="py-3 px-2">{formatEnergyKwh(sc.energyFlow?.selfConsumedKwh)}</td>
+                          <td className="py-3 px-2">{formatEnergyKwh(sc.energyFlow?.gridExportKwh)}</td>
+                          <td className="py-3 px-2">{formatEnergyKwh(sc.energyFlow?.curtailedKwh)}</td>
+                          <td className="py-3 px-2">{formatEnergyKwh(sc.energyFlow?.gridImportKwh)}</td>
+                          <td className="py-3 px-2">
+                            <span className="text-emerald-700 font-bold">
+                              {formatCurrencyPkr(sc.financialAnalysis?.annualBillReductionPkr)}
+                            </span>{' '}
+                            ({sc.financialAnalysis?.annualBillReductionPercent ?? sc.billReductionPercent}%)
+                          </td>
+                          <td className="py-3 px-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              sc.utilityApprovalRequired
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}>
+                              {sc.utilityApprovalRequired ? 'Export / DISCO Approval' : 'Zero Export / Standalone'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {(result.bestMatch.battery || result.selectedSystem?.battery) && (
           <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -1454,9 +1799,14 @@ export function SolarBillAnalyzer() {
           </div>
 
           <div className="bg-white border border-solix-border rounded-3xl p-5 text-xs text-solix-muted space-y-2">
-            <p><strong className="text-solix-dark">Assumptions:</strong> {result.assumptions.panelWattage} W panels, {Math.round(result.assumptions.performanceRatio * 100)}% performance ratio, {result.assumptions.dcAcRatioTarget} target DC/AC ratio.</p>
+            <p><strong className="text-solix-dark">Engineering Assumptions:</strong> {result.assumptions.panelWattage} W panels, {Math.round(result.assumptions.performanceRatio * 100)}% performance ratio, {result.assumptions.dcAcRatioTarget} target DC/AC ratio.</p>
             <p>{result.assumptions.selectionRule}</p>
             <p>{result.assumptions.profileBasis}</p>
+            {result.financialAssumptions && (
+              <p className="pt-2 border-t border-solix-border">
+                <strong className="text-solix-dark">Financial Model {result.financialAssumptions.modelVersion}:</strong> {result.financialAssumptions.exportCreditMechanism} applied ({formatCurrencyPkr(result.financialAssumptions.applicableExportRatePkrPerKwh)}/kWh). Daytime consumption share: {result.financialAssumptions.daytimeSharePercent}%.
+              </p>
+            )}
             <p className="pt-2 border-t border-solix-border">{result.disclaimer}</p>
           </div>
 

@@ -164,6 +164,90 @@ export interface AnalyzerConsumptionMetrics {
   complete: boolean;
 }
 
+export type AnalyzerConsumptionProfileType =
+  | 'daytime'
+  | 'balanced'
+  | 'evening'
+  | 'custom'
+  | 'not-sure';
+
+export type AnalyzerConsumptionProfileSource =
+  | 'user-specified'
+  | 'preset-profile'
+  | 'fallback-assumption';
+
+export type AnalyzerUserPrimaryObjective =
+  | 'maximum-savings'
+  | 'balanced-backup'
+  | 'maximum-backup'
+  | 'grid-independence';
+
+export interface AnalyzerMonthlyEnergyFlow {
+  month: AnalyzerMonthKey;
+  consumptionKwh: number;
+  generationKwh: number;
+  selfConsumedKwh: number;
+  batteryChargeKwh: number;
+  batteryDischargeKwh: number;
+  gridExportKwh: number;
+  curtailedKwh: number;
+  gridImportKwh: number;
+  selfConsumptionRatio: number;
+  exportRatio: number;
+  unmetLoadKwh?: number;
+}
+
+export interface AnalyzerAnnualEnergyFlow {
+  annualGenerationKwh: number;
+  annualConsumptionKwh: number;
+  selfConsumedKwh: number;
+  batteryChargeKwh: number;
+  batteryDischargeKwh: number;
+  gridExportKwh: number;
+  curtailedKwh: number;
+  gridImportKwh: number;
+  selfConsumptionRatio: number;
+  exportRatio: number;
+  curtailmentRatio: number;
+  gridIndependenceRatio: number;
+  loadCoveragePercent: number;
+  unmetLoadKwh: number;
+}
+
+export interface AnalyzerFinancialBreakdown {
+  currentAnnualBillPkr: number;
+  postSolarAnnualBillPkr: number;
+  annualBillReductionPkr: number;
+  annualBillReductionPercent: number;
+  avoidedGridPurchaseValuePkr: number;
+  exportCreditValuePkr: number;
+  batteryEnergyShiftValuePkr: number;
+  estimatedCapexPkr: number | null;
+  simplePaybackYears: number | null;
+  roiPercent: number | null;
+  capexStatus: string;
+  financialModelVersion: string;
+}
+
+export interface AnalyzerFinancialAssumptions {
+  modelVersion: string;
+  profileSource: AnalyzerConsumptionProfileSource;
+  daytimeSharePercent: number;
+  exportCreditMechanism: string;
+  applicableExportRatePkrPerKwh: number;
+  excludedDynamicCharges: string[];
+  capexAvailable: boolean;
+  capexNotice: string;
+}
+
+export interface AnalyzerConsumptionProfileResolution {
+  profileType: AnalyzerConsumptionProfileType;
+  daytimeSharePercent: number;
+  daytimeShareFraction: number;
+  source: AnalyzerConsumptionProfileSource;
+  description: string;
+}
+
 export interface AnalyzerSystemRecommendation {
   type: 'on-grid' | 'hybrid' | 'off-grid';
   label: string;
@@ -195,6 +279,8 @@ export interface AnalyzerSystemRecommendation {
   architecture?: AnalyzerArchitecture;
   annualGridImportKwh?: number;
   annualGridExportKwh?: number;
+  annualDirectConsumptionKwh?: number;
+  annualUnusableSurplusKwh?: number;
   currentEstimatedBill?: number;
   postSolarEstimatedBill?: number;
   billReduction?: number;
@@ -206,6 +292,9 @@ export interface AnalyzerSystemRecommendation {
   regulatoryStatus?: AnalyzerRegulatoryStatus;
   confidence?: AnalyzerResultConfidence;
   qualifications?: string[];
+  energyFlow?: AnalyzerAnnualEnergyFlow;
+  monthlyEnergyFlows?: AnalyzerMonthlyEnergyFlow[];
+  financialAnalysis?: AnalyzerFinancialBreakdown;
 }
 
 export interface SolarRecommendationResponse {
@@ -256,6 +345,8 @@ export interface SolarRecommendationResponse {
     prosumerRegime: string;
     referenceDate: string;
   };
+  consumptionProfile?: AnalyzerConsumptionProfileResolution;
+  financialAssumptions?: AnalyzerFinancialAssumptions;
 }
 
 export interface AnalyzerPresentedSystem {
@@ -535,4 +626,85 @@ export function buildAnalyzerWhatsAppMessage(result: SolarRecommendationResponse
     '',
     'I would like an exact solar proposal.',
   ].join('\n');
+}
+
+export const CONSUMPTION_PROFILE_OPTIONS: Array<{
+  value: AnalyzerConsumptionProfileType;
+  label: string;
+  sublabel: string;
+  defaultSharePercent: number;
+}> = [
+  {
+    value: 'daytime',
+    label: 'Mostly during daytime',
+    sublabel: 'Offices, shops, daytime AC usage (~65% daytime use)',
+    defaultSharePercent: 65,
+  },
+  {
+    value: 'balanced',
+    label: 'Balanced throughout day and night',
+    sublabel: 'Continuous steady loads across 24 hours (~50% daytime use)',
+    defaultSharePercent: 50,
+  },
+  {
+    value: 'evening',
+    label: 'Mostly evening / night',
+    sublabel: 'Occupants away during work hours, night AC (~25% daytime use)',
+    defaultSharePercent: 25,
+  },
+  {
+    value: 'custom',
+    label: 'Custom daytime percentage',
+    sublabel: 'Specify your exact daytime consumption percentage (0–100%)',
+    defaultSharePercent: 50,
+  },
+  {
+    value: 'not-sure',
+    label: 'Not sure / Default estimate',
+    sublabel: 'Applies standard Pakistan benchmark (38% residential, 50% commercial)',
+    defaultSharePercent: 38,
+  },
+];
+
+export const USER_OBJECTIVE_OPTIONS: Array<{
+  value: AnalyzerUserPrimaryObjective;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: 'maximum-savings',
+    label: 'Maximum Bill Savings',
+    description: 'Prioritize lowest equipment cost and maximum bill reduction from direct solar generation.',
+  },
+  {
+    value: 'balanced-backup',
+    label: 'Balanced Savings + Essential Backup',
+    description: 'Optimize bill reduction while maintaining battery backup for essential lighting and fans during outages.',
+  },
+  {
+    value: 'maximum-backup',
+    label: 'Maximum Outage Protection',
+    description: 'Prioritize extended battery runtime to power heavy loads during prolonged power outages.',
+  },
+  {
+    value: 'grid-independence',
+    label: 'Grid Independence / Off-Grid',
+    description: 'Operate independently of the utility grid with complete solar and battery autonomy.',
+  },
+];
+
+export function formatCurrencyPkr(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined || !Number.isFinite(amount)) return '—';
+  return `Rs ${Math.round(amount).toLocaleString('en-US')}`;
+}
+
+export function formatEnergyKwh(kwh: number | null | undefined): string {
+  if (kwh === null || kwh === undefined || !Number.isFinite(kwh)) return '—';
+  return `${Math.round(kwh).toLocaleString('en-US')} kWh`;
+}
+
+export function formatPercent(fraction: number | null | undefined): string {
+  if (fraction === null || fraction === undefined || !Number.isFinite(fraction)) return '—';
+  const val = fraction > 1 ? fraction : fraction * 100;
+  return `${Math.round(val * 10) / 10}%`;
 }

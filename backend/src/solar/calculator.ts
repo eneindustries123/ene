@@ -8,6 +8,12 @@ import { calculateConsumptionMetrics, round } from './consumption';
 import { resolvePakistanSolarProfile } from './profiles';
 import { aggregateAnnualBill, BillingAccount, calculateMonthlyBill } from './billing';
 import {
+  CAPEX_AVAILABILITY_STATUS,
+  CONSUMPTION_PROFILE_PRESETS,
+  DEFAULT_FALLBACK_DAYTIME_SHARES,
+  FINANCIAL_MODEL_VERSION,
+} from './financialConfig';
+import {
   buildRegulatoryStatus,
   getTouWindow,
   loadFlowStudyRequired,
@@ -15,6 +21,7 @@ import {
   normalizeConnectionPhase,
   POLICY_REFERENCE_DATE,
   PROSUMER_POLICY_2026,
+  PROSUMER_REFERENCE_VALUES_2026,
   resolveLegacyAgreementStatus,
   resolveProsumerRegime,
   resolveRequiresAgreementReview,
@@ -22,12 +29,18 @@ import {
 } from './policy';
 import {
   AnalysisMode,
+  AnnualEnergyFlow,
   BatteryEstimate,
   ConnectionPhase,
+  ConsumptionProfileInput,
+  ConsumptionProfileResolution,
   ExistingSolarInput,
+  FinancialAssumptions,
+  FinancialBreakdown,
   LegacyAgreementStatus,
   MONTH_KEYS,
   MonthlyConsumption,
+  MonthlyEnergyFlow,
   MonthlySimulation,
   ProtectedStatus,
   RegulatoryStatus,
@@ -37,6 +50,7 @@ import {
   SystemRecommendation,
   SystemType,
   TariffCategory,
+  UserPrimaryObjective,
 } from './types';
 
 export interface BatteryPreferences {
@@ -62,9 +76,55 @@ export interface RecommendationInput {
   legacyAgreementStatus?: 'valid' | 'expired' | 'none' | 'unknown' | LegacyAgreementStatus;
   existingSolar?: ExistingSolarInput;
   peakConsumptionShare?: number;
+  consumptionProfile?: ConsumptionProfileInput;
+  primaryObjective?: UserPrimaryObjective;
   analysisMode?: AnalysisMode;
   chosenArchitecture?: ScenarioArchitecture;
   billExtractionConfidence?: 'high' | 'medium' | 'low' | 'manual';
+}
+
+export function resolveConsumptionProfile(
+  input?: ConsumptionProfileInput,
+  tariffCategory: TariffCategory = 'residential'
+): ConsumptionProfileResolution {
+  if (
+    input?.profileType === 'custom' &&
+    typeof input.customDaytimeSharePercent === 'number' &&
+    Number.isFinite(input.customDaytimeSharePercent)
+  ) {
+    const clamped = Math.min(100, Math.max(0, input.customDaytimeSharePercent));
+    return {
+      profileType: 'custom',
+      daytimeSharePercent: Math.round(clamped),
+      daytimeShareFraction: clamped / 100,
+      source: 'user-specified',
+      description: `Custom daytime electricity usage share of ${Math.round(clamped)}% specified by user.`,
+    };
+  }
+
+  if (
+    input?.profileType &&
+    input.profileType !== 'not-sure' &&
+    input.profileType in CONSUMPTION_PROFILE_PRESETS
+  ) {
+    const preset = CONSUMPTION_PROFILE_PRESETS[input.profileType as 'daytime' | 'balanced' | 'evening'];
+    return {
+      profileType: preset.type,
+      daytimeSharePercent: Math.round(preset.daytimeShare * 100),
+      daytimeShareFraction: preset.daytimeShare,
+      source: 'preset-profile',
+      description: preset.description,
+    };
+  }
+
+  const fallback = DEFAULT_FALLBACK_DAYTIME_SHARES[tariffCategory] || 0.38;
+  return {
+    profileType: 'not-sure',
+    daytimeSharePercent: Math.round(fallback * 100),
+    daytimeShareFraction: fallback,
+    source: 'fallback-assumption',
+    description: `Standard ${tariffCategory} baseline assumption of ${Math.round(fallback * 100)}% daytime consumption.`,
+  };
 }
 
 export function calculatePanelConfiguration(targetPvKw: number) {
@@ -399,10 +459,17 @@ function resolveScenarioRegime(
   input: RecommendationInput
 ) {
   if (!definition.exportConnected) return 'not-applicable' as const;
-  if (!input.greenMeter) return 'current-2026' as const;
+  const legacyStatus = resolveLegacyAgreementStatus({
+    hasExistingSolar: input.existingSolar?.hasExistingSolar,
+    agreementStatus: input.existingSolar?.agreementStatus,
+    agreementDate: input.existingSolar?.agreementDate,
+    legacyAgreementStatus: input.legacyAgreementStatus,
+    greenMeter: input.greenMeter,
+  });
   return resolveProsumerRegime({
-    greenMeter: true,
-    legacyAgreementStatus: input.legacyAgreementStatus || 'unknown',
+    exportConnected: true,
+    greenMeter: input.greenMeter ?? true,
+    legacyAgreementStatus: legacyStatus,
   });
 }
 
@@ -428,7 +495,8 @@ function buildEconomicRecommendation(
   account: BillingAccount,
   averageDailyKwh: number,
   peakShare: number,
-  currentBill: ReturnType<typeof aggregateAnnualBill>
+  currentBill: ReturnType<typeof aggregateAnnualBill>,
+  consumptionProfile: ConsumptionProfileResolution
 ): SystemRecommendation {
   const simulation = selected.simulation.monthlySimulation;
   const summary = selected.summary;
@@ -437,10 +505,15 @@ function buildEconomicRecommendation(
     ? calculateBatteryEstimate(averageDailyKwh, definition.type === 'off-grid' ? 'off-grid' : 'hybrid', input.batteryPreferences)
     : null;
   const qualifications: string[] = [];
+
   let annualGridImportKwh = 0;
   let annualGridExportKwh = 0;
   let annualDirectConsumptionKwh = 0;
+  let annualBatteryChargeKwh = 0;
+  let annualBatteryDischargeKwh = 0;
   let annualUnusableSurplusKwh = 0;
+
+  const monthlyEnergyFlows: MonthlyEnergyFlow[] = [];
 
   const postBills = simulation.map((month) => {
     const touWindow = getTouWindow(month.month);
@@ -448,38 +521,87 @@ function buildEconomicRecommendation(
       ? month.consumptionKwh * peakShare * (touWindow.peakHours / 4)
       : 0;
     const offPeakConsumption = month.consumptionKwh - peakConsumption;
-    const directUseLimit = month.consumptionKwh * (account.tariffCategory === 'commercial' ? 0.5 : 0.38);
-    const directConsumption = Math.min(month.generationKwh, offPeakConsumption, directUseLimit);
+
+    // Daytime consumption based on user profile
+    const daytimeShare = consumptionProfile.daytimeShareFraction;
+    const daytimeConsumption = month.consumptionKwh * daytimeShare;
+
+    // Direct daytime self-consumption
+    const directConsumption = Math.min(
+      month.generationKwh,
+      account.tou ? Math.min(daytimeConsumption, offPeakConsumption) : daytimeConsumption
+    );
+
     let remainingPeak = peakConsumption;
     let remainingOffPeak = Math.max(0, offPeakConsumption - directConsumption);
+    let remainingNonTouLoad = Math.max(0, month.consumptionKwh - directConsumption);
     const surplusBeforeBattery = Math.max(0, month.generationKwh - directConsumption);
+
     let batteryDischarge = 0;
     let batteryCharge = 0;
 
     if (battery) {
-      const usableDailyThroughput = battery.minKwh * DAYS_IN_MONTH[month.month];
+      const usableMonthlyThroughput = battery.minKwh * DAYS_IN_MONTH[month.month];
+      const unservedLoad = account.tou
+        ? remainingPeak + remainingOffPeak
+        : remainingNonTouLoad;
+
       batteryDischarge = Math.min(
         surplusBeforeBattery * SOLAR_ENGINEERING_CONFIG.batteryRoundTripEfficiency,
-        remainingPeak + remainingOffPeak,
-        usableDailyThroughput
+        unservedLoad,
+        usableMonthlyThroughput
       );
       batteryCharge = batteryDischarge / SOLAR_ENGINEERING_CONFIG.batteryRoundTripEfficiency;
 
-      // TOU dispatch preserves stored solar for the configured four-hour peak window first.
-      const peakDischarge = Math.min(remainingPeak, batteryDischarge);
-      remainingPeak -= peakDischarge;
-      remainingOffPeak = Math.max(0, remainingOffPeak - (batteryDischarge - peakDischarge));
+      if (account.tou) {
+        // TOU dispatch preserves stored solar for the configured four-hour peak window first
+        const peakDischarge = Math.min(remainingPeak, batteryDischarge);
+        remainingPeak -= peakDischarge;
+        remainingOffPeak = Math.max(0, remainingOffPeak - (batteryDischarge - peakDischarge));
+      } else {
+        remainingNonTouLoad = Math.max(0, remainingNonTouLoad - batteryDischarge);
+      }
     }
 
-    const exportableSurplus = Math.max(0, surplusBeforeBattery - batteryCharge);
-    const exportedKwh = definition.exportConnected ? exportableSurplus : 0;
-    const unusableSurplus = definition.exportConnected ? 0 : exportableSurplus;
-    const gridImport = definition.type === 'off-grid' ? 0 : remainingPeak + remainingOffPeak;
+    const surplusAfterBattery = Math.max(0, surplusBeforeBattery - batteryCharge);
+    const exportedKwh = definition.exportConnected ? surplusAfterBattery : 0;
+    const unusableSurplus = definition.exportConnected ? 0 : surplusAfterBattery;
+    const gridImport = definition.type === 'off-grid'
+      ? 0
+      : account.tou
+        ? remainingPeak + remainingOffPeak
+        : remainingNonTouLoad;
 
     annualGridImportKwh += gridImport;
     annualGridExportKwh += exportedKwh;
-    annualDirectConsumptionKwh += directConsumption + batteryDischarge;
+    annualDirectConsumptionKwh += directConsumption;
+    annualBatteryChargeKwh += batteryCharge;
+    annualBatteryDischargeKwh += batteryDischarge;
     annualUnusableSurplusKwh += unusableSurplus;
+
+    const unmetMonthLoad = definition.type === 'off-grid'
+      ? Math.max(0, month.consumptionKwh - (directConsumption + batteryDischarge))
+      : 0;
+
+    const monthFlow: MonthlyEnergyFlow = {
+      month: month.month,
+      consumptionKwh: round(month.consumptionKwh, 1),
+      generationKwh: round(month.generationKwh, 1),
+      selfConsumedKwh: round(directConsumption, 1),
+      batteryChargeKwh: round(batteryCharge, 1),
+      batteryDischargeKwh: round(batteryDischarge, 1),
+      gridExportKwh: round(exportedKwh, 1),
+      curtailedKwh: round(unusableSurplus, 1),
+      gridImportKwh: round(gridImport, 1),
+      selfConsumptionRatio: month.generationKwh > 0
+        ? round((directConsumption + batteryCharge) / month.generationKwh, 3)
+        : 0,
+      exportRatio: month.generationKwh > 0
+        ? round(exportedKwh / month.generationKwh, 3)
+        : 0,
+      unmetLoadKwh: round(unmetMonthLoad, 1),
+    };
+    monthlyEnergyFlows.push(monthFlow);
 
     if (definition.type === 'off-grid') {
       return null;
@@ -495,10 +617,9 @@ function buildEconomicRecommendation(
   });
 
   const postBill = definition.type === 'off-grid'
-    ? { ...currentBill, total: 0, fixedCharges: 0, exportCredit: 0 }
+    ? { ...currentBill, total: 0, energyImportCharges: 0, peakImportCharges: 0, offPeakImportCharges: 0, fixedCharges: 0, exportCredit: 0 }
     : aggregateAnnualBill(postBills.filter((bill): bill is NonNullable<typeof bill> => bill !== null));
-  const billReduction = Math.max(0, currentBill.total - postBill.total);
-  const billReductionPercent = currentBill.total > 0 ? (billReduction / currentBill.total) * 100 : 0;
+
   const actualPvCapacityKw = selected.simulation.actualPvCapacityKw;
 
   const connectionPhase: ConnectionPhase = input.connectionPhase ||
@@ -557,6 +678,74 @@ function buildEconomicRecommendation(
       ? 'Preliminary'
       : 'Medium';
 
+  const annualGenerationKwh = round(summary.annualGenerationKwh, 1);
+  const annualConsumptionKwh = round(summary.annualConsumptionKwh, 1);
+  const roundedSelfConsumed = round(annualDirectConsumptionKwh, 1);
+  const roundedBatteryCharge = round(annualBatteryChargeKwh, 1);
+  const roundedBatteryDischarge = round(annualBatteryDischargeKwh, 1);
+  const roundedGridExport = round(annualGridExportKwh, 1);
+  const roundedCurtailed = round(annualUnusableSurplusKwh, 1);
+  const roundedGridImport = round(annualGridImportKwh, 1);
+
+  const servedBySolarAndBattery = roundedSelfConsumed + roundedBatteryDischarge;
+  const unmetLoadKwh = definition.type === 'off-grid'
+    ? round(Math.max(0, annualConsumptionKwh - servedBySolarAndBattery), 1)
+    : 0;
+  const loadCoveragePercent = annualConsumptionKwh > 0
+    ? round(Math.min(100, (servedBySolarAndBattery / annualConsumptionKwh) * 100), 1)
+    : 0;
+
+  const energyFlow: AnnualEnergyFlow = {
+    annualGenerationKwh,
+    annualConsumptionKwh,
+    selfConsumedKwh: roundedSelfConsumed,
+    batteryChargeKwh: roundedBatteryCharge,
+    batteryDischargeKwh: roundedBatteryDischarge,
+    gridExportKwh: roundedGridExport,
+    curtailedKwh: roundedCurtailed,
+    gridImportKwh: roundedGridImport,
+    selfConsumptionRatio: annualGenerationKwh > 0
+      ? round((roundedSelfConsumed + roundedBatteryCharge) / annualGenerationKwh, 3)
+      : 0,
+    exportRatio: annualGenerationKwh > 0
+      ? round(roundedGridExport / annualGenerationKwh, 3)
+      : 0,
+    curtailmentRatio: annualGenerationKwh > 0
+      ? round(roundedCurtailed / annualGenerationKwh, 3)
+      : 0,
+    gridIndependenceRatio: definition.type === 'off-grid'
+      ? 1.0
+      : annualConsumptionKwh > 0
+        ? round(servedBySolarAndBattery / annualConsumptionKwh, 3)
+        : 0,
+    loadCoveragePercent,
+    unmetLoadKwh,
+  };
+
+  const currentEnergyCharges = currentBill.energyImportCharges + currentBill.peakImportCharges + currentBill.offPeakImportCharges;
+  const postEnergyCharges = postBill.energyImportCharges + postBill.peakImportCharges + postBill.offPeakImportCharges;
+  const avoidedGridPurchaseValuePkr = round(Math.max(0, currentEnergyCharges - postEnergyCharges), 0);
+  const exportCreditValuePkr = round(postBill.exportCredit, 0);
+  const annualBillReductionPkr = round(Math.max(0, currentBill.total - postBill.total), 0);
+  const annualBillReductionPercent = currentBill.total > 0
+    ? round((annualBillReductionPkr / currentBill.total) * 100, 1)
+    : 0;
+
+  const financialAnalysis: FinancialBreakdown = {
+    currentAnnualBillPkr: round(currentBill.total, 0),
+    postSolarAnnualBillPkr: round(postBill.total, 0),
+    annualBillReductionPkr,
+    annualBillReductionPercent,
+    avoidedGridPurchaseValuePkr,
+    exportCreditValuePkr,
+    batteryEnergyShiftValuePkr: battery ? round(roundedBatteryDischarge * (account.tou ? 40 : 33), 0) : 0,
+    estimatedCapexPkr: null,
+    simplePaybackYears: null,
+    roiPercent: null,
+    capexStatus: CAPEX_AVAILABILITY_STATUS.status,
+    financialModelVersion: FINANCIAL_MODEL_VERSION,
+  };
+
   return {
     type: definition.type,
     architecture: definition.architecture,
@@ -576,14 +765,14 @@ function buildEconomicRecommendation(
           ? 'Independence option'
           : 'Zero-export alternative',
     caution: regulatoryStatus.warnings.find((w) => w.severity === 'action-required')?.message || qualifications[0],
-    annualGridImportKwh: round(annualGridImportKwh, 1),
-    annualGridExportKwh: round(annualGridExportKwh, 1),
-    annualDirectConsumptionKwh: round(annualDirectConsumptionKwh, 1),
-    annualUnusableSurplusKwh: round(annualUnusableSurplusKwh, 1),
+    annualGridImportKwh: roundedGridImport,
+    annualGridExportKwh: roundedGridExport,
+    annualDirectConsumptionKwh: roundedSelfConsumed + roundedBatteryDischarge,
+    annualUnusableSurplusKwh: roundedCurtailed,
     currentEstimatedBill: round(currentBill.total, 0),
     postSolarEstimatedBill: round(postBill.total, 0),
-    billReduction: round(billReduction, 0),
-    billReductionPercent: round(billReductionPercent, 1),
+    billReduction: annualBillReductionPkr,
+    billReductionPercent: annualBillReductionPercent,
     prosumerRegime: regime,
     nepraConcurrenceRequired: regulatoryStatus.nepraConcurrenceRequired,
     utilityApprovalRequired: definition.exportConnected,
@@ -594,6 +783,9 @@ function buildEconomicRecommendation(
     policyConfidence,
     recommendationConfidence,
     qualifications,
+    energyFlow,
+    monthlyEnergyFlows,
+    financialAnalysis,
   };
 }
 
@@ -623,6 +815,9 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
   const candidates = buildPvCandidates(theoreticalPvKw);
   const utility = resolveUtility(input.utility);
   const tariffCategory = input.tariffCategory || 'residential';
+  const consumptionProfile = resolveConsumptionProfile(input.consumptionProfile, tariffCategory);
+  const primaryObjective: UserPrimaryObjective = input.primaryObjective || 'maximum-savings';
+
   const account: BillingAccount = {
     utility,
     tariffCategory,
@@ -664,7 +859,8 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
         account,
         consumption.averageDailyKwh,
         peakShare,
-        currentBill
+        currentBill,
+        consumptionProfile
       );
     });
     const maximumReduction = Math.max(...evaluated.map((result) => result.billReductionPercent || 0));
@@ -676,20 +872,64 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
     );
   });
 
-  const practicalScore = (result: SystemRecommendation) => {
-    const definition = SCENARIO_DEFINITIONS.find((item) => item.architecture === result.architecture)!;
-    const unusablePenalty = result.annualConsumptionKwh
-      ? ((result.annualUnusableSurplusKwh || 0) / result.annualConsumptionKwh) * 5
-      : 0;
-    const offGridShortfallPenalty = result.type === 'off-grid' && result.annualConsumptionKwh
-      ? (result.annualShortfallKwh / result.annualConsumptionKwh) * 20
-      : 0;
-    return (result.billReductionPercent || 0) - definition.complexityPenalty - unusablePenalty - offGridShortfallPenalty;
+  function getArchitectureComplexity(arch?: ScenarioArchitecture): number {
+    switch (arch) {
+      case 'on-grid-only': return 1;
+      case 'hybrid-green-no-battery': return 2;
+      case 'hybrid-no-green-no-battery': return 2;
+      case 'hybrid-green-battery': return 3;
+      case 'hybrid-no-green-battery': return 3;
+      case 'off-grid': return 4;
+      default: return 5;
+    }
+  }
+
+  const scoreScenario = (result: SystemRecommendation): number => {
+    const billReduction = result.billReductionPercent || 0;
+    const isOffGrid = result.type === 'off-grid';
+    const hasBattery = Boolean(result.battery);
+    const complexity = getArchitectureComplexity(result.architecture);
+    const regulatoryValid = result.regulatoryValid !== false;
+
+    if (primaryObjective === 'grid-independence') {
+      // Off-Grid explicitly represents complete disconnection from utility
+      if (isOffGrid) {
+        return 1000 + (result.energyFlow?.loadCoveragePercent || 0);
+      }
+      return -1000;
+    }
+
+    if (isOffGrid) {
+      // Off-grid is excluded when grid connection is retained
+      return -1000;
+    }
+
+    if (primaryObjective === 'maximum-backup') {
+      // Prioritize architectures capable of meeting backup resilience
+      if (!hasBattery) return -500 + billReduction;
+      // Between battery architectures, rank by modeled bill reduction & regulatory feasibility
+      const regBonus = regulatoryValid ? 5 : 0;
+      return billReduction + regBonus;
+    }
+
+    if (primaryObjective === 'balanced-backup') {
+      // Backup is a genuine user requirement
+      if (!hasBattery) return -500 + billReduction;
+      // Between battery architectures (e.g. Hybrid+Green vs Hybrid No-Green), rank by bill reduction & regulatory feasibility
+      const regBonus = regulatoryValid ? 5 : 0;
+      return billReduction + regBonus - (complexity * 0.01);
+    }
+
+    // Default: maximum-savings
+    // Purely deterministic optimization of modeled annual bill reduction across all grid-connected architectures.
+    // If two architectures achieve virtually equivalent bill reduction (within 0.1%), prefer lower complexity / fewer components.
+    return billReduction - (complexity * 0.01);
   };
+
   let bestMatch = scenarios.reduce((best, result) => {
-    const difference = practicalScore(result) - practicalScore(best);
-    if (difference > 0.001) return result;
-    if (Math.abs(difference) <= 0.001 && result.actualPvCapacityKw < best.actualPvCapacityKw) return result;
+    const scoreDiff = scoreScenario(result) - scoreScenario(best);
+    if (scoreDiff > 0.001) return result;
+    if (Math.abs(scoreDiff) <= 0.001 && result.actualPvCapacityKw < best.actualPvCapacityKw) return result;
     return best;
   });
 
@@ -703,14 +943,16 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
     input.greenMeter !== undefined ||
     input.analysisMode !== undefined ||
     input.existingSolar !== undefined ||
-    input.connectionPhase !== undefined;
+    input.connectionPhase !== undefined ||
+    input.consumptionProfile !== undefined ||
+    input.primaryObjective !== undefined;
   if (!policyInputsProvided) {
     const establishedOnGridSelection = selectCandidate(
       candidates, input.monthlyConsumption, location.monthlyPeakSunHours, 100
     );
     bestMatch = buildEconomicRecommendation(
       SCENARIO_DEFINITIONS[0], establishedOnGridSelection, input, account,
-      consumption.averageDailyKwh, peakShare, currentBill
+      consumption.averageDailyKwh, peakShare, currentBill, consumptionProfile
     );
   }
 
@@ -728,6 +970,23 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
   const locationText = location.fallbackUsed
     ? `${input.city} using the conservative ${location.profileCity} regional profile`
     : location.profileCity;
+
+  const isLegacy = bestMatch.prosumerRegime === 'legacy';
+  const exportRate = isLegacy
+    ? PROSUMER_POLICY_2026.settlementRules.legacy.ratePkrPerKwh
+    : PROSUMER_POLICY_2026.settlementRules.current.ratePkrPerKwh;
+  const financialAssumptions: FinancialAssumptions = {
+    modelVersion: FINANCIAL_MODEL_VERSION,
+    profileSource: consumptionProfile.source,
+    daytimeSharePercent: consumptionProfile.daytimeSharePercent,
+    exportCreditMechanism: isLegacy
+      ? 'Legacy Net-Metering (CY2026 NAPPP Reference Rate)'
+      : 'NAEPP Net-Billing (CY2026 Reference Rate)',
+    applicableExportRatePkrPerKwh: exportRate,
+    excludedDynamicCharges: currentBill.excludedComponents,
+    capexAvailable: false,
+    capexNotice: CAPEX_AVAILABILITY_STATUS.userMessage,
+  };
 
   return {
     bestMatch,
@@ -771,5 +1030,7 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
       tariffSource: 'S.R.O. 279(I)/2026',
       prosumerSource: 'S.R.O. 251(I)/2026; S.R.O. 547(I)/2026; S.R.O. 1330(I)/2026',
     },
+    consumptionProfile,
+    financialAssumptions,
   };
 }

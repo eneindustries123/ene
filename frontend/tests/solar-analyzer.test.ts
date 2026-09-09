@@ -347,4 +347,24 @@ describe('frontend solar analyzer helpers', () => {
     expect(source).toContain('NEPRA Concurrence Process');
     expect(source).toContain('Distribution Transformer Hosting Capacity');
   });
+
+  it('contains Phase 2 financial, energy flow, and consumption profile UI components', () => {
+    const source = readFileSync(
+      new URL('../components/solar-analyzer/SolarBillAnalyzer.tsx', import.meta.url),
+      'utf8'
+    );
+    expect(source).toContain('Electricity Usage Timing & Self-Consumption');
+    expect(source).toContain('Usage Timing Profile');
+    expect(source).toContain('System Goal & Priority');
+    expect(source).toContain('What is your primary objective for solar?');
+    expect(source).toContain('Financial & Energy-Flow Economics');
+    expect(source).toContain('Energy Flow Balance & Value Separation');
+    expect(source).toContain('Avoided Grid Purchases');
+    expect(source).toContain('Export Credit Value');
+    expect(source).toContain('Annual Physical Energy Conservation');
+    expect(source).toContain('Direct Self-Use');
+    expect(source).toContain('Curtailed Surplus');
+    expect(source).toContain('Transparent Financial Standards');
+    expect(source).toContain('All Solar Options Evaluated');
+  });
 });
