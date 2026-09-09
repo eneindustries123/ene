@@ -19,6 +19,86 @@ export type AnalyzerMonthKey = (typeof ANALYZER_MONTHS)[number]['key'];
 export type AnalyzerConfidence = 'high' | 'medium' | 'low';
 export type AnalyzerResultConfidence = 'High' | 'Medium' | 'Preliminary';
 export type AnalyzerAnalysisMode = 'recommend' | 'chosen' | 'both';
+export type AnalyzerConnectionPhase = 'single-phase' | 'three-phase' | 'unknown';
+export type AnalyzerPhaseStatus = 'compatible' | 'upgrade-recommended' | 'unverified' | 'not-applicable';
+
+export interface AnalyzerPhaseStatusEvaluation {
+  phase: AnalyzerConnectionPhase;
+  status: AnalyzerPhaseStatus;
+  note: string;
+}
+
+export type AnalyzerProsumerEligibility =
+  | 'eligible'
+  | 'upgrade-required'
+  | 'load-extension-required'
+  | 'action-required'
+  | 'requires-disco-verification'
+  | 'not-applicable';
+export type AnalyzerNetworkCapacityStatus =
+  | 'requires-disco-verification'
+  | 'pre-allocated'
+  | 'constrained'
+  | 'unverified';
+export type AnalyzerLegacyAgreementStatus =
+  | 'confirmed'
+  | 'likely'
+  | 'unverified'
+  | 'not-applicable';
+
+export type AnalyzerAgreementLifecycleStatus =
+  | 'active'
+  | 'expired'
+  | 'none'
+  | 'unknown';
+
+export type AnalyzerIntendedModification =
+  | 'none'
+  | 'expansion'
+  | 'replacement'
+  | 'battery-addition'
+  | 'system-modification'
+  | 'analysis-only';
+export type AnalyzerRegulatoryWarningSeverity = 'info' | 'warning' | 'action-required' | 'critical' | 'error';
+
+export interface AnalyzerRegulatoryWarning {
+  code: string;
+  severity: AnalyzerRegulatoryWarningSeverity;
+  message: string;
+  actionableGuidance?: string;
+}
+
+export interface AnalyzerRegulatoryStatus {
+  frameworkVersion: string;
+  gridExportAllowed: boolean;
+  actualPvCapacityKw: number;
+  sanctionedLoadKw: number | null;
+  exceedsSanctionedLoad: boolean;
+  excessCapacityKw: number;
+  currentGridEligibleCapacityKw: number | null;
+  loadExtensionRequired: boolean;
+  connectionPhase: AnalyzerConnectionPhase;
+  phaseStatus: AnalyzerPhaseStatusEvaluation;
+  prosumerEligibility: AnalyzerProsumerEligibility;
+  nepraConcurrenceRequired: boolean;
+  nepraConcurrenceNote: string;
+  loadFlowStudyRequired: boolean;
+  loadFlowStudyNote: string;
+  networkCapacityStatus: AnalyzerNetworkCapacityStatus;
+  transformerCapacityNote: string;
+  legacyAgreementStatus: AnalyzerLegacyAgreementStatus;
+  intendedModification: AnalyzerIntendedModification;
+  requiresAgreementReview: boolean;
+  agreementReviewNote?: string;
+  settlementBasis: {
+    regime: string;
+    applicableRatePkrPerKwh: number;
+    description: string;
+  };
+  warnings: AnalyzerRegulatoryWarning[];
+  userNotes: string[];
+}
+
 export type AnalyzerArchitecture =
   | 'on-grid-only'
   | 'hybrid-green-no-battery'
@@ -123,6 +203,7 @@ export interface AnalyzerSystemRecommendation {
   nepraConcurrenceRequired?: boolean;
   utilityApprovalRequired?: boolean;
   loadFlowStudyRequired?: boolean;
+  regulatoryStatus?: AnalyzerRegulatoryStatus;
   confidence?: AnalyzerResultConfidence;
   qualifications?: string[];
 }

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { SOLAR_ENGINEERING_CONFIG, SOLAR_MODEL_BASIS } from '../solar/config';
 import { recommendSolarSystems } from '../solar/calculator';
 import { SUPPORTED_PAKISTAN_CITIES } from '../solar/profiles';
-import { POLICY_REFERENCE_DATE, PROSUMER_REFERENCE_VALUES_2026 } from '../solar/policy';
+import { POLICY_REFERENCE_DATE, PROSUMER_POLICY_2026, PROSUMER_REFERENCE_VALUES_2026 } from '../solar/policy';
 import { PAKISTAN_UTILITIES } from '../solar/types';
 import { extractSolarBill } from '../services/solarAnalyzerGemini.service';
 import {
@@ -30,7 +30,11 @@ export class SolarAnalyzerController {
       policy: {
         referenceDate: POLICY_REFERENCE_DATE,
         utilities: PAKISTAN_UTILITIES,
-        currentProsumerExportRate: PROSUMER_REFERENCE_VALUES_2026.find((value) => value.id === 'NAEPP')?.exportRate,
+        currentProsumerExportRate: PROSUMER_POLICY_2026.exportSettlement.current.ratePkrPerKwh,
+        concurrenceThresholdKw: PROSUMER_POLICY_2026.nepraConcurrenceExemptAtOrBelowKw,
+        loadFlowThresholdKw: PROSUMER_POLICY_2026.loadFlowThresholdKw,
+        maxDgCapacityKw: PROSUMER_POLICY_2026.maximumDgCapacityKw,
+        prosumerVersion: PROSUMER_POLICY_2026.version,
         dynamicComponentsConfigured: false,
       },
     });

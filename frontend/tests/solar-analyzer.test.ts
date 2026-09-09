@@ -330,4 +330,21 @@ describe('frontend solar analyzer helpers', () => {
       expect(presentation.remainingBill).toBe(system.postSolarEstimatedBill);
     }
   });
+
+  it('contains Phase 1 regulatory UI components and progressive existing solar controls', () => {
+    const source = readFileSync(
+      new URL('../components/solar-analyzer/SolarBillAnalyzer.tsx', import.meta.url),
+      'utf8'
+    );
+    expect(source).toContain('Connection phase');
+    expect(source).toContain('Already have solar installed?');
+    expect(source).toContain('Existing PV capacity');
+    expect(source).toContain('Existing inverter capacity');
+    expect(source).toContain('Intended change');
+    expect(source).toContain('Pakistan Grid & Regulatory Compliance');
+    expect(source).toContain('Engineering PV Requirement');
+    expect(source).toContain('Current Grid-Eligible Capacity');
+    expect(source).toContain('NEPRA Concurrence Process');
+    expect(source).toContain('Distribution Transformer Hosting Capacity');
+  });
 });

@@ -41,6 +41,37 @@ const monthlyConsumptionSchema = z.object({
   kwh: z.number().min(0).max(10_000_000),
 });
 
+const legacyAgreementStatusSchema = z.enum([
+  'confirmed',
+  'likely',
+  'unverified',
+  'not-applicable',
+  'valid',
+  'expired',
+  'none',
+  'unknown',
+]).transform((val): 'confirmed' | 'likely' | 'unverified' | 'not-applicable' => {
+  if (val === 'valid') return 'confirmed';
+  if (val === 'expired' || val === 'none') return 'not-applicable';
+  if (val === 'unknown') return 'unverified';
+  return val;
+});
+
+const agreementLifecycleStatusSchema = z.enum([
+  'active',
+  'expired',
+  'none',
+  'unknown',
+  'yes',
+  'no',
+  'unsure',
+]).transform((val): 'active' | 'expired' | 'none' | 'unknown' => {
+  if (val === 'yes') return 'active';
+  if (val === 'no') return 'none';
+  if (val === 'unsure') return 'unknown';
+  return val;
+});
+
 export const solarRecommendationSchema = z.object({
   city: z.string().trim().min(2).max(120),
   monthlyConsumption: z.array(monthlyConsumptionSchema).length(12),
@@ -50,8 +81,26 @@ export const solarRecommendationSchema = z.object({
   tou: z.boolean().optional(),
   sanctionedLoadKw: z.number().positive().max(100_000).optional(),
   mdiKw: z.number().nonnegative().max(100_000).optional(),
+  phase: z.string().max(60).nullable().optional(),
+  connectionType: z.string().max(120).nullable().optional(),
+  connectionPhase: z.enum(['single-phase', 'three-phase', 'unknown']).optional(),
   greenMeter: z.boolean().optional(),
-  legacyAgreementStatus: z.enum(['valid', 'expired', 'none', 'unknown']).optional(),
+  legacyAgreementStatus: legacyAgreementStatusSchema.optional(),
+  existingSolar: z.object({
+    hasExistingSolar: z.boolean(),
+    existingPvCapacityKw: z.number().positive().max(100_000).nullable().optional(),
+    existingInverterKw: z.number().positive().max(100_000).nullable().optional(),
+    agreementStatus: agreementLifecycleStatusSchema.nullable().optional(),
+    agreementDate: z.string().max(60).nullable().optional(),
+    intendedChange: z.enum([
+      'none',
+      'expansion',
+      'replacement',
+      'battery-addition',
+      'system-modification',
+      'analysis-only',
+    ]).nullable().optional(),
+  }).optional(),
   peakConsumptionShare: z.number().min(0).max(1).optional(),
   analysisMode: z.enum(['recommend', 'chosen', 'both']),
   chosenArchitecture: z.enum([

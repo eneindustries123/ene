@@ -8,21 +8,29 @@ import { calculateConsumptionMetrics, round } from './consumption';
 import { resolvePakistanSolarProfile } from './profiles';
 import { aggregateAnnualBill, BillingAccount, calculateMonthlyBill } from './billing';
 import {
+  buildRegulatoryStatus,
+  getTouWindow,
   loadFlowStudyRequired,
   nepraConcurrenceRequired,
-  getTouWindow,
+  normalizeConnectionPhase,
   POLICY_REFERENCE_DATE,
   PROSUMER_POLICY_2026,
+  resolveLegacyAgreementStatus,
   resolveProsumerRegime,
+  resolveRequiresAgreementReview,
   resolveUtility,
 } from './policy';
 import {
   AnalysisMode,
   BatteryEstimate,
+  ConnectionPhase,
+  ExistingSolarInput,
+  LegacyAgreementStatus,
   MONTH_KEYS,
   MonthlyConsumption,
   MonthlySimulation,
   ProtectedStatus,
+  RegulatoryStatus,
   ResultConfidence,
   ScenarioArchitecture,
   SolarRecommendationResult,
@@ -47,8 +55,12 @@ export interface RecommendationInput {
   tou?: boolean;
   sanctionedLoadKw?: number;
   mdiKw?: number;
+  phase?: string | null;
+  connectionType?: string | null;
+  connectionPhase?: ConnectionPhase;
   greenMeter?: boolean;
-  legacyAgreementStatus?: 'valid' | 'expired' | 'none' | 'unknown';
+  legacyAgreementStatus?: 'valid' | 'expired' | 'none' | 'unknown' | LegacyAgreementStatus;
+  existingSolar?: ExistingSolarInput;
   peakConsumptionShare?: number;
   analysisMode?: AnalysisMode;
   chosenArchitecture?: ScenarioArchitecture;
@@ -488,9 +500,35 @@ function buildEconomicRecommendation(
   const billReduction = Math.max(0, currentBill.total - postBill.total);
   const billReductionPercent = currentBill.total > 0 ? (billReduction / currentBill.total) * 100 : 0;
   const actualPvCapacityKw = selected.simulation.actualPvCapacityKw;
-  const regulatoryValid = !definition.exportConnected ||
-    input.sanctionedLoadKw === undefined ||
-    actualPvCapacityKw <= input.sanctionedLoadKw + 0.0001;
+
+  const connectionPhase: ConnectionPhase = input.connectionPhase ||
+    normalizeConnectionPhase(input.phase, input.connectionType);
+  const hasExistingSolar = input.existingSolar?.hasExistingSolar ?? false;
+  const legacyAgreementStatus = resolveLegacyAgreementStatus({
+    hasExistingSolar,
+    agreementStatus: input.existingSolar?.agreementStatus,
+    agreementDate: input.existingSolar?.agreementDate,
+    legacyAgreementStatus: input.legacyAgreementStatus,
+    greenMeter: input.greenMeter,
+  });
+  const requiresAgreementReview = resolveRequiresAgreementReview({
+    hasExistingSolar,
+    legacyAgreementStatus,
+    intendedChange: input.existingSolar?.intendedChange,
+  });
+
+  const regulatoryStatus = buildRegulatoryStatus({
+    actualPvCapacityKw,
+    exportConnected: definition.exportConnected,
+    sanctionedLoadKw: input.sanctionedLoadKw,
+    connectionPhase,
+    hasExistingSolar,
+    legacyAgreementStatus,
+    requiresAgreementReview,
+  });
+
+  const regulatoryValid = !regulatoryStatus.exceedsSanctionedLoad &&
+    regulatoryStatus.phaseStatus.status !== 'upgrade-recommended';
 
   if (definition.exportConnected) {
     qualifications.push('Utility/interconnection approval remains applicable.');
@@ -537,7 +575,7 @@ function buildEconomicRecommendation(
         : definition.type === 'off-grid'
           ? 'Independence option'
           : 'Zero-export alternative',
-    caution: qualifications[0],
+    caution: regulatoryStatus.warnings.find((w) => w.severity === 'action-required')?.message || qualifications[0],
     annualGridImportKwh: round(annualGridImportKwh, 1),
     annualGridExportKwh: round(annualGridExportKwh, 1),
     annualDirectConsumptionKwh: round(annualDirectConsumptionKwh, 1),
@@ -547,10 +585,11 @@ function buildEconomicRecommendation(
     billReduction: round(billReduction, 0),
     billReductionPercent: round(billReductionPercent, 1),
     prosumerRegime: regime,
-    nepraConcurrenceRequired: definition.exportConnected ? nepraConcurrenceRequired(actualPvCapacityKw) : false,
+    nepraConcurrenceRequired: regulatoryStatus.nepraConcurrenceRequired,
     utilityApprovalRequired: definition.exportConnected,
-    loadFlowStudyRequired: definition.exportConnected ? loadFlowStudyRequired(actualPvCapacityKw) : false,
+    loadFlowStudyRequired: regulatoryStatus.loadFlowStudyRequired,
     regulatoryValid,
+    regulatoryStatus,
     confidence: recommendationConfidence,
     policyConfidence,
     recommendationConfidence,
@@ -560,21 +599,11 @@ function buildEconomicRecommendation(
 
 function candidatesForScenario(
   definition: (typeof SCENARIO_DEFINITIONS)[number],
-  candidates: number[],
-  input: RecommendationInput
+  candidates: number[]
 ) {
-  const regulatoryScopeCandidates = candidates.filter((candidate) =>
+  return candidates.filter((candidate) =>
     calculatePanelConfiguration(candidate).actualPvCapacityKw <= PROSUMER_POLICY_2026.maximumDgCapacityKw
   );
-  if (!definition.exportConnected || input.sanctionedLoadKw === undefined) return regulatoryScopeCandidates;
-  const allowed = regulatoryScopeCandidates.filter((candidate) =>
-    calculatePanelConfiguration(candidate).actualPvCapacityKw <= input.sanctionedLoadKw! + 0.0001
-  );
-  if (allowed.length) return allowed;
-
-  const panelCapacity = SOLAR_ENGINEERING_CONFIG.panelWattage / 1000;
-  const panelCount = Math.floor(input.sanctionedLoadKw / panelCapacity);
-  return panelCount >= 1 ? [round(panelCount * panelCapacity, 3)] : regulatoryScopeCandidates.slice(0, 1);
 }
 
 export function recommendSolarSystems(input: RecommendationInput): SolarRecommendationResult {
@@ -614,7 +643,7 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
     : SCENARIO_DEFINITIONS;
 
   const scenarios = definitionsToEvaluate.map((definition) => {
-    let scenarioCandidates = candidatesForScenario(definition, candidates, input);
+    let scenarioCandidates = candidatesForScenario(definition, candidates);
     if (definition.type === 'off-grid') {
       const technicallyEligible = scenarioCandidates.filter((candidate) => {
         const candidateSimulation = simulateMonthlyPerformance(candidate, input.monthlyConsumption, location.monthlyPeakSunHours);
@@ -652,11 +681,10 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
     const unusablePenalty = result.annualConsumptionKwh
       ? ((result.annualUnusableSurplusKwh || 0) / result.annualConsumptionKwh) * 5
       : 0;
-    const validityPenalty = result.regulatoryValid ? 0 : 100;
     const offGridShortfallPenalty = result.type === 'off-grid' && result.annualConsumptionKwh
       ? (result.annualShortfallKwh / result.annualConsumptionKwh) * 20
       : 0;
-    return (result.billReductionPercent || 0) - definition.complexityPenalty - unusablePenalty - validityPenalty - offGridShortfallPenalty;
+    return (result.billReductionPercent || 0) - definition.complexityPenalty - unusablePenalty - offGridShortfallPenalty;
   };
   let bestMatch = scenarios.reduce((best, result) => {
     const difference = practicalScore(result) - practicalScore(best);
@@ -673,7 +701,9 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
     input.tou !== undefined ||
     input.sanctionedLoadKw !== undefined ||
     input.greenMeter !== undefined ||
-    input.analysisMode !== undefined;
+    input.analysisMode !== undefined ||
+    input.existingSolar !== undefined ||
+    input.connectionPhase !== undefined;
   if (!policyInputsProvided) {
     const establishedOnGridSelection = selectCandidate(
       candidates, input.monthlyConsumption, location.monthlyPeakSunHours, 100

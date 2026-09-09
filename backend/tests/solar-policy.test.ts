@@ -2,13 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { calculateMonthlyBill } from '../src/solar/billing';
 import { recommendSolarSystems } from '../src/solar/calculator';
 import {
+  buildRegulatoryStatus,
+  evaluatePhaseStatus,
   getTouWindow,
   loadFlowStudyRequired,
   NATIONAL_BASE_TARIFF_2026,
   nepraConcurrenceRequired,
+  normalizeConnectionPhase,
   POLICY_REFERENCE_DATE,
   PROSUMER_POLICY_2026,
   PROSUMER_REFERENCE_VALUES_2026,
+  resolveLegacyAgreementStatus,
+  resolveProsumerRegime,
+  resolveRequiresAgreementReview,
   UTILITY_ADJUSTMENTS_2026,
 } from '../src/solar/policy';
 import { BillingAccount } from '../src/solar/billing';
@@ -146,7 +152,10 @@ describe('verified 2026 tariff and policy configuration', () => {
     expect(loadFlowStudyRequired(250)).toBe(true);
   });
 
-  it('versions agreement terms and wider DG/transformer rules', () => {
+  it('versions agreement terms, S.R.O. citations, and wider DG/transformer rules', () => {
+    expect(PROSUMER_POLICY_2026.version).toBe('2026.1');
+    expect(PROSUMER_POLICY_2026.citations.regulations2026).toBe('S.R.O. 251(I)/2026');
+    expect(PROSUMER_POLICY_2026.citations.amendments2026).toBe('S.R.O. 547(I)/2026');
     expect(PROSUMER_POLICY_2026.initialAgreementTermYears).toBe(5);
     expect(PROSUMER_POLICY_2026.renewalTermYears).toBe(5);
     expect(PROSUMER_POLICY_2026.maximumDgCapacityKw).toBe(1000);
@@ -161,17 +170,145 @@ describe('verified 2026 tariff and policy configuration', () => {
   });
 });
 
+describe('Phase 1 regulatory status evaluation and policy separation', () => {
+  it('normalizes connection phase strings accurately', () => {
+    expect(normalizeConnectionPhase('3-phase')).toBe('three-phase');
+    expect(normalizeConnectionPhase('Poly Phase')).toBe('three-phase');
+    expect(normalizeConnectionPhase('Single phase')).toBe('single-phase');
+    expect(normalizeConnectionPhase('1')).toBe('single-phase');
+    expect(normalizeConnectionPhase(undefined)).toBe('unknown');
+  });
+
+  it('evaluates connection phase compatibility for grid-export and off-grid', () => {
+    const threePhaseExport = evaluatePhaseStatus('three-phase', true);
+    expect(threePhaseExport.phase).toBe('three-phase');
+    expect(threePhaseExport.status).toBe('compatible');
+
+    const singlePhaseExport = evaluatePhaseStatus('single-phase', true);
+    expect(singlePhaseExport.status).toBe('upgrade-recommended');
+    expect(singlePhaseExport.note).toMatch(/upgrade or DISCO verification/i);
+
+    const singlePhaseOffGrid = evaluatePhaseStatus('single-phase', false);
+    expect(singlePhaseOffGrid.status).toBe('compatible');
+    expect(singlePhaseOffGrid.note).toMatch(/Not blocked by the prosumer/i);
+
+    const unknownPhase = evaluatePhaseStatus('unknown', true);
+    expect(unknownPhase.status).toBe('unverified');
+  });
+
+  it('builds complete regulatory status with separate engineering requirement and grid-eligible capacity', () => {
+    const regStatus = buildRegulatoryStatus({
+      actualPvCapacityKw: 15.21,
+      sanctionedLoadKw: 10,
+      gridExportAllowed: true,
+      connectionPhase: 'three-phase',
+    });
+
+    expect(regStatus.actualPvCapacityKw).toBe(15.21);
+    expect(regStatus.sanctionedLoadKw).toBe(10);
+    expect(regStatus.exceedsSanctionedLoad).toBe(true);
+    expect(regStatus.excessCapacityKw).toBeCloseTo(5.21, 2);
+    expect(regStatus.currentGridEligibleCapacityKw).toBe(10);
+    expect(regStatus.loadExtensionRequired).toBe(true);
+    expect(regStatus.prosumerEligibility).toBe('load-extension-required');
+    expect(regStatus.networkCapacityStatus).toBe('requires-disco-verification');
+    expect(regStatus.nepraConcurrenceRequired).toBe(false); // <= 25 kW
+    expect(regStatus.loadFlowStudyRequired).toBe(false); // < 250 kW
+    expect(regStatus.settlementBasis.regime).toBe('current-2026');
+    expect(regStatus.settlementBasis.applicableRatePkrPerKwh).toBe(8.13);
+  });
+
+  it('flags NEPRA concurrence for systems exceeding 25 kW', () => {
+    const regStatus = buildRegulatoryStatus({
+      actualPvCapacityKw: 30,
+      sanctionedLoadKw: 35,
+      gridExportAllowed: true,
+      connectionPhase: 'three-phase',
+    });
+
+    expect(regStatus.nepraConcurrenceRequired).toBe(true);
+    expect(regStatus.nepraConcurrenceNote).toMatch(/regulatory concurrence/i);
+    expect(regStatus.loadFlowStudyRequired).toBe(false);
+  });
+
+  it('flags Load Flow Study for systems >= 250 kW', () => {
+    const regStatus = buildRegulatoryStatus({
+      actualPvCapacityKw: 250,
+      sanctionedLoadKw: 300,
+      gridExportAllowed: true,
+      connectionPhase: 'three-phase',
+    });
+
+    expect(regStatus.nepraConcurrenceRequired).toBe(true);
+    expect(regStatus.loadFlowStudyRequired).toBe(true);
+    expect(regStatus.loadFlowStudyNote).toMatch(/load-flow study/i);
+  });
+
+  it('flags single-phase grid export as upgrade-required', () => {
+    const regStatus = buildRegulatoryStatus({
+      actualPvCapacityKw: 6,
+      sanctionedLoadKw: 6,
+      gridExportAllowed: true,
+      connectionPhase: 'single-phase',
+    });
+
+    expect(regStatus.phaseStatus.status).toBe('upgrade-recommended');
+    expect(regStatus.prosumerEligibility).toBe('upgrade-required');
+    expect(regStatus.currentGridEligibleCapacityKw).toBe(6);
+    expect(regStatus.warnings.some((w) => w.code === 'SINGLE_PHASE_EXPORT_RESTRICTION')).toBe(true);
+  });
+
+  it('resolves legacy agreement status accurately across lifecycle statuses', () => {
+    expect(resolveLegacyAgreementStatus({ hasExistingSolar: true, agreementStatus: 'active', agreementDate: '2023' })).toBe('confirmed');
+    expect(resolveLegacyAgreementStatus({ hasExistingSolar: true, agreementStatus: 'active' })).toBe('likely');
+    expect(resolveLegacyAgreementStatus({ hasExistingSolar: true, agreementStatus: 'unknown' })).toBe('unverified');
+    expect(resolveLegacyAgreementStatus({ hasExistingSolar: true, agreementStatus: 'expired' })).toBe('not-applicable');
+    expect(resolveLegacyAgreementStatus({ hasExistingSolar: true, agreementStatus: 'none' })).toBe('not-applicable');
+    expect(resolveLegacyAgreementStatus({ hasExistingSolar: false })).toBe('not-applicable');
+  });
+
+  it('separates regulatory citations from reference rate sources in PROSUMER_POLICY_2026', () => {
+    expect(PROSUMER_POLICY_2026.settlementRules.current.regulatorySource).toContain('S.R.O. 251(I)/2026');
+    expect(PROSUMER_POLICY_2026.settlementRules.current.rateStatus).toContain('REFERENCE_ESTIMATE');
+    expect(PROSUMER_POLICY_2026.settlementRules.legacy.regulatorySource).toContain('S.R.O. 547(I)/2026');
+  });
+
+  it('flags legacy agreement review when existing customer expands or modifies system', () => {
+    const regStatus = buildRegulatoryStatus({
+      actualPvCapacityKw: 15,
+      sanctionedLoadKw: 15,
+      gridExportAllowed: true,
+      connectionPhase: 'three-phase',
+      greenMeter: true,
+      legacyAgreementStatus: 'confirmed',
+      existingSolar: {
+        hasExistingSolar: true,
+        existingPvCapacityKw: 10,
+        existingInverterKw: 10,
+        agreementStatus: 'active',
+        agreementDate: '2023',
+        intendedChange: 'expansion',
+      },
+    });
+
+    expect(regStatus.requiresAgreementReview).toBe(true);
+    expect(regStatus.agreementReviewNote).toMatch(/Expansion or modification/i);
+    expect(regStatus.warnings.some((w) => w.code === 'LEGACY_AGREEMENT_MODIFICATION_REVIEW')).toBe(true);
+  });
+});
+
 describe('six-scenario billing optimizer', () => {
-  it('returns all six architectures and enforces sanctioned load on export-connected DG', () => {
+  it('returns all six architectures and separates physical PV sizing from sanctioned load limit', () => {
     const result = recommendSolarSystems({
       city: 'Lahore', monthlyConsumption, sanctionedLoadKw: 10, greenMeter: false,
       utility: 'LESCO', tariffCategory: 'residential', protectedStatus: 'non-protected',
     });
     expect(result.scenarios).toHaveLength(6);
     for (const scenario of result.scenarios!.filter((item) => item.utilityApprovalRequired)) {
-      expect(scenario.actualPvCapacityKw).toBeLessThanOrEqual(10);
-      expect(scenario.regulatoryValid).toBe(true);
-      expect(scenario.qualifications?.join(' ')).toMatch(/transformer feasibility/i);
+      expect(scenario.actualPvCapacityKw).toBeGreaterThan(0);
+      expect(scenario.regulatoryStatus).toBeDefined();
+      expect(scenario.regulatoryStatus?.networkCapacityStatus).toBe('requires-disco-verification');
+      expect(scenario.regulatoryStatus?.transformerCapacityNote).toMatch(/transformer/i);
     }
   });
 
@@ -180,6 +317,7 @@ describe('six-scenario billing optimizer', () => {
     const noExport = result.scenarios!.find((item) => item.architecture === 'hybrid-no-green-no-battery')!;
     expect(noExport.annualGridExportKwh).toBe(0);
     expect(noExport.prosumerRegime).toBe('not-applicable');
+    expect(noExport.regulatoryStatus?.prosumerEligibility).toBe('not-applicable');
   });
 
   it('excludes unconfigured FCA, QTA, and taxes and preserves fixed charges after solar', () => {

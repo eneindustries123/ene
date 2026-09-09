@@ -23,9 +23,13 @@ import { apiFetchWithTimeout, getApiUrl } from '@/lib/api-client';
 import {
   ANALYZER_ARCHITECTURES,
   ANALYZER_MONTHS,
+  AnalyzerAgreementLifecycleStatus,
   AnalyzerAnalysisMode,
   AnalyzerArchitecture,
   AnalyzerConfidence,
+  AnalyzerConnectionPhase,
+  AnalyzerIntendedModification,
+  AnalyzerLegacyAgreementStatus,
   AnalyzerMonthKey,
   AnalyzerSystemRecommendation,
   buildAnalyzerComparisonExplanation,
@@ -102,6 +106,7 @@ function SystemCard({
   badgeLabel?: string;
 }) {
   const billPresentation = getCustomerBillPresentation(system);
+  const reg = system.regulatoryStatus;
   return (
     <div className={`rounded-3xl border p-6 flex flex-col gap-5 ${
       best
@@ -191,17 +196,29 @@ function SystemCard({
           <span className={best ? 'text-white/60' : 'text-solix-muted'}>Seasonal match</span>
           <strong className="capitalize">{system.seasonalMatch}</strong>
         </div>
-        {system.confidence && (
-          <div className="flex justify-between gap-3">
-            <span className={best ? 'text-white/60' : 'text-solix-muted'}>Recommendation confidence</span>
-            <strong>{system.confidence}</strong>
+        {reg && reg.exceedsSanctionedLoad && (
+          <div className={`p-2.5 rounded-xl text-[11px] flex items-start gap-2 ${best ? 'bg-amber-500/20 text-amber-200 border border-amber-400/30' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block">Sanctioned load extension required</strong>
+              <span>Current load ({reg.sanctionedLoadKw} kW) limits immediate export to {reg.currentGridEligibleCapacityKw} kWp.</span>
+            </div>
+          </div>
+        )}
+        {reg && reg.phaseStatus.status === 'upgrade-recommended' && (
+          <div className={`p-2.5 rounded-xl text-[11px] flex items-start gap-2 ${best ? 'bg-amber-500/20 text-amber-200 border border-amber-400/30' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block">Single-phase connection</strong>
+              <span>Your existing connection may require an upgrade or DISCO verification before export can be enabled.</span>
+            </div>
           </div>
         )}
         {system.utilityApprovalRequired && (
           <>
             <div className="flex justify-between gap-3">
               <span className={best ? 'text-white/60' : 'text-solix-muted'}>NEPRA concurrence</span>
-              <strong>{system.nepraConcurrenceRequired ? 'Required' : 'Not required (≤25 kW)'}</strong>
+              <strong>{system.nepraConcurrenceRequired ? 'Required (>25 kW)' : 'Not required (≤25 kW)'}</strong>
             </div>
             <div className="flex justify-between gap-3">
               <span className={best ? 'text-white/60' : 'text-solix-muted'}>Utility/interconnection</span>
@@ -237,8 +254,15 @@ export function SolarBillAnalyzer() {
   const [tou, setTou] = useState(false);
   const [sanctionedLoadKw, setSanctionedLoadKw] = useState('');
   const [mdiKw, setMdiKw] = useState('');
+  const [connectionPhase, setConnectionPhase] = useState<AnalyzerConnectionPhase>('three-phase');
+  const [hasExistingSolar, setHasExistingSolar] = useState(false);
+  const [existingPvCapacityKw, setExistingPvCapacityKw] = useState('');
+  const [existingInverterKw, setExistingInverterKw] = useState('');
+  const [agreementStatus, setAgreementStatus] = useState<AnalyzerAgreementLifecycleStatus>('unknown');
+  const [agreementDate, setAgreementDate] = useState('');
+  const [intendedChange, setIntendedChange] = useState<AnalyzerIntendedModification>('analysis-only');
   const [greenMeter, setGreenMeter] = useState(false);
-  const [legacyAgreementStatus, setLegacyAgreementStatus] = useState<'valid' | 'expired' | 'none' | 'unknown'>('none');
+  const [legacyAgreementStatus, setLegacyAgreementStatus] = useState<AnalyzerLegacyAgreementStatus>('not-applicable');
   const [analysisMode, setAnalysisMode] = useState<AnalyzerAnalysisMode | ''>('');
   const [chosenArchitecture, setChosenArchitecture] = useState<AnalyzerArchitecture | ''>('');
   const [result, setResult] = useState<SolarRecommendationResponse | null>(null);
@@ -273,6 +297,10 @@ export function SolarBillAnalyzer() {
   );
   const batteryRefinementTitle = useMemo(
     () => result ? getBatteryRefinementTitle(result) : 'Refine the Hybrid battery estimate',
+    [result]
+  );
+  const activeRegulatoryStatus = useMemo(
+    () => result ? (result.selectedSystem?.regulatoryStatus || result.bestMatch.regulatoryStatus || null) : null,
     [result]
   );
 
@@ -333,6 +361,14 @@ export function SolarBillAnalyzer() {
       if (provider) setUtility(provider);
       if (/commercial|a-?2/i.test(extracted.extraction.consumerCategory || '')) setTariffCategory('commercial');
       setSanctionedLoadKw(extracted.extraction.sanctionedLoadKw ? String(extracted.extraction.sanctionedLoadKw) : '');
+      const rawPhase = `${extracted.extraction.phase || ''} ${extracted.extraction.connectionType || ''}`.toLowerCase();
+      if (/3|three|poly/i.test(rawPhase)) {
+        setConnectionPhase('three-phase');
+      } else if (/1|single/i.test(rawPhase)) {
+        setConnectionPhase('single-phase');
+      } else {
+        setConnectionPhase('unknown');
+      }
       setStep('verify');
     } catch (requestError) {
       const timedOut = requestError instanceof Error && requestError.name === 'AbortError';
@@ -353,6 +389,15 @@ export function SolarBillAnalyzer() {
     setMonthlyValues(createEmptyMonthlyValues());
     setMonthConfidence({});
     setCity('');
+    setConnectionPhase('three-phase');
+    setHasExistingSolar(false);
+    setExistingPvCapacityKw('');
+    setExistingInverterKw('');
+    setAgreementStatus('unknown');
+    setAgreementDate('');
+    setIntendedChange('analysis-only');
+    setGreenMeter(false);
+    setLegacyAgreementStatus('not-applicable');
     setError('');
     setStep('verify');
   };
@@ -384,12 +429,27 @@ export function SolarBillAnalyzer() {
         tariffCategory,
         protectedStatus,
         tou,
+        connectionPhase,
         ...(sanctionedLoadKw && Number(sanctionedLoadKw) > 0
           ? { sanctionedLoadKw: Number(sanctionedLoadKw) }
           : {}),
         ...(mdiKw && Number(mdiKw) >= 0 ? { mdiKw: Number(mdiKw) } : {}),
-        greenMeter,
-        legacyAgreementStatus: greenMeter ? legacyAgreementStatus : 'none',
+        greenMeter: hasExistingSolar ? greenMeter : false,
+        legacyAgreementStatus: hasExistingSolar
+          ? (agreementStatus === 'active' ? (agreementDate.trim() ? 'confirmed' : 'likely') : agreementStatus === 'unknown' ? 'unverified' : 'not-applicable')
+          : 'not-applicable',
+        existingSolar: {
+          hasExistingSolar,
+          ...(existingPvCapacityKw && Number(existingPvCapacityKw) > 0
+            ? { existingPvCapacityKw: Number(existingPvCapacityKw) }
+            : {}),
+          ...(existingInverterKw && Number(existingInverterKw) > 0
+            ? { existingInverterKw: Number(existingInverterKw) }
+            : {}),
+          agreementStatus: hasExistingSolar ? agreementStatus : null,
+          agreementDate: hasExistingSolar && agreementDate.trim() ? agreementDate.trim() : null,
+          intendedChange: hasExistingSolar ? intendedChange : null,
+        },
         analysisMode,
         ...((analysisMode === 'chosen' || analysisMode === 'both') ? { chosenArchitecture } : {}),
         billExtractionConfidence: extraction?.extraction.overallConfidence || 'manual',
@@ -446,8 +506,15 @@ export function SolarBillAnalyzer() {
     setTou(false);
     setSanctionedLoadKw('');
     setMdiKw('');
+    setConnectionPhase('three-phase');
+    setHasExistingSolar(false);
+    setExistingPvCapacityKw('');
+    setExistingInverterKw('');
+    setAgreementStatus('unknown');
+    setAgreementDate('');
+    setIntendedChange('analysis-only');
     setGreenMeter(false);
-    setLegacyAgreementStatus('none');
+    setLegacyAgreementStatus('not-applicable');
     setAnalysisMode('');
     setChosenArchitecture('');
     setResult(null);
@@ -740,26 +807,133 @@ export function SolarBillAnalyzer() {
                   </label>
                 )}
                 <label className="space-y-2 text-xs font-bold">
-                  Existing green meter
-                  <select value={greenMeter ? 'yes' : 'no'} onChange={(event) => {
-                    const enabled = event.target.value === 'yes';
-                    setGreenMeter(enabled);
-                    if (enabled) setLegacyAgreementStatus('unknown');
-                  }} className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
-                    <option value="no">No</option>
-                    <option value="yes">Yes</option>
+                  Connection phase
+                  <select
+                    value={connectionPhase}
+                    onChange={(event) => setConnectionPhase(event.target.value as AnalyzerConnectionPhase)}
+                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                  >
+                    <option value="three-phase">Three Phase (3-Phase)</option>
+                    <option value="single-phase">Single Phase (1-Phase)</option>
+                    <option value="unknown">Unknown / Not Listed</option>
                   </select>
                 </label>
-                {greenMeter && (
+                <label className="space-y-2 text-xs font-bold">
+                  Already have solar installed?
+                  <select
+                    value={hasExistingSolar ? 'yes' : 'no'}
+                    onChange={(event) => {
+                      const enabled = event.target.value === 'yes';
+                      setHasExistingSolar(enabled);
+                      if (!enabled) {
+                        setGreenMeter(false);
+                        setLegacyAgreementStatus('not-applicable');
+                        setExistingPvCapacityKw('');
+                        setExistingInverterKw('');
+                        setAgreementStatus('unknown');
+                        setAgreementDate('');
+                        setIntendedChange('analysis-only');
+                      }
+                    }}
+                    className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                  >
+                    <option value="no">No (New Solar Customer)</option>
+                    <option value="yes">Yes (Existing Solar System)</option>
+                  </select>
+                </label>
+                {hasExistingSolar && (
                   <label className="space-y-2 text-xs font-bold">
-                    Old-framework agreement
-                    <select value={legacyAgreementStatus} onChange={(event) => setLegacyAgreementStatus(event.target.value as typeof legacyAgreementStatus)} className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold">
-                      <option value="valid">Valid and unexpired</option>
-                      <option value="expired">Expired</option>
-                      <option value="none">No old agreement</option>
-                      <option value="unknown">Unknown</option>
+                    Existing green meter
+                    <select
+                      value={greenMeter ? 'yes' : 'no'}
+                      onChange={(event) => {
+                        const enabled = event.target.value === 'yes';
+                        setGreenMeter(enabled);
+                        if (enabled && agreementStatus === 'none') {
+                          setAgreementStatus('active');
+                        }
+                      }}
+                      className="w-full bg-solix-bg border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                    >
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
                     </select>
                   </label>
+                )}
+                {hasExistingSolar && (
+                  <div className="sm:col-span-2 lg:col-span-4 rounded-2xl border border-solix-border bg-solix-bg p-4 sm:p-5 space-y-4 animate-fadeIn">
+                    <div>
+                      <strong className="text-sm font-extrabold text-solix-dark">Existing Solar System Details</strong>
+                      <p className="text-xs text-solix-muted mt-1">
+                        These details help determine if existing net-metering agreements or modification rules apply.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <label className="space-y-2 text-xs font-bold">
+                        Existing PV capacity (optional kWp)
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          value={existingPvCapacityKw}
+                          onChange={(event) => setExistingPvCapacityKw(event.target.value)}
+                          placeholder="e.g. 10.0"
+                          className="w-full bg-white border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                        />
+                      </label>
+                      <label className="space-y-2 text-xs font-bold">
+                        Existing inverter capacity (optional kW)
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          value={existingInverterKw}
+                          onChange={(event) => setExistingInverterKw(event.target.value)}
+                          placeholder="e.g. 10.0"
+                          className="w-full bg-white border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                        />
+                      </label>
+                      <label className="space-y-2 text-xs font-bold">
+                        Existing agreement status
+                        <select
+                          value={agreementStatus}
+                          onChange={(event) => setAgreementStatus(event.target.value as AnalyzerAgreementLifecycleStatus)}
+                          className="w-full bg-white border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                        >
+                          <option value="active">Active Agreement (Installed under legacy framework)</option>
+                          <option value="expired">Expired Agreement</option>
+                          <option value="none">No Formal Agreement</option>
+                          <option value="unknown">Unsure / Need Verification</option>
+                        </select>
+                      </label>
+                      {agreementStatus === 'active' && (
+                        <label className="space-y-2 text-xs font-bold">
+                          Agreement date or year (optional)
+                          <input
+                            type="text"
+                            value={agreementDate}
+                            onChange={(event) => setAgreementDate(event.target.value)}
+                            placeholder="e.g. 2023 or Nov 2022"
+                            className="w-full bg-white border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                          />
+                        </label>
+                      )}
+                      <label className="space-y-2 text-xs font-bold">
+                        Intended change
+                        <select
+                          value={intendedChange}
+                          onChange={(event) => setIntendedChange(event.target.value as AnalyzerIntendedModification)}
+                          className="w-full bg-white border border-solix-border rounded-xl px-3 py-3 text-sm font-semibold"
+                        >
+                          <option value="analysis-only">Analysis Only (Comparison)</option>
+                          <option value="expansion">System Expansion / Add Panels</option>
+                          <option value="battery-addition">Battery Addition Only</option>
+                          <option value="replacement">System Replacement</option>
+                          <option value="system-modification">System Modification</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="border-t border-solix-border pt-6 space-y-4">
@@ -1047,6 +1221,135 @@ export function SolarBillAnalyzer() {
               </div>
             </div>
           </div>
+
+          {activeRegulatoryStatus && (
+            <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-solix-green">Pakistan Grid & Regulatory Compliance</span>
+                  <h3 className="text-2xl font-extrabold text-solix-dark mt-1">Connection & Regulatory Review</h3>
+                  <p className="text-xs sm:text-sm text-solix-muted mt-1">
+                    Independent separation of engineering solar capacity from DISCO connection and NEPRA regulatory limits.
+                  </p>
+                </div>
+                <span className={`self-start px-3.5 py-1.5 rounded-full text-xs font-bold border ${
+                  activeRegulatoryStatus.prosumerEligibility === 'eligible'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : activeRegulatoryStatus.prosumerEligibility === 'upgrade-required'
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                    : activeRegulatoryStatus.prosumerEligibility === 'load-extension-required'
+                    ? 'bg-blue-50 text-blue-800 border-blue-200'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}>
+                  {activeRegulatoryStatus.prosumerEligibility === 'eligible' && '✓ Grid-Export Eligible'}
+                  {activeRegulatoryStatus.prosumerEligibility === 'upgrade-required' && '⚠ Phase Verification / Upgrade Required'}
+                  {activeRegulatoryStatus.prosumerEligibility === 'load-extension-required' && 'ℹ Load Extension Required'}
+                  {activeRegulatoryStatus.prosumerEligibility === 'requires-disco-verification' && 'ℹ DISCO Verification Required'}
+                  {activeRegulatoryStatus.prosumerEligibility === 'not-applicable' && 'Zero-Export / Off-Grid (Phase Check Not Applicable)'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="bg-solix-bg rounded-2xl p-4">
+                  <span className="text-[10px] uppercase text-solix-muted font-bold">Engineering PV Requirement</span>
+                  <div className="font-extrabold text-xl text-solix-dark mt-1">{activeRegulatoryStatus.actualPvCapacityKw} kWp</div>
+                  <p className="text-[10px] text-solix-muted mt-1">Physical size from consumption</p>
+                </div>
+
+                <div className="bg-solix-bg rounded-2xl p-4">
+                  <span className="text-[10px] uppercase text-solix-muted font-bold">Sanctioned Load</span>
+                  <div className="font-extrabold text-xl text-solix-dark mt-1">
+                    {activeRegulatoryStatus.sanctionedLoadKw !== null ? `${activeRegulatoryStatus.sanctionedLoadKw} kW` : 'Unspecified'}
+                  </div>
+                  <p className="text-[10px] text-solix-muted mt-1">From verified electricity bill</p>
+                </div>
+
+                <div className="bg-solix-bg rounded-2xl p-4">
+                  <span className="text-[10px] uppercase text-solix-muted font-bold">Current Grid-Eligible Capacity</span>
+                  <div className={`font-extrabold text-xl mt-1 ${activeRegulatoryStatus.currentGridEligibleCapacityKw !== null && activeRegulatoryStatus.currentGridEligibleCapacityKw < activeRegulatoryStatus.actualPvCapacityKw ? 'text-amber-700' : 'text-solix-dark'}`}>
+                    {activeRegulatoryStatus.currentGridEligibleCapacityKw !== null
+                      ? `${activeRegulatoryStatus.currentGridEligibleCapacityKw} kW`
+                      : (activeRegulatoryStatus.gridExportAllowed ? 'Load Unspecified' : '0 kW (Zero Export)')}
+                  </div>
+                  <p className="text-[10px] text-solix-muted mt-1">
+                    {activeRegulatoryStatus.connectionPhase === 'single-phase' && activeRegulatoryStatus.gridExportAllowed
+                      ? 'Single-phase may require upgrade/verification'
+                      : 'Immediate export eligibility'}
+                  </p>
+                </div>
+
+                <div className="bg-solix-bg rounded-2xl p-4">
+                  <span className="text-[10px] uppercase text-solix-muted font-bold">Connection Phase</span>
+                  <div className="font-extrabold text-xl text-solix-dark mt-1 capitalize">
+                    {activeRegulatoryStatus.connectionPhase === 'three-phase' ? '3-Phase' : activeRegulatoryStatus.connectionPhase === 'single-phase' ? 'Single Phase' : 'Unknown'}
+                  </div>
+                  <p className="text-[10px] text-solix-muted mt-1">{activeRegulatoryStatus.phaseStatus.note}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-solix-border pt-4 text-xs">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${activeRegulatoryStatus.nepraConcurrenceRequired ? 'text-blue-600' : 'text-emerald-600'}`} />
+                    <div>
+                      <strong className="text-solix-dark block">NEPRA Concurrence Process</strong>
+                      <span className="text-solix-muted">{activeRegulatoryStatus.nepraConcurrenceNote}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2.5">
+                    <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${activeRegulatoryStatus.loadFlowStudyRequired ? 'text-amber-600' : 'text-emerald-600'}`} />
+                    <div>
+                      <strong className="text-solix-dark block">Load Flow Study Requirement</strong>
+                      <span className="text-solix-muted">{activeRegulatoryStatus.loadFlowStudyNote}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+                    <div>
+                      <strong className="text-solix-dark block">Distribution Transformer Hosting Capacity</strong>
+                      <span className="text-solix-muted">{activeRegulatoryStatus.transformerCapacityNote}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2.5">
+                    <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-solix-green" />
+                    <div>
+                      <strong className="text-solix-dark block">Export Settlement Basis ({activeRegulatoryStatus.settlementBasis.regime})</strong>
+                      <span className="text-solix-muted">{activeRegulatoryStatus.settlementBasis.description}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {activeRegulatoryStatus.warnings.length > 0 && (
+                <div className="space-y-2 border-t border-solix-border pt-4">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-solix-dark">Regulatory Notes & Guidance</span>
+                  {activeRegulatoryStatus.warnings.map((w, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
+                        w.severity === 'critical' || w.severity === 'error'
+                          ? 'bg-rose-50 border-rose-200 text-rose-800'
+                          : w.severity === 'warning'
+                          ? 'bg-amber-50 border-amber-200 text-amber-900'
+                          : 'bg-blue-50 border-blue-200 text-blue-900'
+                      }`}
+                    >
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <strong className="block">{w.message}</strong>
+                        {w.actionableGuidance && <p className="text-[11px] opacity-90">{w.actionableGuidance}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {(result.bestMatch.battery || result.selectedSystem?.battery) && (
           <div className="bg-white border border-solix-border rounded-3xl p-6 sm:p-8 shadow-solix">

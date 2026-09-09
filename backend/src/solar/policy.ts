@@ -1,10 +1,21 @@
 import {
+  AgreementLifecycleStatus,
+  ConnectionPhase,
+  ExistingSolarInput,
+  IntendedModification,
+  LegacyAgreementStatus,
   MONTH_KEYS,
   MonthKey,
+  NetworkCapacityStatus,
   PakistanUtility,
   PAKISTAN_UTILITIES,
+  PhaseStatus,
+  PhaseStatusEvaluation,
   ProtectedStatus,
+  ProsumerEligibility,
   ProsumerRegime,
+  RegulatoryStatus,
+  RegulatoryWarning,
   TariffCategory,
 } from './types';
 
@@ -173,6 +184,7 @@ export const PROSUMER_REFERENCE_VALUES_2026: readonly ProsumerReferenceValue[] =
 ] as const;
 
 export const PROSUMER_POLICY_2026 = {
+  version: '2026.1',
   effectiveFrom: PROSUMER_EFFECTIVE_FROM,
   effectiveTo: null,
   initialAgreementTermYears: 5,
@@ -182,6 +194,59 @@ export const PROSUMER_POLICY_2026 = {
   loadFlowThresholdKw: 250,
   transformerHostingCapacityThreshold: 0.8,
   nepraConcurrenceExemptAtOrBelowKw: 25,
+  settlementRules: {
+    current: {
+      mechanism: 'NAEPP',
+      regulatorySource: 'S.R.O. 251(I)/2026 (NEPRA Alternative & Renewable Energy Distributed Generation and Net-Billing Regulations, 2026)',
+      ratePkrPerKwh: 8.13,
+      rateEffectiveYear: 2026,
+      rateSource: 'Applicable NEPRA CY2026 Power Purchase Price / NAEPP reference (subject to periodic regulatory adjustment / external verification)',
+      rateStatus: 'REFERENCE_ESTIMATE — SUBJECT_TO_REGULATORY_VERIFICATION',
+    },
+    legacy: {
+      mechanism: 'NAPPP',
+      regulatorySource: 'S.R.O. 547(I)/2026 (Grandfathering / Transitional Protection Regulations)',
+      ratePkrPerKwh: 25.32,
+      rateEffectiveYear: 2026,
+      rateSource: 'CY2026 National Average Power Purchase Price (NAPPP) reference (subject to grandfathered contract terms)',
+      rateStatus: 'REFERENCE_ESTIMATE — SUBJECT_TO_CONTRACT_VERIFICATION',
+    },
+  },
+  regulatoryCitations: {
+    prosumerRegulations: 'S.R.O. 251(I)/2026',
+    legacyProtection: 'S.R.O. 547(I)/2026',
+    concurrenceExemption: 'S.R.O. 1330(I)/2026 dated 6 August 2026',
+    concurrenceFeeStatus: 'DEFERRED — REQUIRES AUTHORITATIVE RATE VERIFICATION',
+  },
+  exportSettlement: {
+    current: {
+      basis: 'NAEPP',
+      ratePkrPerKwh: 8.13,
+      effectiveYear: 2026,
+      regulatorySource: 'S.R.O. 251(I)/2026',
+      rateSource: 'Applicable NEPRA CY2026 Power Purchase Price / NAEPP reference',
+      sourceReference: 'Rule: S.R.O. 251(I)/2026; Rate: CY2026 NAEPP reference (subject to regulatory verification)',
+    },
+    legacy: {
+      basis: 'NAPPP',
+      ratePkrPerKwh: 25.32,
+      effectiveYear: 2026,
+      regulatorySource: 'S.R.O. 547(I)/2026',
+      rateSource: 'CY2026 National Average Power Purchase Price (NAPPP) reference',
+      sourceReference: 'Rule: S.R.O. 547(I)/2026; Rate: CY2026 NAPPP reference (subject to contract verification)',
+    },
+  },
+  citations: {
+    regulations2026: 'S.R.O. 251(I)/2026',
+    amendments2026: 'S.R.O. 547(I)/2026',
+    concurrenceExemption2026: 'S.R.O. 1330(I)/2026',
+  },
+  sourceReferences: {
+    prosumerRegulations: 'S.R.O. 251(I)/2026 (NEPRA Prosumer Regulations 2026)',
+    legacyProtection: 'S.R.O. 547(I)/2026 (Grandfathering / Transitional Protection)',
+    concurrenceAmendment: 'S.R.O. 1330(I)/2026 dated 6 August 2026 (≤25 kW Concurrence Exemption)',
+    concurrenceFeeStatus: 'DEFERRED — REQUIRES AUTHORITATIVE RATE VERIFICATION',
+  },
   sourceReference: 'S.R.O. 251(I)/2026; S.R.O. 547(I)/2026; S.R.O. 1330(I)/2026 dated 6 August 2026',
   lastVerified: POLICY_REFERENCE_DATE,
 } as const;
@@ -210,14 +275,97 @@ export function resolveUtility(value?: string | null): PakistanUtility {
   return aliases.find(([alias]) => normalized.includes(alias))?.[1] || 'LESCO';
 }
 
+export function normalizeConnectionPhase(
+  phase?: string | null,
+  connectionType?: string | null
+): ConnectionPhase {
+  const combined = `${phase || ''} ${connectionType || ''}`.toLowerCase();
+  if (/3|three|poly/i.test(combined)) return 'three-phase';
+  if (/1|single/i.test(combined)) return 'single-phase';
+  return 'unknown';
+}
+
+export function evaluatePhaseStatus(
+  phase: ConnectionPhase,
+  exportConnected: boolean
+): PhaseStatusEvaluation {
+  if (!exportConnected) {
+    return {
+      phase,
+      status: 'compatible',
+      note: 'Not blocked by the prosumer/export phase eligibility check.',
+    };
+  }
+  if (phase === 'three-phase') {
+    return {
+      phase,
+      status: 'compatible',
+      note: 'Three-phase connection verified for standard prosumer export metering.',
+    };
+  }
+  if (phase === 'single-phase') {
+    return {
+      phase,
+      status: 'upgrade-recommended',
+      note: 'Your existing connection may require an upgrade or DISCO verification before grid-export/prosumer interconnection can be enabled.',
+    };
+  }
+  return {
+    phase: 'unknown',
+    status: 'unverified',
+    note: 'Connection phase requires verification with your DISCO for prosumer interconnection.',
+  };
+}
+
+export function resolveLegacyAgreementStatus(input: {
+  hasExistingSolar?: boolean;
+  agreementStatus?: AgreementLifecycleStatus | 'yes' | 'no' | 'unsure' | null;
+  agreementDate?: string | null;
+  legacyAgreementStatus?: LegacyAgreementStatus | 'valid' | 'expired' | 'none' | 'unknown' | null;
+  greenMeter?: boolean;
+}): LegacyAgreementStatus {
+  if (input.legacyAgreementStatus) {
+    if (input.legacyAgreementStatus === 'confirmed' || input.legacyAgreementStatus === 'valid') return 'confirmed';
+    if (input.legacyAgreementStatus === 'likely') return 'likely';
+    if (input.legacyAgreementStatus === 'unverified' || input.legacyAgreementStatus === 'unknown') return 'unverified';
+    if (input.legacyAgreementStatus === 'not-applicable' || input.legacyAgreementStatus === 'none' || input.legacyAgreementStatus === 'expired') return 'not-applicable';
+  }
+
+  if (!input.hasExistingSolar) return 'not-applicable';
+  if (input.agreementStatus === 'none' || input.agreementStatus === 'no' || input.agreementStatus === 'expired') return 'not-applicable';
+  if (input.agreementStatus === 'active' || input.agreementStatus === 'yes') {
+    if (input.agreementDate && input.agreementDate.trim().length > 0) return 'confirmed';
+    return 'likely';
+  }
+  if (input.agreementStatus === 'unknown' || input.agreementStatus === 'unsure') return 'unverified';
+  if (input.greenMeter) return 'unverified';
+  return 'not-applicable';
+}
+
+export function resolveRequiresAgreementReview(input: {
+  hasExistingSolar?: boolean;
+  legacyAgreementStatus: LegacyAgreementStatus;
+  intendedChange?: IntendedModification | null;
+}): boolean {
+  if (!input.hasExistingSolar) return false;
+  if (input.legacyAgreementStatus === 'not-applicable') return false;
+  const modifyingIntents: IntendedModification[] = ['expansion', 'replacement', 'system-modification'];
+  return input.intendedChange ? modifyingIntents.includes(input.intendedChange) : false;
+}
+
 export function resolveProsumerRegime(input: {
-  greenMeter: boolean;
-  legacyAgreementStatus?: 'valid' | 'expired' | 'none' | 'unknown';
+  greenMeter?: boolean;
+  exportConnected?: boolean;
+  legacyAgreementStatus?: LegacyAgreementStatus | 'valid' | 'expired' | 'none' | 'unknown' | null;
 }): ProsumerRegime {
+  if (input.exportConnected === false) return 'not-applicable';
+  const status = input.legacyAgreementStatus;
+  if (status === 'confirmed' || status === 'valid') return 'legacy';
+  if (status === 'likely') return 'legacy';
+  if (status === 'unverified' || status === 'unknown') return 'uncertain';
+  if (status === 'not-applicable' || status === 'none' || status === 'expired') return 'current-2026';
   if (!input.greenMeter) return 'not-applicable';
-  if (input.legacyAgreementStatus === 'valid') return 'legacy';
-  if (input.legacyAgreementStatus === 'expired' || input.legacyAgreementStatus === 'none') return 'current-2026';
-  return 'uncertain';
+  return 'current-2026';
 }
 
 export function nepraConcurrenceRequired(capacityKw: number): boolean {
@@ -226,4 +374,192 @@ export function nepraConcurrenceRequired(capacityKw: number): boolean {
 
 export function loadFlowStudyRequired(capacityKw: number): boolean {
   return capacityKw >= PROSUMER_POLICY_2026.loadFlowThresholdKw;
+}
+
+export function buildRegulatoryStatus(input: {
+  actualPvCapacityKw: number;
+  gridExportAllowed?: boolean;
+  exportConnected?: boolean;
+  sanctionedLoadKw?: number | null;
+  connectionPhase?: ConnectionPhase;
+  hasExistingSolar?: boolean;
+  legacyAgreementStatus?: LegacyAgreementStatus;
+  intendedModification?: IntendedModification;
+  requiresAgreementReview?: boolean;
+  existingSolar?: ExistingSolarInput | null;
+}): RegulatoryStatus {
+  const actualPvCapacityKw = input.actualPvCapacityKw;
+  const gridExportAllowed = input.gridExportAllowed ?? input.exportConnected ?? true;
+  const sanctionedLoadKw = input.sanctionedLoadKw ?? null;
+  const connectionPhase: ConnectionPhase = input.connectionPhase || 'unknown';
+  const hasExistingSolar = input.hasExistingSolar ?? input.existingSolar?.hasExistingSolar ?? false;
+
+  const resolvedAgreementStatus: LegacyAgreementStatus = input.legacyAgreementStatus || resolveLegacyAgreementStatus({
+    hasExistingSolar,
+    agreementStatus: input.existingSolar?.agreementStatus as any,
+    agreementDate: input.existingSolar?.agreementDate,
+    greenMeter: gridExportAllowed,
+  });
+
+  const intendedModification: IntendedModification = input.intendedModification || input.existingSolar?.intendedChange || 'analysis-only';
+  const requiresAgreementReview = input.requiresAgreementReview ?? resolveRequiresAgreementReview({
+    hasExistingSolar,
+    legacyAgreementStatus: resolvedAgreementStatus,
+    intendedChange: intendedModification,
+  });
+
+  const exceedsSanctionedLoad = gridExportAllowed && sanctionedLoadKw !== null && actualPvCapacityKw > sanctionedLoadKw + 0.0001;
+  const excessCapacityKw = exceedsSanctionedLoad && sanctionedLoadKw !== null
+    ? Number((actualPvCapacityKw - sanctionedLoadKw).toFixed(3))
+    : 0;
+
+  const phaseStatus = evaluatePhaseStatus(connectionPhase, gridExportAllowed);
+
+  const currentGridEligibleCapacityKw = !gridExportAllowed
+    ? 0
+    : sanctionedLoadKw !== null
+      ? Math.min(actualPvCapacityKw, sanctionedLoadKw)
+      : null;
+
+  const loadExtensionRequired = exceedsSanctionedLoad;
+  const nepraConcurrence = gridExportAllowed ? nepraConcurrenceRequired(actualPvCapacityKw) : false;
+  const loadFlow = gridExportAllowed ? loadFlowStudyRequired(actualPvCapacityKw) : false;
+  const networkCapacityStatus: NetworkCapacityStatus = 'requires-disco-verification';
+
+  let prosumerEligibility: ProsumerEligibility = 'not-applicable';
+  if (gridExportAllowed) {
+    if (phaseStatus.status === 'upgrade-recommended') {
+      prosumerEligibility = 'upgrade-required';
+    } else if (exceedsSanctionedLoad) {
+      prosumerEligibility = 'load-extension-required';
+    } else if (sanctionedLoadKw === null || phaseStatus.status === 'unverified') {
+      prosumerEligibility = 'requires-disco-verification';
+    } else {
+      prosumerEligibility = 'eligible';
+    }
+  }
+
+  const nepraConcurrenceNote = nepraConcurrence
+    ? 'System capacity exceeds 25 kW; formal NEPRA regulatory concurrence is required in addition to DISCO processing (Application fee status: DEFERRED — REQUIRES AUTHORITATIVE RATE VERIFICATION).'
+    : 'NEPRA concurrence is exempt under current framework (≤25 kW); prosumer application proceeds directly through your DISCO.';
+
+  const loadFlowStudyNote = loadFlow
+    ? 'A load-flow study / technical grid assessment is required under the applicable framework (≥250 kW).'
+    : 'System capacity is <250 kW; standard distribution connection criteria apply without mandatory load flow study.';
+
+  const transformerCapacityNote = 'Distribution transformer hosting capacity limit is 80% of rated capacity under NEPRA guidelines; local transformer headroom requires DISCO technical survey verification.';
+
+  const regime = resolveProsumerRegime({
+    greenMeter: gridExportAllowed,
+    exportConnected: gridExportAllowed,
+    legacyAgreementStatus: resolvedAgreementStatus,
+  });
+
+  const applicableRate = regime === 'legacy'
+    ? PROSUMER_POLICY_2026.settlementRules.legacy.ratePkrPerKwh
+    : PROSUMER_POLICY_2026.settlementRules.current.ratePkrPerKwh;
+
+  const settlementBasis = {
+    regime,
+    applicableRatePkrPerKwh: applicableRate,
+    description: regime === 'legacy'
+      ? `Legacy net-metering settlement at NAPPP reference (Rs ${applicableRate}/kWh) applies under grandfathering terms.`
+      : regime === 'uncertain'
+      ? `Unverified agreement terms; provisional net-billing settlement at NAEPP reference (Rs ${applicableRate}/kWh) applied.`
+      : `Current 2026 net-billing settlement at NAEPP reference (Rs ${applicableRate}/kWh) applies per NEPRA prosumer framework.`,
+  };
+
+  const warnings: RegulatoryWarning[] = [];
+  const userNotes: string[] = [];
+
+  if (gridExportAllowed) {
+    if (exceedsSanctionedLoad) {
+      warnings.push({
+        code: 'SANCTIONED_LOAD_EXCEEDED',
+        severity: 'warning',
+        message: `Engineering PV requirement (${actualPvCapacityKw} kWp) exceeds verified sanctioned load (${sanctionedLoadKw} kW).`,
+        actionableGuidance: `Apply for sanctioned-load extension to at least ${Math.ceil(actualPvCapacityKw)} kW with your DISCO, or operate with zero-export / export-limiting until load extension is approved.`,
+      });
+      userNotes.push(`Sanctioned load extension from ${sanctionedLoadKw} kW to at least ${Math.ceil(actualPvCapacityKw)} kW is required for full export interconnection.`);
+    }
+
+    if (phaseStatus.status === 'upgrade-recommended') {
+      warnings.push({
+        code: 'SINGLE_PHASE_EXPORT_RESTRICTION',
+        severity: 'warning',
+        message: 'Single-phase connection detected. Your existing connection may require an upgrade or DISCO verification before grid-export / prosumer interconnection can be enabled.',
+        actionableGuidance: 'Consult your DISCO regarding 3-phase meter upgrade or verification requirements for grid export, or select a Zero-Export / Off-Grid solar configuration.',
+      });
+      userNotes.push('Single-phase connection may require DISCO verification or upgrade to three-phase for export metering.');
+    } else if (phaseStatus.status === 'unverified') {
+      warnings.push({
+        code: 'PHASE_UNVERIFIED',
+        severity: 'info',
+        message: 'Connection phase requires verification with your DISCO for prosumer interconnection.',
+      });
+    }
+
+    if (nepraConcurrence) {
+      warnings.push({
+        code: 'NEPRA_CONCURRENCE_REQUIRED',
+        severity: 'info',
+        message: nepraConcurrenceNote,
+      });
+      userNotes.push('NEPRA concurrence filing applies for systems >25 kW.');
+    }
+
+    if (loadFlow) {
+      warnings.push({
+        code: 'LOAD_FLOW_STUDY_REQUIRED',
+        severity: 'warning',
+        message: loadFlowStudyNote,
+      });
+      userNotes.push('A load-flow study / technical grid assessment is required under the applicable framework (≥250 kW).');
+    }
+
+    warnings.push({
+      code: 'TRANSFORMER_CAPACITY_VERIFICATION',
+      severity: 'info',
+      message: 'Transformer hosting capacity (80% threshold) requires DISCO site survey verification.',
+    });
+  }
+
+  let agreementReviewNote: string | undefined;
+  if (requiresAgreementReview) {
+    agreementReviewNote = 'Expansion or modification of an existing distributed-generation system may affect legacy/grandfathered regulatory treatment. Existing agreement terms should be reviewed with the relevant DISCO before relying on legacy settlement assumptions.';
+    warnings.push({
+      code: 'LEGACY_AGREEMENT_MODIFICATION_REVIEW',
+      severity: 'action-required',
+      message: agreementReviewNote,
+      actionableGuidance: 'Consult with ENE and your DISCO before modifying your existing solar capacity to verify whether grandfathered tariff terms remain applicable.',
+    });
+    userNotes.push('Modification of existing system requires verification of grandfathered net-metering contract terms.');
+  }
+
+  return {
+    frameworkVersion: PROSUMER_POLICY_2026.version,
+    gridExportAllowed,
+    actualPvCapacityKw,
+    sanctionedLoadKw,
+    exceedsSanctionedLoad,
+    excessCapacityKw,
+    currentGridEligibleCapacityKw,
+    loadExtensionRequired,
+    connectionPhase,
+    phaseStatus,
+    prosumerEligibility,
+    nepraConcurrenceRequired: nepraConcurrence,
+    nepraConcurrenceNote,
+    loadFlowStudyRequired: loadFlow,
+    loadFlowStudyNote,
+    networkCapacityStatus,
+    transformerCapacityNote,
+    legacyAgreementStatus: resolvedAgreementStatus,
+    intendedModification,
+    requiresAgreementReview,
+    agreementReviewNote,
+    settlementBasis,
+    warnings,
+    userNotes,
+  };
 }

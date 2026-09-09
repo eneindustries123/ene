@@ -38,6 +38,94 @@ export type ScenarioArchitecture =
   | 'off-grid';
 export type ProsumerRegime = 'not-applicable' | 'current-2026' | 'legacy' | 'uncertain';
 export type ResultConfidence = 'High' | 'Medium' | 'Preliminary';
+export type ConnectionPhase = 'single-phase' | 'three-phase' | 'unknown';
+export type PhaseStatus = 'compatible' | 'upgrade-recommended' | 'unverified' | 'not-applicable';
+
+export interface PhaseStatusEvaluation {
+  phase: ConnectionPhase;
+  status: PhaseStatus;
+  note: string;
+}
+
+export type ProsumerEligibility =
+  | 'eligible'
+  | 'upgrade-required'
+  | 'load-extension-required'
+  | 'action-required'
+  | 'requires-disco-verification'
+  | 'not-applicable';
+export type NetworkCapacityStatus =
+  | 'requires-disco-verification'
+  | 'pre-allocated'
+  | 'constrained'
+  | 'unverified';
+export type LegacyAgreementStatus =
+  | 'confirmed'
+  | 'likely'
+  | 'unverified'
+  | 'not-applicable';
+
+export type AgreementLifecycleStatus =
+  | 'active'
+  | 'expired'
+  | 'none'
+  | 'unknown';
+
+export type IntendedModification =
+  | 'none'
+  | 'expansion'
+  | 'replacement'
+  | 'battery-addition'
+  | 'system-modification'
+  | 'analysis-only';
+export type RegulatoryWarningSeverity = 'info' | 'warning' | 'action-required' | 'critical' | 'error';
+
+export interface RegulatoryWarning {
+  code: string;
+  severity: RegulatoryWarningSeverity;
+  message: string;
+  actionableGuidance?: string;
+}
+
+export interface RegulatoryStatus {
+  frameworkVersion: string;
+  gridExportAllowed: boolean;
+  actualPvCapacityKw: number;
+  sanctionedLoadKw: number | null;
+  exceedsSanctionedLoad: boolean;
+  excessCapacityKw: number;
+  currentGridEligibleCapacityKw: number | null;
+  loadExtensionRequired: boolean;
+  connectionPhase: ConnectionPhase;
+  phaseStatus: PhaseStatusEvaluation;
+  prosumerEligibility: ProsumerEligibility;
+  nepraConcurrenceRequired: boolean;
+  nepraConcurrenceNote: string;
+  loadFlowStudyRequired: boolean;
+  loadFlowStudyNote: string;
+  networkCapacityStatus: NetworkCapacityStatus;
+  transformerCapacityNote: string;
+  legacyAgreementStatus: LegacyAgreementStatus;
+  intendedModification: IntendedModification;
+  requiresAgreementReview: boolean;
+  agreementReviewNote?: string;
+  settlementBasis: {
+    regime: string;
+    applicableRatePkrPerKwh: number;
+    description: string;
+  };
+  warnings: RegulatoryWarning[];
+  userNotes: string[];
+}
+
+export interface ExistingSolarInput {
+  hasExistingSolar: boolean;
+  existingPvCapacityKw?: number | null;
+  existingInverterKw?: number | null;
+  agreementStatus?: AgreementLifecycleStatus | 'yes' | 'no' | 'unsure' | null;
+  agreementDate?: string | null;
+  intendedChange?: IntendedModification | null;
+}
 
 export interface MonthlyConsumption {
   month: MonthKey;
@@ -134,6 +222,7 @@ export interface SystemRecommendation {
   policyConfidence?: ResultConfidence;
   recommendationConfidence?: ResultConfidence;
   qualifications?: string[];
+  regulatoryStatus?: RegulatoryStatus;
 }
 
 export interface SolarProfileResolution {
