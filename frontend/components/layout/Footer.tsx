@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Facebook, MapPin, Phone, Mail, MessageSquare } from 'lucide-react';
 import { BrandLogo } from '@/components/ui/BrandLogo';
+import { RAPIDO_SOLUTIONS_URL } from '@/lib/site';
 
 // Custom TikTok SVG Icon
 function TikTokIcon({ className }: { className?: string }) {
@@ -149,13 +150,34 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom Copyright & Legal Links */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
-          <p>© {new Date().getFullYear()} E&E. All rights reserved.</p>
+        {/* Bottom Copyright, Developer Credit & Legal Links */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-4 text-xs text-white/60 text-center lg:text-left">
+          {/* Left: Copyright */}
+          <p className="lg:justify-self-start">
+            © {new Date().getFullYear()} E&amp;E Industrial Corporation. All rights reserved.
+          </p>
 
-          <div className="flex items-center gap-6">
-            <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms-and-conditions" className="hover:text-white transition-colors">Terms & Conditions</Link>
+          {/* Center: Developer Credit */}
+          <p className="lg:justify-self-center text-white/60">
+            Designed &amp; Developed by{' '}
+            <a
+              href={RAPIDO_SOLUTIONS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/80 hover:text-white font-medium underline underline-offset-4 decoration-white/30 hover:decoration-white transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 rounded-sm"
+            >
+              Rapido Solutions Co.
+            </a>
+          </p>
+
+          {/* Right: Legal Links */}
+          <div className="lg:justify-self-end flex items-center justify-center lg:justify-end gap-6">
+            <Link href="/privacy-policy" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 rounded-sm">
+              Privacy Policy
+            </Link>
+            <Link href="/terms-and-conditions" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 rounded-sm">
+              Terms &amp; Conditions
+            </Link>
           </div>
         </div>
       </div>

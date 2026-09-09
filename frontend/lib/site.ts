@@ -9,3 +9,5 @@ export function absoluteSiteUrl(pathname: string): string {
   return new URL(pathname, `${getSiteUrl()}/`).toString();
 }
 
+export const RAPIDO_SOLUTIONS_URL = 'https://rapidosolutions.vercel.app/';
+
