@@ -221,6 +221,10 @@ export interface AnalyzerFinancialBreakdown {
   annualBillReductionPercent: number;
   avoidedGridPurchaseValuePkr: number;
   exportCreditValuePkr: number;
+  realizedExportCreditPkr?: number;
+  surplusExportCreditPkr?: number;
+  totalModeledAnnualValuePkr?: number;
+  totalModeledAnnualValuePercent?: number;
   batteryEnergyShiftValuePkr: number;
   fixedChargeSavingsPkr?: number;
   estimatedCapexPkr: number | null;
@@ -287,6 +291,8 @@ export interface AnalyzerSystemRecommendation {
   postSolarEstimatedBill?: number;
   billReduction?: number;
   billReductionPercent?: number;
+  totalModeledAnnualValuePkr?: number;
+  totalModeledAnnualValuePercent?: number;
   prosumerRegime?: 'not-applicable' | 'current-2026' | 'legacy' | 'uncertain';
   nepraConcurrenceRequired?: boolean;
   utilityApprovalRequired?: boolean;
@@ -347,6 +353,7 @@ export interface SolarRecommendationResponse {
     prosumerRegime: string;
     referenceDate: string;
   };
+  primaryObjective?: AnalyzerUserPrimaryObjective;
   consumptionProfile?: AnalyzerConsumptionProfileResolution;
   financialAssumptions?: AnalyzerFinancialAssumptions;
 }
@@ -444,10 +451,24 @@ export function selectMeaningfulAlternative(
   );
 }
 
+export function getAnalyzerBestTitle(result: SolarRecommendationResponse): string {
+  if (result.bestMatch.architecture === 'off-grid' || result.primaryObjective === 'grid-independence') {
+    return 'Preliminary Off-Grid Independence Option';
+  }
+  if (result.primaryObjective === 'maximum-backup') {
+    return 'Optimized Maximum-Backup Option';
+  }
+  if (result.primaryObjective === 'balanced-backup') {
+    return 'Optimized Balanced-Backup Option';
+  }
+  return 'Best Modeled Bill-Reduction Option';
+}
+
 export function getAnalyzerResultPresentation(
   result: SolarRecommendationResponse
 ): AnalyzerPresentedSystem[] {
   const mode = result.analysisMode || 'recommend';
+  const bestTitle = getAnalyzerBestTitle(result);
   if (mode === 'chosen') {
     return [{
       role: 'selected',
@@ -457,7 +478,7 @@ export function getAnalyzerResultPresentation(
   }
   if (mode === 'both') {
     return [
-      { role: 'best', title: 'Best Recommended System', system: result.bestMatch },
+      { role: 'best', title: bestTitle, system: result.bestMatch },
       { role: 'selected', title: 'Your Selected System', system: result.selectedSystem || result.bestMatch },
     ];
   }
@@ -470,7 +491,7 @@ export function getAnalyzerResultPresentation(
         : 'Practical Alternative'
     : 'Practical Alternative';
   return [
-    { role: 'best', title: 'Best Recommendation', system: result.bestMatch },
+    { role: 'best', title: bestTitle, system: result.bestMatch },
     ...(alternative ? [{
       role: 'alternative' as const,
       title: alternativeTitle,

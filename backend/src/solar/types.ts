@@ -257,6 +257,10 @@ export interface FinancialBreakdown {
   annualBillReductionPercent: number;
   avoidedGridPurchaseValuePkr: number;
   exportCreditValuePkr: number;
+  realizedExportCreditPkr: number;
+  surplusExportCreditPkr: number;
+  totalModeledAnnualValuePkr: number;
+  totalModeledAnnualValuePercent: number;
   batteryEnergyShiftValuePkr: number;
   fixedChargeSavingsPkr?: number;
   estimatedCapexPkr: number | null;
@@ -304,6 +308,8 @@ export interface SystemRecommendation {
   postSolarEstimatedBill?: number;
   billReduction?: number;
   billReductionPercent?: number;
+  totalModeledAnnualValuePkr?: number;
+  totalModeledAnnualValuePercent?: number;
   prosumerRegime?: ProsumerRegime;
   nepraConcurrenceRequired?: boolean;
   utilityApprovalRequired?: boolean;

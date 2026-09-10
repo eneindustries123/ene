@@ -86,7 +86,7 @@ const ANALYSIS_OPTIONS: Array<{ value: AnalyzerAnalysisMode; label: string; desc
   {
     value: 'both',
     label: 'Both',
-    description: 'See our best recommendation alongside the system you personally want to analyze.',
+    description: 'See the best modeled bill-reduction option alongside the system you personally want to analyze.',
   },
 ];
 
@@ -216,7 +216,7 @@ function SystemCard({
             <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <div>
               <strong className="block">Sanctioned load extension required</strong>
-              <span>Current load ({reg.sanctionedLoadKw} kW) limits immediate export to {reg.currentGridEligibleCapacityKw} kWp.</span>
+              <span>Current sanctioned-load limit: {reg.sanctionedLoadKw} kW. Full export-enabled capacity requires any necessary load extension and DISCO/interconnection approval.</span>
             </div>
           </div>
         )}
@@ -1215,8 +1215,16 @@ export function SolarBillAnalyzer() {
                       : result.analysisMode === 'chosen'
                       ? 'Your Selected System'
                       : result.analysisMode === 'both'
-                        ? 'Best Recommended System'
-                        : 'Highest Modeled Annual Utility-Bill Reduction'
+                        ? (primaryObjective === 'maximum-backup'
+                          ? 'Optimized Maximum-Backup Option'
+                          : primaryObjective === 'balanced-backup'
+                            ? 'Optimized Balanced-Backup Option'
+                            : 'Best Modeled Bill-Reduction Option')
+                        : primaryObjective === 'maximum-backup'
+                          ? 'Optimized Maximum-Backup Option'
+                          : primaryObjective === 'balanced-backup'
+                            ? 'Optimized Balanced-Backup Option'
+                            : 'Highest Modeled Annual Utility-Bill Reduction'
                   }
                 </span>
                 <h2 className="text-3xl sm:text-5xl font-extrabold mt-3 tracking-tight">
@@ -1533,7 +1541,9 @@ export function SolarBillAnalyzer() {
                     {result.bestMatch.prosumerRegime === 'legacy'
                       ? 'Legacy reference: Rs 25.32/kWh (NAPPP CY2026)'
                       : result.bestMatch.regulatoryStatus?.gridExportAllowed
-                      ? 'NAEPP reference: Rs 8.13/kWh (CY2026 reference)'
+                      ? (result.bestMatch.financialAnalysis.surplusExportCreditPkr ?? 0) > 0
+                        ? `NAEPP: Rs 8.13/kWh (${formatCurrencyPkr(result.bestMatch.financialAnalysis.realizedExportCreditPkr ?? result.bestMatch.financialAnalysis.exportCreditValuePkr)} applied, ${formatCurrencyPkr(result.bestMatch.financialAnalysis.surplusExportCreditPkr ?? 0)} surplus)`
+                        : 'NAEPP reference: Rs 8.13/kWh (CY2026 reference)'
                       : '0 PKR (Zero-Export / No Export Credit)'}
                   </p>
                 </div>
@@ -1556,7 +1566,18 @@ export function SolarBillAnalyzer() {
                   <strong className="font-extrabold">Bill Reduction Reconciliation:</strong>
                 </div>
                 <p className="text-solix-muted leading-relaxed">
-                  Modeled Annual Bill Reduction ({formatCurrencyPkr(result.bestMatch.financialAnalysis.annualBillReductionPkr)}) = Avoided Retail Grid Purchases ({formatCurrencyPkr(result.bestMatch.financialAnalysis.avoidedGridPurchaseValuePkr)}) + Export Credit Value ({formatCurrencyPkr(result.bestMatch.financialAnalysis.exportCreditValuePkr)}){result.bestMatch.financialAnalysis.fixedChargeSavingsPkr !== undefined && result.bestMatch.financialAnalysis.fixedChargeSavingsPkr !== 0 ? ` + Fixed Charge Adjustment (${formatCurrencyPkr(result.bestMatch.financialAnalysis.fixedChargeSavingsPkr)})` : ''}.
+                  {(result.bestMatch.financialAnalysis.surplusExportCreditPkr ?? 0) > 0 ? (
+                    <>
+                      Modeled Annual Bill Reduction ({formatCurrencyPkr(result.bestMatch.financialAnalysis.annualBillReductionPkr)}) = Avoided Retail Grid Purchases ({formatCurrencyPkr(result.bestMatch.financialAnalysis.avoidedGridPurchaseValuePkr)}) + Applied Export Credits ({formatCurrencyPkr(result.bestMatch.financialAnalysis.realizedExportCreditPkr ?? result.bestMatch.financialAnalysis.exportCreditValuePkr)}){result.bestMatch.financialAnalysis.fixedChargeSavingsPkr !== undefined && result.bestMatch.financialAnalysis.fixedChargeSavingsPkr !== 0 ? ` + Fixed Charge Adjustment (${formatCurrencyPkr(result.bestMatch.financialAnalysis.fixedChargeSavingsPkr)})` : ''}.
+                      <span className="block mt-1 text-[11px] text-slate-600">
+                        Total Export Credit Value is {formatCurrencyPkr(result.bestMatch.financialAnalysis.exportCreditValuePkr)} (Applied: {formatCurrencyPkr(result.bestMatch.financialAnalysis.realizedExportCreditPkr ?? result.bestMatch.financialAnalysis.exportCreditValuePkr)}, Surplus: {formatCurrencyPkr(result.bestMatch.financialAnalysis.surplusExportCreditPkr ?? 0)}). Export value exceeding the current billing-cycle amount may be credited to a subsequent bill or settled according to the applicable prosumer billing arrangement. Total modeled annual energy value is {formatCurrencyPkr(result.bestMatch.financialAnalysis.totalModeledAnnualValuePkr ?? (result.bestMatch.financialAnalysis.annualBillReductionPkr + (result.bestMatch.financialAnalysis.surplusExportCreditPkr ?? 0)))}.
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Modeled Annual Bill Reduction ({formatCurrencyPkr(result.bestMatch.financialAnalysis.annualBillReductionPkr)}) = Avoided Retail Grid Purchases ({formatCurrencyPkr(result.bestMatch.financialAnalysis.avoidedGridPurchaseValuePkr)}) + Export Credit Value ({formatCurrencyPkr(result.bestMatch.financialAnalysis.exportCreditValuePkr)}){result.bestMatch.financialAnalysis.fixedChargeSavingsPkr !== undefined && result.bestMatch.financialAnalysis.fixedChargeSavingsPkr !== 0 ? ` + Fixed Charge Adjustment (${formatCurrencyPkr(result.bestMatch.financialAnalysis.fixedChargeSavingsPkr)})` : ''}.
+                    </>
+                  )}
                 </p>
               </div>
 

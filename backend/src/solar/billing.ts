@@ -43,6 +43,8 @@ export interface BillBreakdown {
   peakImportCharges: number;
   offPeakImportCharges: number;
   exportCredit: number;
+  realizedExportCredit: number;
+  surplusExportCredit: number;
   fixedCharges: number;
   minimumUnavoidableCharges: number;
   configuredAdjustments: number;
@@ -188,19 +190,31 @@ export function calculateMonthlyBill(
   if (adjustments.qtaAmount === undefined && !adjustmentLayer.qtaConfigured) excludedComponents.push('QTA');
   if (adjustments.statutoryTaxPercent === undefined && !adjustmentLayer.taxesConfigured) excludedComponents.push('statutory taxes');
 
-  const beforeAdjustments = energyImportCharges + peakImportCharges + offPeakImportCharges + fixed.amount - exportCredit;
+  const grossCharges = energyImportCharges + peakImportCharges + offPeakImportCharges + fixed.amount;
+  const grossAdjustments =
+    (adjustments.fcaPerImportedKwh || 0) * billedImports +
+    (adjustments.qtaAmount || 0) +
+    grossCharges * ((adjustments.statutoryTaxPercent || 0) / 100);
+  const minimumUnavoidableCharges = Math.max(0, adjustments.minimumCharge || 0);
+  const grossTotal = Math.max(minimumUnavoidableCharges, grossCharges + grossAdjustments);
+
+  const beforeAdjustments = grossCharges - exportCredit;
   const configuredAdjustments =
     (adjustments.fcaPerImportedKwh || 0) * billedImports +
     (adjustments.qtaAmount || 0) +
     beforeAdjustments * ((adjustments.statutoryTaxPercent || 0) / 100);
-  const minimumUnavoidableCharges = Math.max(0, adjustments.minimumCharge || 0);
   const total = Math.max(minimumUnavoidableCharges, beforeAdjustments + configuredAdjustments);
+
+  const realizedExportCredit = Math.max(0, grossTotal - total);
+  const surplusExportCredit = Math.max(0, exportCredit - realizedExportCredit);
 
   return {
     energyImportCharges: round(energyImportCharges, 2),
     peakImportCharges: round(peakImportCharges, 2),
     offPeakImportCharges: round(offPeakImportCharges, 2),
     exportCredit: round(exportCredit, 2),
+    realizedExportCredit: round(realizedExportCredit, 2),
+    surplusExportCredit: round(surplusExportCredit, 2),
     fixedCharges: round(fixed.amount, 2),
     minimumUnavoidableCharges: round(minimumUnavoidableCharges, 2),
     configuredAdjustments: round(configuredAdjustments, 2),
@@ -224,6 +238,8 @@ export function aggregateAnnualBill(months: BillBreakdown | BillBreakdown[]): Bi
     peakImportCharges: round(months.reduce((sum, month) => sum + month.peakImportCharges, 0), 2),
     offPeakImportCharges: round(months.reduce((sum, month) => sum + month.offPeakImportCharges, 0), 2),
     exportCredit: round(months.reduce((sum, month) => sum + month.exportCredit, 0), 2),
+    realizedExportCredit: round(months.reduce((sum, month) => sum + month.realizedExportCredit, 0), 2),
+    surplusExportCredit: round(months.reduce((sum, month) => sum + month.surplusExportCredit, 0), 2),
     fixedCharges: round(months.reduce((sum, month) => sum + month.fixedCharges, 0), 2),
     minimumUnavoidableCharges: round(months.reduce((sum, month) => sum + month.minimumUnavoidableCharges, 0), 2),
     configuredAdjustments: round(months.reduce((sum, month) => sum + month.configuredAdjustments, 0), 2),

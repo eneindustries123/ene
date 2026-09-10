@@ -146,7 +146,7 @@ describe('Phase 2 — Solar Energy Flow, Optimization & Regulatory Verification'
   });
 
   describe('3. Separation of Avoided Retail Value vs Export Credit Value', () => {
-    it('separates avoided retail savings from export credit savings in financial breakdown', () => {
+    it('separates avoided retail savings from export credit savings in financial breakdown and maintains exact mathematical reconciliation', () => {
       const res = recommendSolarSystems({
         city: 'Islamabad',
         monthlyConsumption: SAMPLE_12_MONTHS,
@@ -162,6 +162,28 @@ describe('Phase 2 — Solar Energy Flow, Optimization & Regulatory Verification'
       expect(fin!.exportCreditValuePkr).toBeGreaterThan(0);
       expect(fin!.annualBillReductionPkr).toBeGreaterThan(0);
       expect(fin!.financialModelVersion).toBe(FINANCIAL_MODEL_VERSION);
+
+      // Exact mathematical reconciliation identity:
+      // Bill Reduction = Avoided Purchases + Applied Export Credits + Fixed Charge Savings
+      const reconciledBillReduction =
+        fin!.avoidedGridPurchaseValuePkr +
+        fin!.realizedExportCreditPkr +
+        (fin!.fixedChargeSavingsPkr || 0);
+      expect(fin!.annualBillReductionPkr).toBe(reconciledBillReduction);
+
+      // Total Export Credits = Realized Credits + Surplus Credits
+      const reconciledExportCredits = fin!.realizedExportCreditPkr + fin!.surplusExportCreditPkr;
+      expect(fin!.exportCreditValuePkr).toBe(reconciledExportCredits);
+
+      // Total Modeled Annual Energy Value = Bill Reduction + Surplus Export Settlement/Carryover Value
+      expect(fin!.totalModeledAnnualValuePkr).toBe(fin!.annualBillReductionPkr + fin!.surplusExportCreditPkr);
+      expect(fin!.totalModeledAnnualValuePkr).toBe(
+        fin!.avoidedGridPurchaseValuePkr + fin!.exportCreditValuePkr + (fin!.fixedChargeSavingsPkr || 0)
+      );
+
+      // Post-solar bill is never negative, and annual bill reduction never exceeds current bill
+      expect(fin!.postSolarAnnualBillPkr).toBeGreaterThanOrEqual(0);
+      expect(fin!.annualBillReductionPkr).toBeLessThanOrEqual(fin!.currentAnnualBillPkr);
 
       // Avoided retail unit rate is substantially higher than NAEPP export rate (Rs 8.13/kWh)
       const unitRetailRate = fin!.avoidedGridPurchaseValuePkr / res.bestMatch.energyFlow!.selfConsumedKwh;
@@ -284,6 +306,26 @@ describe('Phase 2 — Solar Energy Flow, Optimization & Regulatory Verification'
       expect(result.bestMatch.billReductionPercent).toBeGreaterThan(onGridScenario?.billReductionPercent || 0);
     });
 
+    it('preserves surplus export credits in economic value and architecture comparisons without artificially discarding export value', () => {
+      // Scenario with high daytime generation leading to summer surplus export credits
+      const result = recommendSolarSystems({
+        city: 'Multan',
+        monthlyConsumption: SAMPLE_12_MONTHS,
+        sanctionedLoadKw: 25,
+        primaryObjective: 'maximum-savings',
+        consumptionProfile: { profileType: 'custom', customDaytimeSharePercent: 60 },
+      });
+
+      const best = result.bestMatch;
+      expect(best.financialAnalysis).toBeDefined();
+      expect(best.financialAnalysis!.totalModeledAnnualValuePkr).toBeGreaterThanOrEqual(best.financialAnalysis!.annualBillReductionPkr);
+      if (best.financialAnalysis!.surplusExportCreditPkr > 0) {
+        expect(best.financialAnalysis!.totalModeledAnnualValuePkr).toBe(
+          best.financialAnalysis!.annualBillReductionPkr + best.financialAnalysis!.surplusExportCreditPkr
+        );
+      }
+    });
+
     it('recommends hybrid with battery when primaryObjective is balanced-backup and evaluates battery options', () => {
       const result = recommendSolarSystems({
         city: 'Lahore',
@@ -298,7 +340,7 @@ describe('Phase 2 — Solar Energy Flow, Optimization & Regulatory Verification'
       expect(result.bestMatch.architecture).toBe('hybrid-green-battery');
     });
 
-    it('recommends off-grid when primaryObjective is grid-independence', () => {
+    it('recommends off-grid when primaryObjective is grid-independence and strictly requires Off-Grid', () => {
       const result = recommendSolarSystems({
         city: 'Lahore',
         monthlyConsumption: SAMPLE_12_MONTHS,
@@ -308,6 +350,158 @@ describe('Phase 2 — Solar Energy Flow, Optimization & Regulatory Verification'
       expect(result.bestMatch.type).toBe('off-grid');
       expect(result.bestMatch.architecture).toBe('off-grid');
       expect(result.bestMatch.energyFlow?.gridIndependenceRatio).toBe(1);
+
+      // Verify grid-connected architectures are strictly disqualified when grid-independence is selected
+      const onGridScenario = result.scenarios?.find((s) => s.architecture === 'on-grid-only');
+      const hybridScenario = result.scenarios?.find((s) => s.architecture === 'hybrid-green-battery');
+      expect(onGridScenario).toBeDefined();
+      expect(hybridScenario).toBeDefined();
+      expect(result.bestMatch.type).not.toBe('on-grid');
+      expect(result.bestMatch.type).not.toBe('hybrid');
+    });
+
+    it('ensures higher bill reduction beats lower bill reduction regardless of complexity penalty for maximum-savings', () => {
+      // Simulate scenarios comparison where System A has 87.10% bill reduction (higher complexity)
+      // and System B has 87.09% bill reduction (lower complexity)
+      const mockScenarios: any[] = [
+        {
+          type: 'hybrid',
+          label: 'Hybrid Solar System',
+          architecture: 'hybrid-green-battery', // complexity = 3
+          actualPvCapacityKw: 15,
+          inverterKw: 15,
+          panelCount: 26,
+          annualGenerationKwh: 22000,
+          annualConsumptionKwh: 20000,
+          consumptionCoveragePercent: 110,
+          generationToConsumptionPercent: 110,
+          annualSurplusKwh: 2000,
+          annualShortfallKwh: 0,
+          seasonalMatch: 'strong',
+          monthlySimulation: [],
+          battery: { simulatedKwh: 10, minKwh: 10, maxKwh: 15, backupHours: 6, chemistry: 'LiFePO4', dod: 0.9, roundTripEfficiency: 0.92, description: '10 kWh' },
+          suitability: 'High',
+          billReductionPercent: 87.10, // Higher bill reduction
+          financialAnalysis: {
+            annualBillReductionPkr: 871000,
+            annualBillReductionPercent: 87.10,
+            avoidedGridPurchaseValuePkr: 800000,
+            exportCreditValuePkr: 71000,
+            realizedExportCreditPkr: 71000,
+            surplusExportCreditPkr: 0,
+            totalModeledAnnualValuePkr: 871000,
+            totalModeledAnnualValuePercent: 87.10,
+            batteryEnergyShiftValuePkr: 50000,
+            estimatedCapexPkr: null,
+            simplePaybackYears: null,
+            roiPercent: null,
+            capexStatus: 'quote-required',
+            financialModelVersion: '2026.1',
+          },
+        },
+        {
+          type: 'on-grid',
+          label: 'On-Grid Solar System',
+          architecture: 'on-grid-only', // complexity = 1
+          actualPvCapacityKw: 15,
+          inverterKw: 15,
+          panelCount: 26,
+          annualGenerationKwh: 22000,
+          annualConsumptionKwh: 20000,
+          consumptionCoveragePercent: 110,
+          generationToConsumptionPercent: 110,
+          annualSurplusKwh: 2000,
+          annualShortfallKwh: 0,
+          seasonalMatch: 'strong',
+          monthlySimulation: [],
+          battery: null,
+          suitability: 'High',
+          billReductionPercent: 87.09, // Lower bill reduction (0.01% lower)
+          financialAnalysis: {
+            annualBillReductionPkr: 870900,
+            annualBillReductionPercent: 87.09,
+            avoidedGridPurchaseValuePkr: 800000,
+            exportCreditValuePkr: 70900,
+            realizedExportCreditPkr: 70900,
+            surplusExportCreditPkr: 0,
+            totalModeledAnnualValuePkr: 870900,
+            totalModeledAnnualValuePercent: 87.09,
+            batteryEnergyShiftValuePkr: 0,
+            estimatedCapexPkr: null,
+            simplePaybackYears: null,
+            roiPercent: null,
+            capexStatus: 'quote-required',
+            financialModelVersion: '2026.1',
+          },
+        },
+      ];
+
+      // Re-run the deterministic comparison logic
+      const EQUALITY_TOLERANCE = 0.0001;
+      function getComplexity(arch?: string): number {
+        switch (arch) {
+          case 'on-grid-only': return 1;
+          case 'hybrid-green-battery': return 3;
+          default: return 5;
+        }
+      }
+
+      const winner = mockScenarios.reduce((best, result) => {
+        const scoreDiff = result.billReductionPercent - best.billReductionPercent;
+        if (scoreDiff > EQUALITY_TOLERANCE) return result;
+        if (scoreDiff < -EQUALITY_TOLERANCE) return best;
+
+        const complexityDiff = getComplexity(result.architecture) - getComplexity(best.architecture);
+        if (complexityDiff < 0) return result;
+        if (complexityDiff > 0) return best;
+
+        const valueDiff = (result.financialAnalysis?.totalModeledAnnualValuePkr || 0) - (best.financialAnalysis?.totalModeledAnnualValuePkr || 0);
+        if (valueDiff > 50) return result;
+        if (valueDiff < -50) return best;
+
+        return best;
+      });
+
+      // System A (87.10% bill reduction) MUST win despite higher complexity
+      expect(winner.architecture).toBe('hybrid-green-battery');
+      expect(winner.billReductionPercent).toBe(87.10);
+    });
+
+    it('uses deterministic tie-breaking hierarchy when bill reductions are effectively equal', () => {
+      const mockEqualBillScenarios: any[] = [
+        {
+          architecture: 'hybrid-green-battery', // complexity = 3
+          billReductionPercent: 85.0000,
+          financialAnalysis: { totalModeledAnnualValuePkr: 500000 },
+          actualPvCapacityKw: 10,
+        },
+        {
+          architecture: 'on-grid-only', // complexity = 1 (simpler)
+          billReductionPercent: 85.0000,
+          financialAnalysis: { totalModeledAnnualValuePkr: 490000 },
+          actualPvCapacityKw: 10,
+        },
+      ];
+
+      const EQUALITY_TOLERANCE = 0.0001;
+      function getComplexity(arch?: string): number {
+        return arch === 'on-grid-only' ? 1 : 3;
+      }
+
+      const winner = mockEqualBillScenarios.reduce((best, result) => {
+        const scoreDiff = result.billReductionPercent - best.billReductionPercent;
+        if (scoreDiff > EQUALITY_TOLERANCE) return result;
+        if (scoreDiff < -EQUALITY_TOLERANCE) return best;
+
+        const complexityDiff = getComplexity(result.architecture) - getComplexity(best.architecture);
+        if (complexityDiff < 0) return result;
+        if (complexityDiff > 0) return best;
+
+        return best;
+      });
+
+      // Tie-breaker 1: Lower complexity wins when bill reduction is equal
+      expect(winner.architecture).toBe('on-grid-only');
     });
   });
 

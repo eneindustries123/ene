@@ -197,7 +197,7 @@ describe('frontend solar analyzer helpers', () => {
     const presented = getAnalyzerResultPresentation(result);
 
     expect(presented).toHaveLength(2);
-    expect(presented[0].title).toBe('Best Recommendation');
+    expect(presented[0].title).toBe('Best Modeled Bill-Reduction Option');
     expect(presented[1].title).toBe('Zero-Export Alternative');
     expect(presented.map((item) => item.system.architecture)).not.toHaveLength(6);
   });
@@ -229,7 +229,7 @@ describe('frontend solar analyzer helpers', () => {
     const presented = getAnalyzerResultPresentation(result);
     const explanation = buildAnalyzerComparisonExplanation(result);
 
-    expect(presented.map((item) => item.title)).toEqual(['Best Recommended System', 'Your Selected System']);
+    expect(presented.map((item) => item.title)).toEqual(['Best Modeled Bill-Reduction Option', 'Your Selected System']);
     expect(explanation).toHaveLength(3);
     expect(explanation.join(' ')).toMatch(/bill reduction|imports|exports|battery/i);
   });
@@ -390,5 +390,16 @@ describe('frontend solar analyzer helpers', () => {
       'Prioritize the strongest modeled annual utility-bill reduction through solar self-consumption, battery energy shifting where beneficial, and applicable grid export credits.'
     );
     expect(maxSavings?.description).not.toMatch(/capex|equipment cost|roi|payback/i);
+  });
+
+  it('uses accurate prosumer net-billing framework terminology for surplus export credits', () => {
+    const source = readFileSync(
+      new URL('../components/solar-analyzer/SolarBillAnalyzer.tsx', import.meta.url),
+      'utf8'
+    );
+    expect(source).toContain('applicable prosumer billing arrangement');
+    expect(source).toContain('Export value exceeding the current billing-cycle amount may be credited to a subsequent bill');
+    expect(source).not.toContain('net metering rules');
+    expect(source).not.toContain('quarterly net-metering settlement');
   });
 });

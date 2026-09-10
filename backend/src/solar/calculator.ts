@@ -731,10 +731,16 @@ function buildEconomicRecommendation(
   const postEnergyCharges = postBill.energyImportCharges + postBill.peakImportCharges + postBill.offPeakImportCharges;
   const avoidedGridPurchaseValuePkr = round(Math.max(0, currentEnergyCharges - postEnergyCharges), 0);
   const exportCreditValuePkr = round(postBill.exportCredit, 0);
+  const realizedExportCreditPkr = round(postBill.realizedExportCredit, 0);
+  const surplusExportCreditPkr = round(postBill.surplusExportCredit, 0);
   const fixedChargeSavingsPkr = round(currentBill.fixedCharges - postBill.fixedCharges, 0);
   const annualBillReductionPkr = round(Math.max(0, currentBill.total - postBill.total), 0);
   const annualBillReductionPercent = currentBill.total > 0
     ? round((annualBillReductionPkr / currentBill.total) * 100, 1)
+    : 0;
+  const totalModeledAnnualValuePkr = round(annualBillReductionPkr + surplusExportCreditPkr, 0);
+  const totalModeledAnnualValuePercent = currentBill.total > 0
+    ? round((totalModeledAnnualValuePkr / currentBill.total) * 100, 1)
     : 0;
 
   const financialAnalysis: FinancialBreakdown = {
@@ -744,6 +750,10 @@ function buildEconomicRecommendation(
     annualBillReductionPercent,
     avoidedGridPurchaseValuePkr,
     exportCreditValuePkr,
+    realizedExportCreditPkr,
+    surplusExportCreditPkr,
+    totalModeledAnnualValuePkr,
+    totalModeledAnnualValuePercent,
     fixedChargeSavingsPkr,
     batteryEnergyShiftValuePkr: battery ? round(roundedBatteryDischarge * (account.tou ? 40 : 33), 0) : 0,
     estimatedCapexPkr: null,
@@ -780,6 +790,8 @@ function buildEconomicRecommendation(
     postSolarEstimatedBill: round(postBill.total, 0),
     billReduction: annualBillReductionPkr,
     billReductionPercent: annualBillReductionPercent,
+    totalModeledAnnualValuePkr,
+    totalModeledAnnualValuePercent,
     prosumerRegime: regime,
     nepraConcurrenceRequired: regulatoryStatus.nepraConcurrenceRequired,
     utilityApprovalRequired: definition.exportConnected,
@@ -924,19 +936,36 @@ export function recommendSolarSystems(input: RecommendationInput): SolarRecommen
       if (!hasBattery) return -500 + billReduction;
       // Between battery architectures (e.g. Hybrid+Green vs Hybrid No-Green), rank by bill reduction & regulatory feasibility
       const regBonus = regulatoryValid ? 5 : 0;
-      return billReduction + regBonus - (complexity * 0.01);
+      return billReduction + regBonus;
     }
 
     // Default: maximum-savings
-    // Purely deterministic optimization of modeled annual bill reduction across all grid-connected architectures.
-    // If two architectures achieve virtually equivalent bill reduction (within 0.1%), prefer lower complexity / fewer components.
-    return billReduction - (complexity * 0.01);
+    // Purely deterministic optimization of modeled annual utility-bill reduction across all grid-connected architectures.
+    return billReduction;
   };
+
+  const EQUALITY_TOLERANCE = 0.0001; // 0.0001% numerical equality tolerance for floating-point noise
 
   let bestMatch = scenarios.reduce((best, result) => {
     const scoreDiff = scoreScenario(result) - scoreScenario(best);
-    if (scoreDiff > 0.001) return result;
-    if (Math.abs(scoreDiff) <= 0.001 && result.actualPvCapacityKw < best.actualPvCapacityKw) return result;
+    // 1. Primary winner-selection: Higher utility-bill reduction / objective score
+    if (scoreDiff > EQUALITY_TOLERANCE) return result;
+    if (scoreDiff < -EQUALITY_TOLERANCE) return best;
+
+    // When scores / annual bill reduction are effectively equal (within numerical tolerance):
+    // 2. Tie-breaker 1: Lower architecture complexity (fewer components, simpler topology)
+    const complexityDiff = getArchitectureComplexity(result.architecture) - getArchitectureComplexity(best.architecture);
+    if (complexityDiff < 0) return result;
+    if (complexityDiff > 0) return best;
+
+    // 3. Tie-breaker 2: Higher totalModeledAnnualValuePkr (surplus export settlement value)
+    const valueDiff = (result.financialAnalysis?.totalModeledAnnualValuePkr || 0) - (best.financialAnalysis?.totalModeledAnnualValuePkr || 0);
+    if (valueDiff > 50) return result;
+    if (valueDiff < -50) return best;
+
+    // 4. Deterministic final tie-breaker: Smaller physical PV capacity
+    if (result.actualPvCapacityKw < best.actualPvCapacityKw) return result;
+
     return best;
   });
 
