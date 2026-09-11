@@ -1,23 +1,43 @@
 import { Request, Response } from 'express';
 import { ProjectsService } from '../services/projects.service';
 import { createProjectSchema, updateProjectSchema } from '../validators/project.validator';
+import { checkAdminAuth } from '../middleware/auth';
 
 export class ProjectsController {
   static async getAll(req: Request, res: Response) {
     try {
       const { status, featured, limit } = req.query;
       const parsedLimit = limit ? Math.max(1, Math.min(50, parseInt(String(limit), 10) || 0)) : undefined;
+      const { isAdmin } = checkAdminAuth(req);
 
       if (status === 'published' && featured === 'true') {
         const projects = await ProjectsService.getFeaturedPublishedProjects(parsedLimit || 3);
         return res.status(200).json(projects);
       }
+
       if (status === 'published') {
         const projects = await ProjectsService.getPublishedProjects();
         return res.status(200).json(projects);
       }
-      const projects = await ProjectsService.getAllProjects();
-      return res.status(200).json(projects);
+
+      if (status === 'draft' || status === 'archived') {
+        if (!isAdmin) {
+          return res.status(401).json({ error: 'Unauthorized. Admin session required to view unpublished projects.' });
+        }
+        const allProjects = await ProjectsService.getAllProjects();
+        const filtered = allProjects.filter((p) => p.status === status);
+        return res.status(200).json(filtered);
+      }
+
+      // If caller is authenticated admin, return all projects
+      // If unauthenticated public caller, return strictly published projects only
+      if (isAdmin) {
+        const projects = await ProjectsService.getAllProjects();
+        return res.status(200).json(projects);
+      } else {
+        const projects = await ProjectsService.getPublishedProjects();
+        return res.status(200).json(projects);
+      }
     } catch (err: any) {
       return res.status(500).json({ error: err.message || 'Failed to fetch projects' });
     }
@@ -26,6 +46,8 @@ export class ProjectsController {
   static async getByIdOrSlug(req: Request, res: Response) {
     try {
       const { idOrSlug } = req.params;
+      const { isAdmin } = checkAdminAuth(req);
+
       let project = await ProjectsService.getProjectById(idOrSlug);
       if (!project) {
         project = await ProjectsService.getProjectBySlug(idOrSlug);
@@ -35,11 +57,17 @@ export class ProjectsController {
         return res.status(404).json({ error: 'Project not found' });
       }
 
+      // Hide unpublished projects from unauthenticated public requests
+      if (!isAdmin && project.status !== 'published') {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
       return res.status(200).json(project);
     } catch (err: any) {
       return res.status(500).json({ error: err.message || 'Failed to fetch project' });
     }
   }
+
 
   static async create(req: Request, res: Response) {
     try {

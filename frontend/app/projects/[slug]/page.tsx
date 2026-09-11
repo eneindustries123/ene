@@ -7,6 +7,9 @@ import { Footer } from '@/components/layout/Footer';
 import { getProjectBySlug, getPublishedProjects } from '@/lib/projects-store';
 import { ArrowUpRight, MapPin, Zap, Calendar, UserCheck } from 'lucide-react';
 
+export const revalidate = 60; // ISR revalidate every 60 seconds
+export const dynamicParams = true; // Allow on-demand generation for newly published project slugs
+
 export async function generateStaticParams() {
   const projects = await getPublishedProjects();
   return projects.map((p) => ({ slug: p.slug }));

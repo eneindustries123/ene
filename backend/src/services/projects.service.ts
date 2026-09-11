@@ -1,5 +1,4 @@
 import { getSupabaseAdminClient, isSupabaseConfigured } from '../lib/supabase/admin';
-import { getSupabaseAnonClient } from '../lib/supabase/client';
 
 export interface Project {
   id: string;
@@ -196,7 +195,7 @@ function mapProjectRow(row: any): Project {
     mainImage: row.main_image,
     gallery: Array.isArray(row.gallery) ? row.gallery : [],
     isFeatured: Boolean(row.is_featured),
-    status: (row.status as 'published' | 'draft' | 'archived') || 'published',
+    status: (row.status as 'published' | 'draft' | 'archived') || 'draft',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -216,7 +215,7 @@ function mapProjectToRow(project: Omit<Project, 'id'>) {
     main_image: project.mainImage,
     gallery: Array.isArray(project.gallery) ? project.gallery : [],
     is_featured: Boolean(project.isFeatured),
-    status: project.status || 'published',
+    status: project.status || 'draft',
   };
 }
 
@@ -230,42 +229,58 @@ export class ProjectsService {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (!error && data && data.length > 0) {
+        if (error) {
+          console.error('[ProjectsService.getAllProjects] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database query failed: ${error.message}`);
+          }
+        } else if (data) {
           return data.map(mapProjectRow);
         }
       } catch (err) {
-        console.warn('ProjectsService.getAllProjects error, falling back:', err);
+        console.error('[ProjectsService.getAllProjects] Exception:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
     return [...inMemoryProjects];
   }
 
   static async getPublishedProjects(): Promise<Project[]> {
-    const supabase = getSupabaseAnonClient() || getSupabaseAdminClient();
-    if (supabase && isSupabaseConfigured()) {
+    const adminClient = getSupabaseAdminClient();
+    if (adminClient && isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await adminClient
           .from('projects')
           .select('*')
-          .or('status.eq.published,status.is.null')
+          .eq('status', 'published')
           .order('created_at', { ascending: false });
 
-        if (!error && data && data.length > 0) {
+        if (error) {
+          console.error('[ProjectsService.getPublishedProjects] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database query failed: ${error.message}`);
+          }
+        } else if (data) {
           return data.map(mapProjectRow);
         }
       } catch (err) {
-        console.warn('ProjectsService.getPublishedProjects error, falling back:', err);
+        console.error('[ProjectsService.getPublishedProjects] Exception:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 
-    return inMemoryProjects.filter((p) => p.status === 'published' || p.status === undefined);
+    return inMemoryProjects.filter((p) => p.status === 'published');
   }
 
   static async getFeaturedPublishedProjects(limit = 3): Promise<Project[]> {
-    const supabase = getSupabaseAnonClient() || getSupabaseAdminClient();
-    if (supabase && isSupabaseConfigured()) {
+    const adminClient = getSupabaseAdminClient();
+    if (adminClient && isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await adminClient
           .from('projects')
           .select('*')
           .eq('status', 'published')
@@ -273,11 +288,19 @@ export class ProjectsService {
           .order('created_at', { ascending: false })
           .limit(limit);
 
-        if (!error && data) {
+        if (error) {
+          console.error('[ProjectsService.getFeaturedPublishedProjects] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database query failed: ${error.message}`);
+          }
+        } else if (data) {
           return data.map(mapProjectRow);
         }
       } catch (err) {
-        console.warn('ProjectsService.getFeaturedPublishedProjects error, falling back:', err);
+        console.error('[ProjectsService.getFeaturedPublishedProjects] Exception:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 
@@ -301,11 +324,19 @@ export class ProjectsService {
         }
 
         const { count, error } = await query;
-        if (!error && typeof count === 'number') {
+        if (error) {
+          console.error('[countPublishedFeaturedProjects] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database count query failed: ${error.message}`);
+          }
+        } else if (typeof count === 'number') {
           return count;
         }
       } catch (err) {
-        console.warn('countPublishedFeaturedProjects check error:', err);
+        console.error('[countPublishedFeaturedProjects] Exception:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 
@@ -327,11 +358,21 @@ export class ProjectsService {
           .eq('id', id)
           .maybeSingle();
 
-        if (!error && data) {
+        if (error) {
+          console.error('[ProjectsService.getProjectById] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database query failed: ${error.message}`);
+          }
+        } else if (data) {
           return mapProjectRow(data);
+        } else {
+          return null;
         }
       } catch (err) {
-        console.warn('ProjectsService.getProjectById error, falling back:', err);
+        console.error('[ProjectsService.getProjectById] Exception:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 
@@ -339,20 +380,30 @@ export class ProjectsService {
   }
 
   static async getProjectBySlug(slug: string): Promise<Project | null> {
-    const supabase = getSupabaseAnonClient() || getSupabaseAdminClient();
-    if (supabase && isSupabaseConfigured()) {
+    const adminClient = getSupabaseAdminClient();
+    if (adminClient && isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await adminClient
           .from('projects')
           .select('*')
           .eq('slug', slug)
           .maybeSingle();
 
-        if (!error && data) {
+        if (error) {
+          console.error('[ProjectsService.getProjectBySlug] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database query failed: ${error.message}`);
+          }
+        } else if (data) {
           return mapProjectRow(data);
+        } else {
+          return null;
         }
       } catch (err) {
-        console.warn('ProjectsService.getProjectBySlug error, falling back:', err);
+        console.error('[ProjectsService.getProjectBySlug] Exception:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 
@@ -371,15 +422,21 @@ export class ProjectsService {
           .select()
           .single();
 
-        if (!error && data) {
+        if (error) {
+          console.error('[createProject] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database insert failed: ${error.message}`);
+          }
+        } else if (data) {
           const created = mapProjectRow(data);
           inMemoryProjects = [created, ...inMemoryProjects.filter((p) => p.id !== created.id)];
           return created;
-        } else if (error) {
-          console.warn('Supabase createProject warning (falling back to in-memory):', error.message);
         }
       } catch (err: any) {
-        console.warn('Supabase createProject exception (falling back to in-memory):', err.message);
+        console.error('[createProject] Exception:', err.message);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 
@@ -387,7 +444,7 @@ export class ProjectsService {
     const fallbackProject: Project = {
       ...projectData,
       id: fallbackId,
-      status: projectData.status || 'published',
+      status: projectData.status || 'draft',
     };
 
     inMemoryProjects = [fallbackProject, ...inMemoryProjects.filter((p) => p.id !== fallbackProject.id)];
@@ -424,7 +481,12 @@ export class ProjectsService {
           .select()
           .single();
 
-        if (!error && data) {
+        if (error) {
+          console.error('[updateProject] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database update failed: ${error.message}`);
+          }
+        } else if (data) {
           const updated = mapProjectRow(data);
           const memIdx = inMemoryProjects.findIndex((p) => p.id === id);
           if (memIdx !== -1) inMemoryProjects[memIdx] = updated;
@@ -432,7 +494,10 @@ export class ProjectsService {
           return updated;
         }
       } catch (err: any) {
-        console.warn('Supabase updateProject exception (falling back to in-memory):', err.message);
+        console.error('[updateProject] Exception:', err.message);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 
@@ -459,10 +524,16 @@ export class ProjectsService {
       try {
         const { error } = await adminClient.from('projects').delete().eq('id', id);
         if (error) {
-          console.warn('Supabase deleteProject warning (falling back to in-memory):', error.message);
+          console.error('[deleteProject] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database delete failed: ${error.message}`);
+          }
         }
       } catch (err: any) {
-        console.warn('Supabase deleteProject exception (falling back to in-memory):', err.message);
+        console.error('[deleteProject] Exception:', err.message);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 
@@ -480,11 +551,19 @@ export class ProjectsService {
           query = query.neq('id', currentId);
         }
         const { data, error } = await query;
-        if (!error && data && data.length > 0) {
+        if (error) {
+          console.error('[isSlugUnique] Supabase error:', error.message);
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error(`Database slug check failed: ${error.message}`);
+          }
+        } else if (data && data.length > 0) {
           return false;
         }
       } catch (err) {
-        console.warn('isSlugUnique check error:', err);
+        console.error('[isSlugUnique] Exception:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw err;
+        }
       }
     }
 

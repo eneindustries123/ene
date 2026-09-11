@@ -308,6 +308,7 @@ export const INITIAL_PROJECTS: Project[] = [
       '/images/projects/p1-3.jpg',
     ],
     isFeatured: true,
+    status: 'published',
   },
   {
     id: 'proj-2',
@@ -326,6 +327,7 @@ export const INITIAL_PROJECTS: Project[] = [
       '/images/projects/p2-3.jpg',
     ],
     isFeatured: true,
+    status: 'published',
   },
   {
     id: 'proj-3',
@@ -344,6 +346,7 @@ export const INITIAL_PROJECTS: Project[] = [
       '/images/projects/p3-3.jpg',
     ],
     isFeatured: true,
+    status: 'published',
   },
   {
     id: 'proj-4',
@@ -362,6 +365,7 @@ export const INITIAL_PROJECTS: Project[] = [
       '/images/projects/p4-3.jpg',
     ],
     isFeatured: false,
+    status: 'published',
   },
   {
     id: 'proj-5',
@@ -380,6 +384,7 @@ export const INITIAL_PROJECTS: Project[] = [
       '/images/projects/p5-3.jpg',
     ],
     isFeatured: false,
+    status: 'published',
   },
   {
     id: 'proj-6',

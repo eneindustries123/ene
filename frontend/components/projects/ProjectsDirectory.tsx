@@ -16,9 +16,29 @@ export function ProjectsDirectory({ initialProjects }: ProjectsDirectoryProps) {
   // Extract available categories
   const categories = [
     { id: 'all', label: 'All Projects' },
-    { id: 'solar', label: 'Solar Energy', filter: (p: Project) => p.category.toLowerCase().includes('solar') },
-    { id: 'commercial', label: 'Commercial & Logistics', filter: (p: Project) => p.category.toLowerCase().includes('commercial') || p.category.toLowerCase().includes('logistics') },
-    { id: 'fabrication', label: 'Fabrication & Infrastructure', filter: (p: Project) => p.category.toLowerCase().includes('fabrication') || p.category.toLowerCase().includes('infrastructure') },
+    {
+      id: 'solar',
+      label: 'Solar Energy',
+      filter: (p: Project) => p.category.toLowerCase().includes('solar'),
+    },
+    {
+      id: 'commercial',
+      label: 'Commercial & Logistics',
+      filter: (p: Project) =>
+        p.category.toLowerCase().includes('commercial') ||
+        p.category.toLowerCase().includes('logistics') ||
+        p.category.toLowerCase().includes('industrial'),
+    },
+    {
+      id: 'fabrication',
+      label: 'Fabrication & Infrastructure',
+      filter: (p: Project) =>
+        p.category.toLowerCase().includes('fabrication') ||
+        p.category.toLowerCase().includes('infrastructure') ||
+        p.category.toLowerCase().includes('structural') ||
+        p.category.toLowerCase().includes('trading') ||
+        p.category.toLowerCase().includes('contracting'),
+    },
   ];
 
   const filteredProjects = initialProjects.filter((p) => {

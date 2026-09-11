@@ -30,7 +30,7 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
     const published = await getPublishedProjects();
     expect(published.length).toBeGreaterThan(0);
     published.forEach((p) => {
-      expect(p.status === 'published' || p.status === undefined).toBe(true);
+      expect(p.status).toBe('published');
     });
   });
 
@@ -301,5 +301,98 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
     });
 
     expect(updated?.capacity).toBe('Updated 200KW');
+  });
+
+  it('renders published admin projects on public /projects while strictly excluding draft and archived projects', async () => {
+    const mockApiResponse = [
+      {
+        id: 'proj-new-1',
+        title: 'Shed Fabrication – Shapes Gym',
+        slug: 'shed-fabrication-shapes-gym',
+        client: 'Shapes Gym',
+        location: 'Lahore, Pakistan',
+        capacity: 'Custom Steel Shed',
+        category: 'Fabrication & Solar',
+        completionYear: 2026,
+        summary: 'Elevated structural steel roof shed engineered for fitness facility.',
+        mainImage: '/images/shapes-gym.jpg',
+        gallery: ['/images/shapes-gym-1.jpg'],
+        isFeatured: false,
+        status: 'published',
+      },
+      {
+        id: 'proj-new-2',
+        title: 'PEB Shed Fabrication for Agriculture / Plastic Molding Industries',
+        slug: 'peb-shed-fabrication-agriculture-plastic-molding',
+        client: 'Industrial Client',
+        location: 'Gujranwala, Pakistan',
+        capacity: 'Heavy PEB Structure',
+        category: 'Fabrication & Solar',
+        completionYear: 2026,
+        summary: 'Turnkey pre-engineered building shed fabrication for industrial manufacturing.',
+        mainImage: '/images/peb-shed.jpg',
+        gallery: ['/images/peb-shed-1.jpg'],
+        isFeatured: false,
+        status: 'published',
+      },
+      {
+        id: 'proj-new-3',
+        title: '100 kW Hybrid Solar System – Kharian Medical Complex',
+        slug: '100-kw-hybrid-solar-system-kharian-medical-complex',
+        client: 'Kharian Medical Complex',
+        location: 'Kharian, Punjab, Pakistan',
+        capacity: '100 kW',
+        category: 'Institutional Solar',
+        completionYear: 2026,
+        summary: 'Continuous clean power integration for critical healthcare infrastructure.',
+        mainImage: '/images/kharian-med.jpg',
+        gallery: ['/images/kharian-med-1.jpg'],
+        isFeatured: false,
+        status: 'published',
+      },
+    ];
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(mockApiResponse));
+
+    const published = await getPublishedProjects();
+    expect(published).toHaveLength(3);
+    expect(published.map((p) => p.title)).toContain('Shed Fabrication – Shapes Gym');
+    expect(published.map((p) => p.title)).toContain('PEB Shed Fabrication for Agriculture / Plastic Molding Industries');
+    expect(published.map((p) => p.title)).toContain('100 kW Hybrid Solar System – Kharian Medical Complex');
+
+    // Verify categories render cleanly
+    expect(published.some((p) => p.category === 'Institutional Solar')).toBe(true);
+    expect(published.some((p) => p.category === 'Fabrication & Solar')).toBe(true);
+
+    // Verify each project retains its own distinct cover image
+    expect(published[0].mainImage).toBe('/images/shapes-gym.jpg');
+    expect(published[1].mainImage).toBe('/images/peb-shed.jpg');
+    expect(published[2].mainImage).toBe('/images/kharian-med.jpg');
+  });
+
+  it('resolves individual published project detail route by slug', async () => {
+    const singleMock = {
+      id: 'proj-kharian',
+      title: '100 kW Hybrid Solar System – Kharian Medical Complex',
+      slug: '100-kw-hybrid-solar-system-kharian-medical-complex',
+      client: 'Kharian Medical Complex',
+      location: 'Kharian, Punjab, Pakistan',
+      capacity: '100 kW',
+      category: 'Institutional Solar',
+      completionYear: 2026,
+      summary: 'Healthcare solar deployment.',
+      mainImage: '/images/kharian-med.jpg',
+      gallery: ['/images/kharian-1.jpg'],
+      isFeatured: false,
+      status: 'published',
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(singleMock));
+
+    const project = await getProjectBySlug('100-kw-hybrid-solar-system-kharian-medical-complex');
+    expect(project).not.toBeNull();
+    expect(project?.slug).toBe('100-kw-hybrid-solar-system-kharian-medical-complex');
+    expect(project?.title).toBe('100 kW Hybrid Solar System – Kharian Medical Complex');
+    expect(project?.category).toBe('Institutional Solar');
   });
 });

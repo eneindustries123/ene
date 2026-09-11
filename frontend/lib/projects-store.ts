@@ -148,8 +148,9 @@ export async function getPublishedProjects(): Promise<Project[]> {
     );
   }
 
-  return inMemoryProjects.filter((p) => p.status === 'published' || p.status === undefined);
+  return inMemoryProjects.filter((p) => p.status === 'published');
 }
+
 
 /**
  * Retrieves a single project by URL slug.

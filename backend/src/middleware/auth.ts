@@ -130,10 +130,27 @@ export interface AuthenticatedRequest extends Request {
   adminEmail?: string;
 }
 
+export function checkAdminAuth(req: Request): { isAdmin: boolean; email?: string } {
+  const token =
+    req.cookies?.[SESSION_COOKIE_NAME] ||
+    req.headers.authorization?.replace(/^Bearer\s+/i, '');
+
+  if (!token) {
+    return { isAdmin: false };
+  }
+
+  const { valid, email } = verifyToken(token);
+  if (!valid || !email) {
+    return { isAdmin: false };
+  }
+
+  return { isAdmin: true, email };
+}
+
 export function requireAdminAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const token =
     req.cookies?.[SESSION_COOKIE_NAME] ||
-    req.headers.authorization?.replace('Bearer ', '');
+    req.headers.authorization?.replace(/^Bearer\s+/i, '');
 
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized. Admin session required.' });

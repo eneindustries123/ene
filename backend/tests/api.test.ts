@@ -378,6 +378,142 @@ describe('E&E Industries Backend API Endpoints', () => {
       expect(res.body.capacity).toBe('750 kW');
     });
 
+    it('GET /api/projects?status=published returns only published projects and excludes draft/archived projects', async () => {
+      // Create a draft project and an archived project
+      const draftSlug = `test-draft-excl-${Date.now()}`;
+      const archivedSlug = `test-arch-excl-${Date.now()}`;
+
+      const draftRes = await request(app)
+        .post('/api/projects')
+        .set('Cookie', [adminCookie])
+        .send({
+          title: 'Excluded Draft Project',
+          slug: draftSlug,
+          client: 'Test Client',
+          location: 'Lahore, Pakistan',
+          capacity: '50 kW',
+          category: 'Institutional Solar',
+          completionYear: 2026,
+          summary: 'Should not appear in published list.',
+          mainImage: '/images/test-project.jpg',
+          gallery: ['/images/test-1.jpg'],
+          status: 'draft',
+        });
+
+      const archRes = await request(app)
+        .post('/api/projects')
+        .set('Cookie', [adminCookie])
+        .send({
+          title: 'Excluded Archived Project',
+          slug: archivedSlug,
+          client: 'Test Client',
+          location: 'Lahore, Pakistan',
+          capacity: '50 kW',
+          category: 'Fabrication & Solar',
+          completionYear: 2026,
+          summary: 'Should not appear in published list.',
+          mainImage: '/images/test-project.jpg',
+          gallery: ['/images/test-1.jpg'],
+          status: 'archived',
+        });
+
+      const res = await request(app).get('/api/projects?status=published');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+
+      const slugs = res.body.map((p: any) => p.slug);
+      expect(slugs).not.toContain(draftSlug);
+      expect(slugs).not.toContain(archivedSlug);
+
+      res.body.forEach((p: any) => {
+        expect(p.status).toBe('published');
+      });
+
+      // Security Test 1: Unauthenticated GET /api/projects defaults strictly to published projects
+      const unauthAllRes = await request(app).get('/api/projects');
+      expect(unauthAllRes.status).toBe(200);
+      const unauthSlugs = unauthAllRes.body.map((p: any) => p.slug);
+      expect(unauthSlugs).not.toContain(draftSlug);
+      expect(unauthSlugs).not.toContain(archivedSlug);
+      unauthAllRes.body.forEach((p: any) => {
+        expect(p.status).toBe('published');
+      });
+
+      // Security Test 2: Unauthenticated GET /api/projects?status=draft returns 401
+      const unauthDraftRes = await request(app).get('/api/projects?status=draft');
+      expect(unauthDraftRes.status).toBe(401);
+
+      // Security Test 3: Unauthenticated GET /api/projects?status=archived returns 401
+      const unauthArchRes = await request(app).get('/api/projects?status=archived');
+      expect(unauthArchRes.status).toBe(401);
+
+      // Security Test 4: Unauthenticated GET /api/projects/:slug for draft/archived returns 404
+      const unauthDraftDetailRes = await request(app).get(`/api/projects/${draftSlug}`);
+      expect(unauthDraftDetailRes.status).toBe(404);
+      const unauthArchDetailRes = await request(app).get(`/api/projects/${archivedSlug}`);
+      expect(unauthArchDetailRes.status).toBe(404);
+
+      // Security Test 5: Authenticated Admin GET /api/projects returns all projects including draft and archived
+      const adminAllRes = await request(app).get('/api/projects').set('Cookie', [adminCookie]);
+      expect(adminAllRes.status).toBe(200);
+      const adminSlugs = adminAllRes.body.map((p: any) => p.slug);
+      expect(adminSlugs).toContain(draftSlug);
+      expect(adminSlugs).toContain(archivedSlug);
+
+      // Security Test 6: Authenticated Admin GET /api/projects/:slug for draft/archived returns 200
+      const adminDraftDetailRes = await request(app).get(`/api/projects/${draftSlug}`).set('Cookie', [adminCookie]);
+      expect(adminDraftDetailRes.status).toBe(200);
+      expect(adminDraftDetailRes.body.slug).toBe(draftSlug);
+
+      const adminArchDetailRes = await request(app).get(`/api/projects/${archivedSlug}`).set('Cookie', [adminCookie]);
+      expect(adminArchDetailRes.status).toBe(200);
+      expect(adminArchDetailRes.body.slug).toBe(archivedSlug);
+
+      // Security Test 7: NULL / undefined status project is strictly private and hidden from public
+      const nullSlug = `test-null-status-${Date.now()}`;
+      const { ProjectsService } = await import('../src/services/projects.service');
+      const nullProject = await ProjectsService.createProject({
+        title: 'Legacy Null Status Project',
+        slug: nullSlug,
+        client: 'Legacy Client',
+        location: 'Lahore, Pakistan',
+        capacity: '50 kW',
+        category: 'Institutional Solar',
+        completionYear: 2024,
+        summary: 'Legacy project with null/undefined status.',
+        mainImage: '/images/test-project.jpg',
+        gallery: ['/images/test-1.jpg'],
+        isFeatured: false,
+        status: (null as any), // simulate database record with null status
+      });
+
+      // 7a. Public GET /api/projects excludes null-status project
+      const publicAllWithNull = await request(app).get('/api/projects');
+      expect(publicAllWithNull.body.map((p: any) => p.slug)).not.toContain(nullSlug);
+
+      // 7b. Public GET /api/projects?status=published excludes null-status project
+      const publicPublishedWithNull = await request(app).get('/api/projects?status=published');
+      expect(publicPublishedWithNull.body.map((p: any) => p.slug)).not.toContain(nullSlug);
+
+      // 7c. Public GET /api/projects/:slug returns 404 for null-status project
+      const publicNullDetail = await request(app).get(`/api/projects/${nullSlug}`);
+      expect(publicNullDetail.status).toBe(404);
+
+      // 7d. Admin GET /api/projects includes null-status project
+      const adminAllWithNull = await request(app).get('/api/projects').set('Cookie', [adminCookie]);
+      expect(adminAllWithNull.body.map((p: any) => p.slug)).toContain(nullSlug);
+
+      // 7e. Admin GET /api/projects/:slug returns 200 for null-status project
+      const adminNullDetail = await request(app).get(`/api/projects/${nullSlug}`).set('Cookie', [adminCookie]);
+      expect(adminNullDetail.status).toBe(200);
+      expect(adminNullDetail.body.slug).toBe(nullSlug);
+
+      // Cleanup
+      if (nullProject?.id) await request(app).delete(`/api/projects/${nullProject.id}`).set('Cookie', [adminCookie]);
+      if (draftRes.body.id) await request(app).delete(`/api/projects/${draftRes.body.id}`).set('Cookie', [adminCookie]);
+      if (archRes.body.id) await request(app).delete(`/api/projects/${archRes.body.id}`).set('Cookie', [adminCookie]);
+    });
+
     it('DELETE /api/projects/:id permanently deletes project', async () => {
       if (!createdProjectId) return;
 
