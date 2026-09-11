@@ -15,7 +15,7 @@ type ProjectFetchOptions = RequestInit & {
 export const FEATURED_PROJECTS_CACHE_TAG = 'featured-projects';
 export const PUBLIC_PROJECTS_CACHE_TAG = 'published-projects';
 export const FEATURED_PROJECTS_REVALIDATE_SECONDS = 300;
-export const PUBLIC_PROJECTS_REVALIDATE_SECONDS = 60;
+export const PUBLIC_PROJECTS_REVALIDATE_SECONDS = 0;
 const PUBLIC_PROJECTS_FETCH_TIMEOUT_MS = 15_000;
 const FEATURED_PROJECTS_FETCH_TIMEOUT_MS = 15_000;
 
@@ -51,15 +51,12 @@ export async function fetchFeaturedProjectsFromApi(
 }
 
 /**
- * Fetches the backend's ordered public project list without using local seed data.
- * Intended for surfaces that must never display stale hard-coded projects.
+ * Fetches the backend's ordered public project list dynamically without caching or seed fallback.
+ * Guarantees fresh real-time retrieval on every request.
  */
 export async function fetchPublishedProjectsFromApi(
   options: ProjectFetchOptions = {
-    next: {
-      revalidate: PUBLIC_PROJECTS_REVALIDATE_SECONDS,
-      tags: [PUBLIC_PROJECTS_CACHE_TAG],
-    },
+    cache: 'no-store',
   },
   timeoutMs = PUBLIC_PROJECTS_FETCH_TIMEOUT_MS
 ): Promise<Project[]> {
@@ -117,29 +114,26 @@ export async function getAllProjects(): Promise<Project[]> {
 }
 
 /**
- * Retrieves only published projects for public display.
+ * Retrieves only published projects dynamically for public display.
  */
 export async function getPublishedProjects(): Promise<Project[]> {
   try {
     const data = await fetchPublishedProjectsFromApi({
-      next: {
-        revalidate: PUBLIC_PROJECTS_REVALIDATE_SECONDS,
-        tags: [PUBLIC_PROJECTS_CACHE_TAG],
-      },
+      cache: 'no-store',
     });
-    if (Array.isArray(data) && data.length > 0) {
+    if (Array.isArray(data)) {
       return data;
     }
   } catch (err) {
-    const preserveCachedPage = process.env.NODE_ENV === 'production' && !isProductionBuild();
-    if (preserveCachedPage) {
+    const isProdRuntime = process.env.NODE_ENV === 'production' && !isProductionBuild();
+    if (isProdRuntime) {
       console.warn(
-        '[projects-store] Published projects API request failed during production runtime/ISR; re-throwing to preserve cached page:',
+        '[projects-store] Published projects API request failed during production runtime; re-throwing to prevent stale seed fallback:',
         err
       );
       throw err instanceof Error
         ? err
-        : new Error('Published projects unavailable during production ISR regeneration.');
+        : new Error('Published projects unavailable during production runtime.');
     }
 
     console.warn(
@@ -153,17 +147,14 @@ export async function getPublishedProjects(): Promise<Project[]> {
 
 
 /**
- * Retrieves a single project by URL slug.
+ * Retrieves a single project dynamically by URL slug.
  */
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
   try {
     const res = await apiFetchWithTimeout(
       getApiUrl(`/api/projects/${slug}`),
       {
-        next: {
-          revalidate: PUBLIC_PROJECTS_REVALIDATE_SECONDS,
-          tags: [PUBLIC_PROJECTS_CACHE_TAG],
-        },
+        cache: 'no-store',
       },
       PUBLIC_PROJECTS_FETCH_TIMEOUT_MS
     );
@@ -173,16 +164,25 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
         return data;
       }
     }
+    if (res.status === 404) {
+      return null;
+    }
+    if (!res.ok) {
+      const isProdRuntime = process.env.NODE_ENV === 'production' && !isProductionBuild();
+      if (isProdRuntime) {
+        throw new Error(`Project detail API request failed with status ${res.status}`);
+      }
+    }
   } catch (err) {
-    const preserveCachedPage = process.env.NODE_ENV === 'production' && !isProductionBuild();
-    if (preserveCachedPage) {
+    const isProdRuntime = process.env.NODE_ENV === 'production' && !isProductionBuild();
+    if (isProdRuntime) {
       console.warn(
-        `[projects-store] Project detail API request for "${slug}" failed during production runtime/ISR; re-throwing to preserve cached page:`,
+        `[projects-store] Project detail API request for "${slug}" failed during production runtime; re-throwing:`,
         err
       );
       throw err instanceof Error
         ? err
-        : new Error(`Project "${slug}" unavailable during production ISR regeneration.`);
+        : new Error(`Project "${slug}" unavailable during production runtime.`);
     }
   }
 

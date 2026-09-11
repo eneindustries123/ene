@@ -13,7 +13,7 @@ export const metadata = {
     'Explore engineered clean energy deployments, custom solar mounting structures, commercial hybrid microgrids, and industrial infrastructure delivered across Pakistan by E&E Industries.',
 };
 
-export const revalidate = 60; // ISR revalidate every 60 seconds
+export const dynamic = 'force-dynamic';
 
 export default async function ProjectsPage() {
   const projects = await getPublishedProjects();

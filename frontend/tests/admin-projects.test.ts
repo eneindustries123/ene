@@ -395,4 +395,46 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
     expect(project?.title).toBe('100 kW Hybrid Solar System – Kharian Medical Complex');
     expect(project?.category).toBe('Institutional Solar');
   });
+
+  it('verifies /projects and /projects/[slug] use force-dynamic SSR and bypass stale ISR route caching', () => {
+    const projectsSource = readFileSync(
+      new URL('../app/projects/page.tsx', import.meta.url),
+      'utf8'
+    );
+    const slugSource = readFileSync(
+      new URL('../app/projects/[slug]/page.tsx', import.meta.url),
+      'utf8'
+    );
+
+    expect(projectsSource).toContain("export const dynamic = 'force-dynamic';");
+    expect(projectsSource).not.toContain('export const revalidate');
+
+    expect(slugSource).toContain("export const dynamic = 'force-dynamic';");
+    expect(slugSource).toContain('export const dynamicParams = true;');
+    expect(slugSource).not.toContain('export const revalidate');
+  });
+
+  it('guarantees published project fetches default to cache: no-store to prevent stale refresh data', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json([
+        {
+          id: 'p-1',
+          title: 'Dynamic Test Project',
+          slug: 'dynamic-test-project',
+          status: 'published',
+          category: 'Solar',
+        },
+      ])
+    );
+
+    await getPublishedProjects();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/projects?status=published'),
+      expect.objectContaining({
+        cache: 'no-store',
+        signal: expect.any(AbortSignal),
+      })
+    );
+  });
 });
