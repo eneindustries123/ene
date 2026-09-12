@@ -77,6 +77,7 @@ export default function ProductsPage() {
               {/* Action Button */}
               <div className="pt-4">
                 <Link
+                  prefetch={false}
                   href={`/products/${product.slug}`}
                   className="w-full flex items-center justify-center gap-2 bg-solix-dark hover:bg-black text-white text-xs font-semibold py-3 rounded-full transition-colors"
                 >

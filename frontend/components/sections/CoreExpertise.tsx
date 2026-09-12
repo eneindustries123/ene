@@ -110,6 +110,7 @@ export function CoreExpertise() {
 
               <div className="pt-2">
                 <Link
+                  prefetch={false}
                   href={service.href}
                   className="inline-flex items-center gap-3 bg-solix-dark hover:bg-black text-white text-xs font-bold px-6 py-3 rounded-full transition-all shadow-md group/btn"
                 >

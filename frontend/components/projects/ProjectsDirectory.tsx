@@ -120,6 +120,7 @@ export function ProjectsDirectory({ initialProjects }: ProjectsDirectoryProps) {
             {/* Read Case Study Button */}
             <div className="pt-2">
               <Link
+                prefetch={false}
                 href={`/projects/${project.slug}`}
                 className="group/btn w-full flex items-center justify-center gap-2.5 bg-solix-dark hover:bg-black text-white text-xs font-bold py-3.5 px-6 rounded-full transition-all duration-200 shadow-md hover:shadow-lg"
               >

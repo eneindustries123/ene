@@ -29,6 +29,7 @@ export function FeaturedProjects({ projects = HOMEPAGE_FEATURED_PROJECTS }: Feat
         </div>
 
         <Link
+          prefetch={false}
           href="/projects"
           className="group inline-flex items-center gap-3 bg-solix-dark hover:bg-black text-white text-xs font-bold px-6 py-3.5 rounded-full transition-all shadow-md shrink-0"
         >
@@ -51,6 +52,7 @@ export function FeaturedProjects({ projects = HOMEPAGE_FEATURED_PROJECTS }: Feat
             className="bg-white rounded-3xl overflow-hidden border border-solix-border shadow-solix hover:shadow-solix-lg transition-all group flex flex-col justify-between"
           >
             <Link
+              prefetch={false}
               href={proj.href}
               className="flex flex-col h-full justify-between focus:outline-none focus:ring-2 focus:ring-solix-green/50 rounded-3xl"
             >

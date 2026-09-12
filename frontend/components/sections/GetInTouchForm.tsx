@@ -202,6 +202,7 @@ export function GetInTouchForm() {
               </button>
 
               <Link
+                prefetch={false}
                 href="/request-a-quote"
                 className="inline-flex items-center gap-2 text-xs font-bold text-solix-dark hover:text-solix-green transition-colors"
               >

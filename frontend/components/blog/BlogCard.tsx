@@ -17,6 +17,7 @@ export function BlogCard({ post }: { post: BlogPostCardValue }) {
   return (
     <article className="group h-full overflow-hidden rounded-3xl border border-solix-border bg-white shadow-solix transition-all duration-300 hover:-translate-y-1 hover:shadow-solix-lg focus-within:ring-2 focus-within:ring-solix-green focus-within:ring-offset-4">
       <Link
+        prefetch={false}
         href={`/blogs/${post.slug}`}
         className="flex h-full flex-col focus:outline-none"
         aria-label={`Read article: ${post.title}`}

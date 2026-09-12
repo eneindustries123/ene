@@ -39,6 +39,7 @@ export function TechnologySpotlight() {
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <Link
+              prefetch={false}
               href="/solar-energy"
               className="group flex items-center gap-3 bg-solix-dark hover:bg-black text-white text-xs font-bold px-5 py-3 rounded-full transition-all shadow-md"
             >
@@ -49,6 +50,7 @@ export function TechnologySpotlight() {
             </Link>
 
             <Link
+              prefetch={false}
               href="/request-a-quote"
               className="text-xs font-bold text-solix-dark hover:text-solix-green border-b border-solix-dark/30 hover:border-solix-green transition-colors pb-0.5"
             >
@@ -102,6 +104,7 @@ export function TechnologySpotlight() {
 
           <div className="pt-2">
             <Link
+              prefetch={false}
               href="/solar-energy"
               className="w-full flex items-center justify-center gap-2 bg-solix-dark hover:bg-black text-white font-semibold text-xs py-3 rounded-full transition-colors"
             >

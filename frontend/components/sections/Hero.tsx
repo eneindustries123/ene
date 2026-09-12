@@ -154,6 +154,7 @@ export function Hero() {
           <div className="mt-6 flex flex-wrap items-center gap-4 shrink-0">
             {/* Primary CTA -> Scroll to Services */}
             <Link
+              prefetch={false}
               href="#services"
               className="group inline-flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-solix-dark font-semibold text-sm h-14 px-6 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl shrink-0"
             >
@@ -165,6 +166,7 @@ export function Hero() {
 
             {/* Secondary CTA -> Scroll to Mission & Vision */}
             <Link
+              prefetch={false}
               href="#mission-vision"
               className="inline-flex items-center justify-center text-white/90 hover:text-white text-sm font-semibold h-14 px-6 rounded-full bg-black/30 hover:bg-black/40 backdrop-blur border border-white/20 transition-all shrink-0"
             >

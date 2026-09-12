@@ -41,6 +41,7 @@ export function Footer() {
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <Link
+                prefetch={false}
                 href="/request-a-quote"
                 className="inline-flex items-center gap-2 bg-white text-solix-dark hover:bg-slate-200 text-xs font-bold px-5 py-2.5 rounded-full transition-all shadow-md"
               >
@@ -49,6 +50,7 @@ export function Footer() {
               </Link>
 
               <Link
+                prefetch={false}
                 href="/contact"
                 className="text-xs text-white/80 hover:text-white font-semibold underline underline-offset-4 px-3 py-2"
               >
@@ -64,10 +66,10 @@ export function Footer() {
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Services</h4>
             <ul className="space-y-2 text-white/70">
-              <li><Link href="/solar-energy" className="hover:text-white transition-colors">Solar Energy</Link></li>
-              <li><Link href="/trading-contracting" className="hover:text-white transition-colors">Trading & Contracting</Link></li>
-              <li><Link href="/fabrication-design" className="hover:text-white transition-colors">Fabrication & Design</Link></li>
-              <li><Link href="/projects" className="hover:text-white transition-colors">Projects</Link></li>
+              <li><Link prefetch={false} href="/solar-energy" className="hover:text-white transition-colors">Solar Energy</Link></li>
+              <li><Link prefetch={false} href="/trading-contracting" className="hover:text-white transition-colors">Trading & Contracting</Link></li>
+              <li><Link prefetch={false} href="/fabrication-design" className="hover:text-white transition-colors">Fabrication & Design</Link></li>
+              <li><Link prefetch={false} href="/projects" className="hover:text-white transition-colors">Projects</Link></li>
             </ul>
           </div>
 
@@ -75,12 +77,12 @@ export function Footer() {
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Company</h4>
             <ul className="space-y-2 text-white/70">
-              <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
-              <li><Link href="/company-profile" className="hover:text-white transition-colors">Company Profile</Link></li>
-              <li><Link href="/projects" className="hover:text-white transition-colors">Projects</Link></li>
-              <li><Link href="/blogs" className="hover:text-white transition-colors">Insights</Link></li>
-              <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-              <li><Link href="/request-a-quote" className="hover:text-white transition-colors">Request a Quote</Link></li>
+              <li><Link prefetch={false} href="/about" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link prefetch={false} href="/company-profile" className="hover:text-white transition-colors">Company Profile</Link></li>
+              <li><Link prefetch={false} href="/projects" className="hover:text-white transition-colors">Projects</Link></li>
+              <li><Link prefetch={false} href="/blogs" className="hover:text-white transition-colors">Insights</Link></li>
+              <li><Link prefetch={false} href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+              <li><Link prefetch={false} href="/request-a-quote" className="hover:text-white transition-colors">Request a Quote</Link></li>
             </ul>
           </div>
 
@@ -172,10 +174,10 @@ export function Footer() {
 
           {/* Right: Legal Links */}
           <div className="lg:justify-self-end flex items-center justify-center lg:justify-end gap-6">
-            <Link href="/privacy-policy" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 rounded-sm">
+            <Link prefetch={false} href="/privacy-policy" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 rounded-sm">
               Privacy Policy
             </Link>
-            <Link href="/terms-and-conditions" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 rounded-sm">
+            <Link prefetch={false} href="/terms-and-conditions" className="hover:text-white transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 rounded-sm">
               Terms &amp; Conditions
             </Link>
           </div>

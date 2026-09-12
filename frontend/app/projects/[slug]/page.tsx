@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { cache } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { getProjectBySlug, getPublishedProjects } from '@/lib/projects-store';
+import { getProjectBySlug } from '@/lib/projects-store';
 import { ArrowUpRight, MapPin, Zap, Calendar, UserCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true; // Allow on-demand generation for newly published project slugs
 
+// Share the live lookup within this server request, without caching across requests.
+const getProject = cache((slug: string) => getProjectBySlug(slug));
+
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const project = await getProjectBySlug(params.slug);
+  const project = await getProject(params.slug);
   if (!project) return { title: 'Project Not Found | E&E Industries' };
   return {
     title: `${project.title} | Case Study | E&E Industries`,
@@ -20,7 +23,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function ProjectDetailPage({ params }: { params: { slug: string } }) {
-  const project = await getProjectBySlug(params.slug);
+  const project = await getProject(params.slug);
   if (!project) return notFound();
 
   return (

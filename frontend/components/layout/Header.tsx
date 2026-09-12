@@ -154,6 +154,7 @@ export function Header() {
             className="hidden lg:flex items-center gap-6 bg-white/10 backdrop-blur-md px-5 py-2 rounded-full border border-white/15 text-xs font-medium"
           >
             <Link
+              prefetch={false}
               href="/"
               className={cn(
                 'transition-colors hover:text-white',
@@ -164,6 +165,7 @@ export function Header() {
             </Link>
 
             <Link
+              prefetch={false}
               href="/about"
               className={cn(
                 'transition-colors hover:text-white',
@@ -211,6 +213,7 @@ export function Header() {
                   <div className="bg-solix-dark/95 backdrop-blur-xl border border-white/15 rounded-2xl p-2 shadow-solix-dark">
                     {serviceLinks.map((sub) => (
                       <Link
+                        prefetch={false}
                         key={sub.name}
                         href={sub.href}
                         role="menuitem"
@@ -231,6 +234,7 @@ export function Header() {
             </div>
 
             <Link
+              prefetch={false}
               href="/projects"
               className={cn(
                 'transition-colors hover:text-white',
@@ -243,6 +247,7 @@ export function Header() {
             </Link>
 
             <Link
+              prefetch={false}
               href="/blogs"
               className={cn(
                 'transition-colors hover:text-white',
@@ -255,6 +260,7 @@ export function Header() {
             </Link>
 
             <Link
+              prefetch={false}
               href="/contact"
               className={cn(
                 'transition-colors hover:text-white',
@@ -268,6 +274,7 @@ export function Header() {
           {/* Desktop Right Action */}
           <div className="hidden lg:flex items-center">
             <Link
+              prefetch={false}
               href="/request-a-quote"
               className="group flex items-center gap-2.5 bg-white hover:bg-slate-100 text-solix-dark text-xs font-bold px-5 py-2.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg"
             >
@@ -333,6 +340,7 @@ export function Header() {
               {/* Primary Navigation Links */}
               <nav aria-label="Mobile Menu Links" className="space-y-1">
                 <Link
+                  prefetch={false}
                   href="/"
                   onClick={closeMobile}
                   className={cn(
@@ -346,6 +354,7 @@ export function Header() {
                 </Link>
 
                 <Link
+                  prefetch={false}
                   href="/about"
                   onClick={closeMobile}
                   className={cn(
@@ -383,6 +392,7 @@ export function Header() {
                     <div className="mt-1 ml-3 pl-3 border-l-2 border-emerald-500/30 space-y-1 animate-fadeIn">
                       {serviceLinks.map((sub) => (
                         <Link
+                          prefetch={false}
                           key={sub.name}
                           href={sub.href}
                           onClick={closeMobile}
@@ -404,6 +414,7 @@ export function Header() {
                 </div>
 
                 <Link
+                  prefetch={false}
                   href="/projects"
                   onClick={closeMobile}
                   className={cn(
@@ -417,6 +428,7 @@ export function Header() {
                 </Link>
 
                 <Link
+                  prefetch={false}
                   href="/blogs"
                   onClick={closeMobile}
                   className={cn(
@@ -430,6 +442,7 @@ export function Header() {
                 </Link>
 
                 <Link
+                  prefetch={false}
                   href="/contact"
                   onClick={closeMobile}
                   className={cn(

@@ -13,7 +13,7 @@ interface BrandLogoProps {
 export function BrandLogo({ variant = 'full', className, imgClassName }: BrandLogoProps) {
   if (variant === 'symbol') {
     return (
-      <Link href="/" className={cn('inline-flex items-center group focus:outline-none', className)}>
+      <Link prefetch={false} href="/" className={cn('inline-flex items-center group focus:outline-none', className)}>
         <Image
           src="/logos/symbol.png"
           alt="E&E Symbol"
@@ -26,7 +26,7 @@ export function BrandLogo({ variant = 'full', className, imgClassName }: BrandLo
   }
 
   return (
-    <Link href="/" className={cn('inline-flex items-center group focus:outline-none', className)}>
+    <Link prefetch={false} href="/" className={cn('inline-flex items-center group focus:outline-none', className)}>
       <Image
         src="/logos/logo-full.png"
         alt="E&E Engineering & Energy"
