@@ -3,13 +3,18 @@ import { absoluteSiteUrl, getSiteUrl } from '@/lib/site';
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: ['/admin/', '/project-admin/', '/api/'],
-    },
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/admin/', '/project-admin/', '/api/'],
+      },
+      {
+        userAgent: 'Meta-ExternalAgent',
+        disallow: '/',
+      },
+    ],
     sitemap: absoluteSiteUrl('/sitemap.xml'),
     host: getSiteUrl(),
   };
 }
-
