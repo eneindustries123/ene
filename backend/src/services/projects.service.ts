@@ -24,6 +24,23 @@ function isValidUuid(id: string): boolean {
   return UUID_REGEX.test(id);
 }
 
+// Production projects must always use persistent storage.
+function projectClient() {
+  const configured = isSupabaseConfigured();
+  if (!configured && process.env.NODE_ENV === 'production') throw new Error('Project storage is unavailable');
+  const client = configured ? getSupabaseAdminClient() : null;
+  if (configured && !client) throw new Error('Project storage is unavailable');
+  return client;
+}
+
+function requireFixtureMode() {
+  if (process.env.NODE_ENV === 'production') throw new Error('Project storage did not confirm the operation');
+}
+
+export class ProjectConflictError extends Error {
+  constructor() { super('A project with this URL slug already exists'); }
+}
+
 // In-memory fallback store
 let inMemoryProjects: Project[] = [
   {
@@ -216,12 +233,13 @@ function mapProjectToRow(project: Omit<Project, 'id'>) {
     gallery: Array.isArray(project.gallery) ? project.gallery : [],
     is_featured: Boolean(project.isFeatured),
     status: project.status || 'draft',
+    is_published: project.status === 'published',
   };
 }
 
 export class ProjectsService {
   static async getAllProjects(): Promise<Project[]> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
     if (adminClient && isSupabaseConfigured()) {
       try {
         const { data, error } = await adminClient
@@ -244,11 +262,12 @@ export class ProjectsService {
         }
       }
     }
+    requireFixtureMode();
     return [...inMemoryProjects];
   }
 
   static async getPublishedProjects(): Promise<Project[]> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
     if (adminClient && isSupabaseConfigured()) {
       try {
         const { data, error } = await adminClient
@@ -273,11 +292,12 @@ export class ProjectsService {
       }
     }
 
+    requireFixtureMode();
     return inMemoryProjects.filter((p) => p.status === 'published');
   }
 
   static async getFeaturedPublishedProjects(limit = 3): Promise<Project[]> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
     if (adminClient && isSupabaseConfigured()) {
       try {
         const { data, error } = await adminClient
@@ -304,13 +324,14 @@ export class ProjectsService {
       }
     }
 
+    requireFixtureMode();
     return inMemoryProjects
       .filter((p) => p.status === 'published' && p.isFeatured === true)
       .slice(0, limit);
   }
 
   static async countPublishedFeaturedProjects(excludeId?: string): Promise<number> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
     if (adminClient && isSupabaseConfigured()) {
       try {
         let query = adminClient
@@ -340,6 +361,7 @@ export class ProjectsService {
       }
     }
 
+    requireFixtureMode();
     return inMemoryProjects.filter(
       (p) =>
         p.status === 'published' &&
@@ -349,7 +371,8 @@ export class ProjectsService {
   }
 
   static async getProjectById(id: string): Promise<Project | null> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
+    if (adminClient && !isValidUuid(id)) return null;
     if (adminClient && isSupabaseConfigured() && isValidUuid(id)) {
       try {
         const { data, error } = await adminClient
@@ -376,11 +399,12 @@ export class ProjectsService {
       }
     }
 
+    requireFixtureMode();
     return inMemoryProjects.find((p) => p.id === id) || null;
   }
 
   static async getProjectBySlug(slug: string): Promise<Project | null> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
     if (adminClient && isSupabaseConfigured()) {
       try {
         const { data, error } = await adminClient
@@ -407,12 +431,13 @@ export class ProjectsService {
       }
     }
 
+    requireFixtureMode();
     return inMemoryProjects.find((p) => p.slug === slug) || null;
   }
 
   static async createProject(projectData: Omit<Project, 'id'>): Promise<Project> {
     const rowData = mapProjectToRow(projectData);
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
 
     if (adminClient && isSupabaseConfigured()) {
       try {
@@ -423,23 +448,26 @@ export class ProjectsService {
           .single();
 
         if (error) {
+          if (error.code === '23505') throw new ProjectConflictError();
           console.error('[createProject] Supabase error:', error.message);
           if (process.env.NODE_ENV === 'production') {
             throw new Error(`Database insert failed: ${error.message}`);
           }
         } else if (data) {
           const created = mapProjectRow(data);
-          inMemoryProjects = [created, ...inMemoryProjects.filter((p) => p.id !== created.id)];
+          if (!isValidUuid(created.id)) throw new Error('Project persistence was not confirmed');
           return created;
         }
       } catch (err: any) {
         console.error('[createProject] Exception:', err.message);
+        if (err instanceof ProjectConflictError) throw err;
         if (process.env.NODE_ENV === 'production') {
           throw err;
         }
       }
     }
 
+    requireFixtureMode();
     const fallbackId = `proj-${Date.now()}`;
     const fallbackProject: Project = {
       ...projectData,
@@ -452,13 +480,12 @@ export class ProjectsService {
   }
 
   static async updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
+    if (adminClient && !isValidUuid(id)) return null;
 
     if (adminClient && isSupabaseConfigured() && isValidUuid(id)) {
       try {
-        const rowUpdates: Record<string, any> = {
-          updated_at: new Date().toISOString(),
-        };
+        const rowUpdates: Record<string, any> = {};
 
         if (updates.title !== undefined) rowUpdates.title = updates.title;
         if (updates.slug !== undefined) rowUpdates.slug = updates.slug;
@@ -472,35 +499,41 @@ export class ProjectsService {
         if (updates.mainImage !== undefined) rowUpdates.main_image = updates.mainImage;
         if (updates.gallery !== undefined) rowUpdates.gallery = updates.gallery;
         if (updates.isFeatured !== undefined) rowUpdates.is_featured = Boolean(updates.isFeatured);
-        if (updates.status !== undefined) rowUpdates.status = updates.status;
+        if (updates.status !== undefined) {
+          rowUpdates.status = updates.status;
+          rowUpdates.is_published = updates.status === 'published';
+        }
+        if (Object.keys(rowUpdates).length === 0) return this.getProjectById(id);
 
         const { data, error } = await adminClient
           .from('projects')
           .update(rowUpdates)
           .eq('id', id)
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) {
+          if (error.code === '23505') throw new ProjectConflictError();
           console.error('[updateProject] Supabase error:', error.message);
           if (process.env.NODE_ENV === 'production') {
             throw new Error(`Database update failed: ${error.message}`);
           }
         } else if (data) {
           const updated = mapProjectRow(data);
-          const memIdx = inMemoryProjects.findIndex((p) => p.id === id);
-          if (memIdx !== -1) inMemoryProjects[memIdx] = updated;
-          else inMemoryProjects.push(updated);
           return updated;
+        } else {
+          return null;
         }
       } catch (err: any) {
         console.error('[updateProject] Exception:', err.message);
+        if (err instanceof ProjectConflictError) throw err;
         if (process.env.NODE_ENV === 'production') {
           throw err;
         }
       }
     }
 
+    requireFixtureMode();
     const existing = await this.getProjectById(id);
     if (!existing) return null;
 
@@ -518,16 +551,19 @@ export class ProjectsService {
   }
 
   static async deleteProject(id: string): Promise<boolean> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
+    if (adminClient && !isValidUuid(id)) return false;
 
     if (adminClient && isSupabaseConfigured() && isValidUuid(id)) {
       try {
-        const { error } = await adminClient.from('projects').delete().eq('id', id);
+        const { data, error } = await adminClient.from('projects').delete().eq('id', id).select('id');
         if (error) {
           console.error('[deleteProject] Supabase error:', error.message);
           if (process.env.NODE_ENV === 'production') {
             throw new Error(`Database delete failed: ${error.message}`);
           }
+        } else if (data) {
+          return data.length > 0;
         }
       } catch (err: any) {
         console.error('[deleteProject] Exception:', err.message);
@@ -537,12 +573,13 @@ export class ProjectsService {
       }
     }
 
+    requireFixtureMode();
     inMemoryProjects = inMemoryProjects.filter((p) => p.id !== id);
     return true;
   }
 
   static async isSlugUnique(slug: string, currentId?: string): Promise<boolean> {
-    const adminClient = getSupabaseAdminClient();
+    const adminClient = projectClient();
 
     if (adminClient && isSupabaseConfigured()) {
       try {
@@ -556,8 +593,8 @@ export class ProjectsService {
           if (process.env.NODE_ENV === 'production') {
             throw new Error(`Database slug check failed: ${error.message}`);
           }
-        } else if (data && data.length > 0) {
-          return false;
+        } else if (data) {
+          return data.length === 0;
         }
       } catch (err) {
         console.error('[isSlugUnique] Exception:', err);
@@ -567,6 +604,7 @@ export class ProjectsService {
       }
     }
 
+    requireFixtureMode();
     return !inMemoryProjects.some((p) => p.slug === slug && p.id !== currentId);
   }
 }

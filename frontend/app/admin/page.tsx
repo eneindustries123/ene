@@ -9,7 +9,8 @@ import {
   TrendingUp,
   Plus,
 } from 'lucide-react';
-import { getAllProjects } from '@/lib/projects-store';
+import type { Project } from '@/lib/projects-store';
+import { isProjectArray } from '@/lib/project-response';
 import type { Review } from '@/lib/reviews-store';
 import { fetchAdminBackend } from '@/lib/admin-server-api';
 
@@ -27,18 +28,30 @@ async function getAdminReviews(): Promise<Review[]> {
   }
 }
 
-export default async function AdminDashboardOverview() {
-  const [projects, reviews] = await Promise.all([getAllProjects(), getAdminReviews()]);
+async function getAdminProjects(): Promise<Project[] | null> {
+  try {
+    const response = await fetchAdminBackend('/api/projects');
+    if (!response?.ok) return null;
+    const data = await response.json();
+    return isProjectArray(data) ? data : null;
+  } catch {
+    return null;
+  }
+}
 
-  const publishedProjectsCount = projects.filter((p) => p.status === 'published' || p.status === undefined).length;
-  const featuredProjectsCount = projects.filter((p) => p.isFeatured).length;
+export default async function AdminDashboardOverview() {
+  const [projectResult, reviews] = await Promise.all([getAdminProjects(), getAdminReviews()]);
+  const projects = projectResult ?? [];
+
+  const publishedProjectsCount = projects.filter((p) => p.status === 'published').length;
+  const featuredProjectsCount = projects.filter((p) => p.isFeatured && p.status === 'published').length;
 
   const pendingReviewsCount = reviews.filter((r) => r.status === 'pending').length;
   const approvedReviewsCount = reviews.filter((r) => r.status === 'approved').length;
   const featuredReviewsCount = reviews.filter((r) => r.featured).length;
 
   const stats = [
-    { name: 'Published Projects', value: `${publishedProjectsCount}`, change: `${featuredProjectsCount} featured`, icon: FolderKanban, color: 'text-solix-green', href: '/admin/projects' },
+    { name: 'Published Projects', value: projectResult === null ? 'Unavailable' : `${publishedProjectsCount}`, change: projectResult === null ? 'Project data unavailable' : `${featuredProjectsCount} featured`, icon: FolderKanban, color: 'text-solix-green', href: '/admin/projects' },
     { name: 'Approved Reviews', value: `${approvedReviewsCount}`, change: `${featuredReviewsCount} featured`, icon: Star, color: 'text-amber-500', href: '/admin/reviews' },
     { name: 'Pending Moderation', value: `${pendingReviewsCount}`, change: pendingReviewsCount > 0 ? 'Requires review' : 'All clear', icon: MessageSquare, color: 'text-blue-600', href: '/admin/reviews?status=pending' },
     { name: 'System Security', value: '100%', change: 'HttpOnly Active', icon: FileText, color: 'text-emerald-700', href: '/admin' },
@@ -75,6 +88,10 @@ export default async function AdminDashboardOverview() {
           </Link>
         </div>
       </div>
+
+      {projectResult === null && (
+        <p role="alert" className="text-sm text-red-700">Unable to load projects. Please refresh to try again.</p>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -125,11 +142,11 @@ export default async function AdminDashboardOverview() {
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between p-3.5 bg-solix-bg rounded-2xl border border-solix-border">
               <span className="text-solix-muted font-medium">Total Projects in Portfolio:</span>
-              <span className="font-mono font-extrabold text-solix-dark">{projects.length}</span>
+              <span className="font-mono font-extrabold text-solix-dark">{projectResult === null ? 'Unavailable' : projects.length}</span>
             </div>
             <div className="flex items-center justify-between p-3.5 bg-solix-bg rounded-2xl border border-solix-border">
-              <span className="text-solix-muted font-medium">Featured Projects (Homepage):</span>
-              <span className="font-mono font-extrabold text-solix-green">{featuredProjectsCount}</span>
+              <span className="text-solix-muted font-medium">Published Featured Projects (CMS):</span>
+              <span className="font-mono font-extrabold text-solix-green">{projectResult === null ? 'Unavailable' : featuredProjectsCount}</span>
             </div>
           </div>
         </div>

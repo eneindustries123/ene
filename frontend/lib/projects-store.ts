@@ -1,5 +1,5 @@
 import { Project, INITIAL_PROJECTS } from './data';
-import { apiFetchWithTimeout, getApiUrl, isProductionBuild } from './api-client';
+import { apiFetchWithTimeout, getApiUrl, getAdminApiUrl } from './api-client';
 
 let inMemoryProjects: Project[] = INITIAL_PROJECTS.map((p) => ({
   ...p,
@@ -7,6 +7,10 @@ let inMemoryProjects: Project[] = INITIAL_PROJECTS.map((p) => ({
 }));
 
 export type { Project };
+
+function requireFixtureMode() {
+  if (process.env.NODE_ENV === 'production') throw new Error('Project API did not confirm the operation');
+}
 
 type ProjectFetchOptions = RequestInit & {
   next?: { revalidate?: number };
@@ -93,8 +97,6 @@ export function selectHomepageProjects(projects: Project[], limit = 3): Project[
  * Retrieves all projects from standalone backend API (or fallback).
  */
 export async function getAllProjects(): Promise<Project[]> {
-  if (isProductionBuild()) return [...inMemoryProjects];
-
   try {
     const res = await apiFetchWithTimeout(getApiUrl('/api/projects'), {
       cache: 'no-store',
@@ -102,7 +104,7 @@ export async function getAllProjects(): Promise<Project[]> {
     });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         return data;
       }
     }
@@ -110,6 +112,7 @@ export async function getAllProjects(): Promise<Project[]> {
     // Local development fallback
   }
 
+  requireFixtureMode();
   return [...inMemoryProjects];
 }
 
@@ -125,7 +128,7 @@ export async function getPublishedProjects(): Promise<Project[]> {
       return data;
     }
   } catch (err) {
-    const isProdRuntime = process.env.NODE_ENV === 'production' && !isProductionBuild();
+    const isProdRuntime = process.env.NODE_ENV === 'production';
     if (isProdRuntime) {
       console.warn(
         '[projects-store] Published projects API request failed during production runtime; re-throwing to prevent stale seed fallback:',
@@ -142,6 +145,7 @@ export async function getPublishedProjects(): Promise<Project[]> {
     );
   }
 
+  requireFixtureMode();
   return inMemoryProjects.filter((p) => p.status === 'published');
 }
 
@@ -168,13 +172,13 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
       return null;
     }
     if (!res.ok) {
-      const isProdRuntime = process.env.NODE_ENV === 'production' && !isProductionBuild();
+      const isProdRuntime = process.env.NODE_ENV === 'production';
       if (isProdRuntime) {
         throw new Error(`Project detail API request failed with status ${res.status}`);
       }
     }
   } catch (err) {
-    const isProdRuntime = process.env.NODE_ENV === 'production' && !isProductionBuild();
+    const isProdRuntime = process.env.NODE_ENV === 'production';
     if (isProdRuntime) {
       console.warn(
         `[projects-store] Project detail API request for "${slug}" failed during production runtime; re-throwing:`,
@@ -186,6 +190,7 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
     }
   }
 
+  requireFixtureMode();
   const found = inMemoryProjects.find((p) => p.slug === slug);
   return found || null;
 }
@@ -209,10 +214,12 @@ export async function getProjectById(id: string): Promise<Project | null> {
         return data;
       }
     }
+    if (res.status === 404) return null;
   } catch {
     // Local fallback
   }
 
+  requireFixtureMode();
   const found = inMemoryProjects.find((p) => p.id === id);
   return found || null;
 }
@@ -222,7 +229,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
  */
 export async function createProject(projectData: Omit<Project, 'id'>): Promise<Project> {
   try {
-    const res = await apiFetchWithTimeout(getApiUrl('/api/projects'), {
+    const res = await apiFetchWithTimeout(getAdminApiUrl('/api/projects'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -231,13 +238,15 @@ export async function createProject(projectData: Omit<Project, 'id'>): Promise<P
 
     if (res.ok) {
       const created = await res.json();
-      inMemoryProjects = [created, ...inMemoryProjects.filter((p) => p.id !== created.id)];
+      if (!created?.id) throw new Error('Invalid project response');
+      if (process.env.NODE_ENV !== 'production') inMemoryProjects = [created, ...inMemoryProjects.filter((p) => p.id !== created.id)];
       return created;
     }
   } catch {
     // Fallback
   }
 
+  requireFixtureMode();
   const fallbackId = `proj-${Date.now()}`;
   const fallbackProject: Project = {
     ...projectData,
@@ -254,7 +263,7 @@ export async function createProject(projectData: Omit<Project, 'id'>): Promise<P
  */
 export async function updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
   try {
-    const res = await apiFetchWithTimeout(getApiUrl(`/api/projects/${id}`), {
+    const res = await apiFetchWithTimeout(getAdminApiUrl(`/api/projects/${id}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -263,6 +272,8 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
 
     if (res.ok) {
       const updated = await res.json();
+      if (!updated?.id) throw new Error('Invalid project response');
+      if (process.env.NODE_ENV === 'production') return updated;
       const memIdx = inMemoryProjects.findIndex((p) => p.id === id);
       if (memIdx !== -1) inMemoryProjects[memIdx] = updated;
       else inMemoryProjects.push(updated);
@@ -272,6 +283,7 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
     // Fallback
   }
 
+  requireFixtureMode();
   const currentIdx = inMemoryProjects.findIndex((p) => p.id === id);
   if (currentIdx !== -1) {
     inMemoryProjects[currentIdx] = { ...inMemoryProjects[currentIdx], ...updates };
@@ -285,11 +297,13 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
  */
 export async function deleteProject(id: string): Promise<boolean> {
   try {
-    const res = await apiFetchWithTimeout(getApiUrl(`/api/projects/${id}`), {
+    const res = await apiFetchWithTimeout(getAdminApiUrl(`/api/projects/${id}`), {
       method: 'DELETE',
       credentials: 'include',
     });
     if (res.ok) {
+      if (process.env.NODE_ENV === 'production') return true;
+      requireFixtureMode();
       inMemoryProjects = inMemoryProjects.filter((p) => p.id !== id);
       return true;
     }
@@ -297,6 +311,7 @@ export async function deleteProject(id: string): Promise<boolean> {
     // Fallback
   }
 
+  requireFixtureMode();
   inMemoryProjects = inMemoryProjects.filter((p) => p.id !== id);
   return true;
 }
@@ -305,5 +320,6 @@ export async function deleteProject(id: string): Promise<boolean> {
  * Checks slug uniqueness.
  */
 export async function isSlugUnique(slug: string, currentId?: string): Promise<boolean> {
+  requireFixtureMode();
   return !inMemoryProjects.some((p) => p.slug === slug && p.id !== currentId);
 }

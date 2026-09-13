@@ -178,3 +178,42 @@ describe('admin same-origin authentication bridge', () => {
     expect(backendFetch).not.toHaveBeenCalled();
   });
 });
+
+
+describe('authenticated project list BFF', () => {
+  it('rejects missing sessions without contacting the backend', async () => {
+    const backendFetch = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected fetch'));
+    const response = await proxyGet(new NextRequest(`${FRONTEND_URL}/api/admin/backend/projects`), { params: { path: ['projects'] } });
+    expect(response.status).toBe(401);
+    expect(backendFetch).not.toHaveBeenCalled();
+  });
+  it('forwards the session as Bearer and preserves all project statuses', async () => {
+    const projects = ['published', 'draft', 'archived', null].map(status => ({ status }));
+    const backendFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(projects));
+    const response = await proxyGet(new NextRequest(`${FRONTEND_URL}/api/admin/backend/projects`, {
+      headers: { Cookie: `${ADMIN_SESSION_COOKIE_NAME}=${SESSION_TOKEN}` },
+    }), { params: { path: ['projects'] } });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(projects);
+    const init = backendFetch.mock.calls[0][1];
+    expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${SESSION_TOKEN}`);
+    expect(init?.cache).toBe('no-store');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+  });
+  it('passes backend authentication rejection through and clears the cookie', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ error: 'Unauthorized' }, { status: 401 }));
+    const response = await proxyGet(new NextRequest(`${FRONTEND_URL}/api/admin/backend/projects`, {
+      headers: { Cookie: `${ADMIN_SESSION_COOKIE_NAME}=${SESSION_TOKEN}` },
+    }), { params: { path: ['projects'] } });
+    expect(response.status).toBe(401);
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
+  });
+  it('does not permit arbitrary project subroutes', async () => {
+    const backendFetch = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Unexpected fetch'));
+    const response = await proxyGet(new NextRequest(`${FRONTEND_URL}/api/admin/backend/projects/all/extra`, {
+      headers: { Cookie: `${ADMIN_SESSION_COOKIE_NAME}=${SESSION_TOKEN}` },
+    }), { params: { path: ['projects', 'all', 'extra'] } });
+    expect(response.status).toBe(404);
+    expect(backendFetch).not.toHaveBeenCalled();
+  });
+});

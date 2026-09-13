@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import {
   getAllProjects,
   getPublishedProjects,
@@ -12,6 +12,11 @@ import {
   PUBLIC_PROJECTS_REVALIDATE_SECONDS,
   selectHomepageProjects,
 } from '../lib/projects-store';
+
+// Legacy fixture tests must never contact a real backend.
+beforeEach(() => {
+  vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Isolated fixture test'));
+});
 
 afterEach(() => {
   vi.restoreAllMocks();

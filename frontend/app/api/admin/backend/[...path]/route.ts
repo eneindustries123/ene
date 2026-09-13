@@ -21,7 +21,7 @@ function isAllowedProtectedRoute(path: string[], method: string): boolean {
   const [resource, id] = path;
 
   if (resource === 'projects') {
-    return (!id && method === 'POST') ||
+    return (path.length === 1 && ['GET', 'POST'].includes(method)) ||
       (path.length === 2 && Boolean(id) && ['PUT', 'PATCH', 'DELETE'].includes(method));
   }
 

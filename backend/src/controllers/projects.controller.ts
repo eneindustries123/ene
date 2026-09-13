@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ProjectsService } from '../services/projects.service';
+import { ProjectsService, ProjectConflictError } from '../services/projects.service';
 import { createProjectSchema, updateProjectSchema } from '../validators/project.validator';
 import { checkAdminAuth } from '../middleware/auth';
 
@@ -9,6 +9,10 @@ export class ProjectsController {
       const { status, featured, limit } = req.query;
       const parsedLimit = limit ? Math.max(1, Math.min(50, parseInt(String(limit), 10) || 0)) : undefined;
       const { isAdmin } = checkAdminAuth(req);
+      // The admin BFF forwards a Bearer token; never downgrade an invalid admin read to public data.
+      if (req.headers.authorization && !isAdmin) {
+        return res.status(401).json({ error: 'Session expired or invalid.' });
+      }
 
       if (status === 'published' && featured === 'true') {
         const projects = await ProjectsService.getFeaturedPublishedProjects(parsedLimit || 3);
@@ -92,6 +96,7 @@ export class ProjectsController {
       const created = await ProjectsService.createProject(parsedData);
       return res.status(201).json(created);
     } catch (err: any) {
+      if (err instanceof ProjectConflictError) return res.status(409).json({ error: err.message });
       if (err.name === 'ZodError') {
         return res.status(400).json({ error: 'Validation failed', details: err.flatten().fieldErrors });
       }
@@ -138,6 +143,7 @@ export class ProjectsController {
 
       return res.status(200).json(updated);
     } catch (err: any) {
+      if (err instanceof ProjectConflictError) return res.status(409).json({ error: err.message });
       if (err.name === 'ZodError') {
         return res.status(400).json({ error: 'Validation failed', details: err.flatten().fieldErrors });
       }
@@ -149,6 +155,7 @@ export class ProjectsController {
     try {
       const { id } = req.params;
       const success = await ProjectsService.deleteProject(id);
+      if (!success) return res.status(404).json({ error: 'Project not found' });
       return res.status(200).json({ success, message: 'Project permanently deleted' });
     } catch (err: any) {
       return res.status(500).json({ error: err.message || 'Failed to delete project' });

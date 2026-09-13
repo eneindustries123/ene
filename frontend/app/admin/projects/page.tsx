@@ -24,7 +24,8 @@ import {
   ImageIcon,
 } from 'lucide-react';
 import { Project } from '@/lib/data';
-import { getAdminApiUrl, getApiUrl } from '@/lib/api-client';
+import { isProjectArray } from '@/lib/project-response';
+import { getAdminApiUrl } from '@/lib/api-client';
 
 const CATEGORY_OPTIONS = [
   'Institutional Solar',
@@ -54,6 +55,7 @@ const isVideoMedia = (url: string): boolean => {
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [listError, setListError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived' | 'featured'>('all');
 
@@ -97,16 +99,18 @@ export default function AdminProjectsPage() {
 
   const fetchProjects = async () => {
     setLoading(true);
+    setListError('');
     try {
-      const res = await fetch(getApiUrl('/api/projects'), {
+      const res = await fetch(getAdminApiUrl('/api/projects'), {
         credentials: 'include',
+        cache: 'no-store',
       });
-      if (res.ok) {
-        const data = await res.json();
-        setProjects(Array.isArray(data) ? data : data.projects || []);
-      }
+      if (!res.ok) throw new Error('Project list unavailable');
+      const data = await res.json();
+      if (!isProjectArray(data)) throw new Error('Invalid project list');
+      setProjects(data);
     } catch {
-      // Ignore
+      setListError('Unable to load projects. Please refresh to try again.');
     } finally {
       setLoading(false);
     }
@@ -514,6 +518,10 @@ export default function AdminProjectsPage() {
       {loading ? (
         <div className="bg-white border border-solix-border rounded-3xl p-12 text-center text-solix-muted text-xs shadow-solix">
           Loading project portfolio...
+        </div>
+      ) : listError ? (
+        <div role="alert" className="bg-white border border-solix-border rounded-3xl p-12 text-center text-sm text-red-700">
+          {listError}
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="bg-white border border-solix-border rounded-3xl p-12 text-center space-y-3 shadow-solix">
