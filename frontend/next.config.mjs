@@ -13,6 +13,11 @@ const nextConfig = {
         hostname: 'cdn.sanity.io',
         pathname: '/images/kjz2jmxz/production/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'xnvxmolqsxizrfjysnnk.supabase.co',
+        pathname: '/storage/v1/object/public/project-media/**',
+      },
     ],
   },
   experimental: {

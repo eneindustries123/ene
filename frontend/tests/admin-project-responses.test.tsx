@@ -39,6 +39,28 @@ function expectListError() {
 }
 
 describe('admin project list response handling', () => {
+  it('cannot persist a temporary preview after a failed main-image upload', async () => {
+    const NativeURL = URL;
+    vi.stubGlobal('URL', class extends NativeURL {
+      static createObjectURL() { return 'blob:temporary-main-image'; }
+      static revokeObjectURL() {}
+    });
+    await renderResponse([]);
+    await act(async () => {
+      const button = Array.from(container.querySelectorAll('button')).find((item) => item.textContent?.includes('Create New Project'))!;
+      button.click();
+    });
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    Object.defineProperty(input, 'files', { value: [new File(['image'], 'main.png', { type: 'image/png' })] });
+    vi.mocked(fetch).mockResolvedValue(Response.json({ error: 'Media storage is unavailable.' }, { status: 500 }));
+    await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })));
+    expect(container.querySelector('img[src="blob:temporary-main-image"]')).toBeNull();
+    const callsBeforeSave = vi.mocked(fetch).mock.calls.length;
+    await act(async () => container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(container.textContent).toContain('Please upload a main project image');
+    expect(fetch).toHaveBeenCalledTimes(callsBeforeSave);
+  });
   it('renders the legitimate empty state for []', async () => {
     await renderResponse([]);
     expect(container.textContent).toContain('No projects found');

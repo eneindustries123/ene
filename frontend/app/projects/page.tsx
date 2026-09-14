@@ -1,10 +1,10 @@
-import React from 'react';
-import Image from 'next/image';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { getPublishedProjects } from '@/lib/projects-store';
+import { getPublishedProjectDirectory } from '@/lib/projects-store';
 import { ProjectsDirectory } from '@/components/projects/ProjectsDirectory';
+import { ProjectsDirectoryLoading } from '@/components/projects/ProjectsDirectoryLoading';
 import { ArrowUpRight } from 'lucide-react';
 
 export const metadata = {
@@ -15,9 +15,18 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function ProjectsPage() {
-  const projects = await getPublishedProjects();
+async function PublishedDirectory() {
+  try {
+    const projects = await getPublishedProjectDirectory();
+    return <ProjectsDirectory initialProjects={projects} />;
+  } catch {
+    return <div role="alert" className="bg-white rounded-3xl p-12 text-center text-solix-muted text-sm border border-solix-border">
+      Projects are temporarily unavailable. Please refresh to try again.
+    </div>;
+  }
+}
 
+export default function ProjectsPage() {
   return (
     <main className="min-h-screen bg-solix-bg text-solix-dark flex flex-col justify-between">
       <Header />
@@ -41,7 +50,9 @@ export default async function ProjectsPage() {
 
       {/* 2. DYNAMIC PUBLISHED PROJECTS DIRECTORY */}
       <section className="pb-24 px-4 sm:px-8 max-w-7xl mx-auto w-full">
-        <ProjectsDirectory initialProjects={projects} />
+        <Suspense fallback={<ProjectsDirectoryLoading />}>
+          <PublishedDirectory />
+        </Suspense>
       </section>
 
       {/* 3. FINAL PROJECT ENQUIRY / QUOTE CTA */}

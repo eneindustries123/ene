@@ -221,9 +221,11 @@ export default function AdminProjectsPage() {
         setMainImagePreview(data.url);
       } else {
         setFormError(data.error || 'Failed to upload main image');
+        setMainImagePreview(formData.mainImage);
       }
     } catch {
       setFormError('Failed to upload image due to network error');
+      setMainImagePreview(formData.mainImage);
     } finally {
       setUploadingMain(false);
     }
@@ -309,8 +311,8 @@ export default function AdminProjectsPage() {
     setFormError('');
 
     // Main Image validation
-    const mainImg = formData.mainImage || mainImagePreview;
-    if (!mainImg) {
+    const mainImg = formData.mainImage;
+    if (!mainImg || mainImg.startsWith('blob:')) {
       setFormError('Please upload a main project image (compulsory).');
       return;
     }

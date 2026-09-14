@@ -1,5 +1,6 @@
 import { Project, INITIAL_PROJECTS } from './data';
 import { apiFetchWithTimeout, getApiUrl, getAdminApiUrl } from './api-client';
+import { isProjectArray } from './project-response';
 
 let inMemoryProjects: Project[] = INITIAL_PROJECTS.map((p) => ({
   ...p,
@@ -80,6 +81,30 @@ export async function fetchPublishedProjectsFromApi(
   }
 
   return data;
+}
+
+/** Fresh directory cards only; never substitute fixtures for a failed live read. */
+export async function getPublishedProjectDirectory(): Promise<Project[]> {
+  const controller = new AbortController();
+  // Keep the deadline active through body consumption, not just response headers.
+  const timeout = setTimeout(() => controller.abort(), PUBLIC_PROJECTS_FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(getApiUrl('/api/projects?status=published&view=directory'), {
+      cache: 'no-store', signal: controller.signal,
+    });
+    if (!response.ok) throw new Error('Published projects are temporarily unavailable.');
+    const projects: unknown = await response.json();
+    if (!isProjectArray(projects)) throw new Error('Published projects are temporarily unavailable.');
+    return projects.filter((project) => project.status === 'published').map((project) => ({
+      ...project,
+      // Resolve backend-relative media references without relying on request Host headers.
+      mainImage: project.mainImage === `/api/projects/${encodeURIComponent(project.id)}/image`
+        ? getApiUrl(project.mainImage)
+        : project.mainImage,
+    }));
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /**

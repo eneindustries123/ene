@@ -16,7 +16,7 @@ vi.mock('../src/lib/supabase/admin', () => ({
         return storage.replies.shift();
       };
       const query: any = { then: (resolve: any, reject: any) => Promise.resolve().then(result).then(resolve, reject) };
-      for (const name of ['select', 'eq', 'neq', 'order', 'limit', 'insert', 'update', 'delete']) {
+      for (const name of ['select', 'eq', 'neq', 'order', 'limit', 'insert', 'update', 'delete', 'returns']) {
         query[name] = (...args: any[]) => { calls.push([name, ...args]); return query; };
       }
       query.single = query.maybeSingle = () => Promise.resolve().then(result);
@@ -49,6 +49,80 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe('production projects use persistent storage exclusively', () => {
+  it('opts directory reads into a single published-only projection without changing full reads', async () => {
+    storage.replies = [ok([{ ...row, main_image: undefined, gallery: undefined, full_story: undefined }]), ok([{ ...row, full_story: 'Complete story' }])];
+    const directory = await request(app).get('/api/projects?view=directory');
+    expect(directory.status).toBe(200);
+    expect(directory.body[0]).toMatchObject({ mainImage: `/api/projects/${id}/image`, gallery: [], fullStory: '', status: 'published' });
+    expect(directory.text).not.toContain('data:image');
+    expect(storage.queries).toHaveLength(1);
+    expect(storage.queries[0]).toContainEqual(['eq', 'status', 'published']);
+    expect(storage.queries[0]).toContainEqual(['order', 'created_at', { ascending: false }]);
+    const projection = storage.queries[0].find((call: any[]) => call[0] === 'select')[1].split(',');
+    expect(projection).not.toContain('main_image');
+    expect(projection).not.toContain('gallery');
+    expect(projection).not.toContain('full_story');
+    const full = await request(app).get('/api/projects?status=published');
+    expect(full.body[0]).toMatchObject({ gallery: payload.gallery, fullStory: 'Complete story' });
+    expect(storage.queries[1]).toContainEqual(['select', '*']);
+  });
+
+  it('delivers existing embedded images as binary without changing full project detail', async () => {
+    const bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+    const image = `data:image/png;base64,${bytes.toString('base64')}`;
+    storage.replies = [ok({ main_image: image }), ok({ ...row, main_image: image })];
+    const response = await request(app).get(`/api/projects/${id}/image`);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(bytes);
+    expect(response.headers['content-type']).toContain('image/png');
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.headers['cross-origin-resource-policy']).toBe('cross-origin');
+    expect(response.headers['content-security-policy']).toContain('sandbox');
+    expect(storage.queries[0]).toContainEqual(['select', 'main_image']);
+    expect(storage.queries[0]).toContainEqual(['eq', 'id', id]);
+    expect(storage.queries[0]).toContainEqual(['eq', 'status', 'published']);
+    const detail = await request(app).get(`/api/projects/${id}`);
+    expect(detail.body.mainImage).toBe(image);
+    expect(detail.body.gallery).toEqual(payload.gallery);
+  });
+
+  it.each(['draft', 'archived', null])('does not expose an image excluded by publication filtering: %s', async () => {
+    storage.replies = [ok(null)];
+    const response = await request(app).get(`/api/projects/${id}/image`).set('Authorization', authorization());
+    expect(response.status).toBe(404);
+    expect(storage.queries[0]).toContainEqual(['eq', 'status', 'published']);
+  });
+
+  it('rejects invalid image IDs without querying and hides database errors', async () => {
+    expect((await request(app).get('/api/projects/not-a-uuid/image')).status).toBe(404);
+    expect(storage.queries).toHaveLength(0);
+    storage.replies = [{ data: null, error: { message: 'private database details' } }];
+    const response = await request(app).get(`/api/projects/${id}/image`);
+    expect(response.status).toBe(503);
+    expect(response.text).not.toContain('private database details');
+  });
+
+  it.each([
+    ['/images/projects/p1-1.jpg', 'https://www.eneindustries.com/images/projects/p1-1.jpg'],
+    ['https://example.supabase.co/storage/v1/object/public/project-media/a.png', 'https://example.supabase.co/storage/v1/object/public/project-media/a.png'],
+  ])('redirects an existing image reference without proxying it: %s', async (stored, expected) => {
+    vi.stubEnv('FRONTEND_URL', 'https://www.eneindustries.com');
+    storage.replies = [ok({ main_image: stored })];
+    const response = await request(app).get(`/api/projects/${id}/image`);
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe(expected);
+  });
+
+  it.each(['javascript:alert(1)', 'data:text/html;base64,SGVsbG8=', 'data:image/png;base64,invalid!'])('does not serve unsafe image references: %s', async (stored) => {
+    storage.replies = [ok({ main_image: stored })];
+    expect((await request(app).get(`/api/projects/${id}/image`)).status).toBe(404);
+  });
+
+  it('never substitutes directory fixtures when storage is missing, even in development', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    storage.configured = false;
+    await expect(ProjectsService.getPublishedProjects(true)).rejects.toThrow('unavailable');
+  });
   it('preserves empty lists, detail misses and zero featured counts', async () => {
     storage.replies = [ok([]), ok([]), ok([]), ok(null, 0), ok(null), ok(null)];
     expect(await ProjectsService.getAllProjects()).toEqual([]);

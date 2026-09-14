@@ -6,6 +6,7 @@ export const projectsRouter = Router();
 
 // Public routes
 projectsRouter.get('/', ProjectsController.getAll);
+projectsRouter.get('/:id/image', ProjectsController.getImage);
 projectsRouter.get('/:idOrSlug', ProjectsController.getByIdOrSlug);
 
 // Protected Admin routes

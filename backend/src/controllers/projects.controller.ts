@@ -14,6 +14,11 @@ export class ProjectsController {
         return res.status(401).json({ error: 'Session expired or invalid.' });
       }
 
+      if (req.query.view === 'directory' && (status === undefined || status === 'published')) {
+        const projects = await ProjectsService.getPublishedProjects(true);
+        return res.status(200).json(projects);
+      }
+
       if (status === 'published' && featured === 'true') {
         const projects = await ProjectsService.getFeaturedPublishedProjects(parsedLimit || 3);
         return res.status(200).json(projects);
@@ -44,6 +49,36 @@ export class ProjectsController {
       }
     } catch (err: any) {
       return res.status(500).json({ error: err.message || 'Failed to fetch projects' });
+    }
+  }
+
+  static async getImage(req: Request, res: Response) {
+    // Recheck publication on every image request, including previously viewed URLs.
+    res.set('Cache-Control', 'no-store');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.set('Content-Security-Policy', "default-src 'none'; sandbox");
+    try {
+      const image = await ProjectsService.getPublishedProjectImage(req.params.id);
+      if (!image) return res.status(404).end();
+
+      if (image.startsWith('data:')) {
+        const match = /^data:(image\/(?:jpeg|png|webp|gif|avif|svg\+xml));base64,([A-Za-z0-9+/]+={0,2})$/.exec(image);
+        if (!match || match[2].length % 4 !== 0 || match[2].length > 70 * 1024 * 1024) {
+          return res.status(404).end();
+        }
+        return res.type(match[1]).send(Buffer.from(match[2], 'base64'));
+      }
+
+      // Redirect existing references; never proxy arbitrary URLs server-side.
+      const url = image.startsWith('/images/') && !image.includes('\\')
+        ? new URL(image, process.env.FRONTEND_URL || 'http://localhost:3000')
+        : new URL(image);
+      if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) {
+        return res.status(404).end();
+      }
+      return res.redirect(302, url.href);
+    } catch {
+      return res.status(503).json({ error: 'Project image is temporarily unavailable.' });
     }
   }
 

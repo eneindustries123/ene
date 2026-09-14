@@ -14,6 +14,10 @@ export class UploadsService {
 
     if (adminClient && isSupabaseConfigured()) {
       try {
+        if (process.env.NODE_ENV === 'production') {
+          const { data: bucket, error: bucketError } = await adminClient.storage.getBucket(bucketName);
+          if (bucketError || !bucket?.public) throw new Error('Public media storage is unavailable');
+        }
         const { data, error } = await adminClient.storage
           .from(bucketName)
           .upload(storagePath, fileBuffer, {
@@ -26,6 +30,8 @@ export class UploadsService {
             .from(bucketName)
             .getPublicUrl(data.path);
 
+          if (!publicUrlData?.publicUrl) throw new Error('Media URL is unavailable');
+
           return {
             url: publicUrlData.publicUrl,
             fileName: sanitizedFileName,
@@ -33,8 +39,14 @@ export class UploadsService {
           };
         }
       } catch (err) {
-        console.warn('Supabase storage upload error, using fallback:', err);
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('Media storage is unavailable. Please try again later.');
+        }
       }
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Media storage is unavailable. Please try again later.');
     }
 
     // Fallback: Data URL

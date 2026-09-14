@@ -266,15 +266,19 @@ export class ProjectsService {
     return [...inMemoryProjects];
   }
 
-  static async getPublishedProjects(): Promise<Project[]> {
+  static async getPublishedProjects(directoryOnly = false): Promise<Project[]> {
     const adminClient = projectClient();
+    const columns: string = directoryOnly
+      ? 'id,title,slug,client,location,capacity,category,completion_year,summary,is_featured,status,created_at'
+      : '*';
     if (adminClient && isSupabaseConfigured()) {
       try {
         const { data, error } = await adminClient
           .from('projects')
-          .select('*')
+          .select(columns)
           .eq('status', 'published')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .returns<Array<Record<string, unknown>>>();
 
         if (error) {
           console.error('[ProjectsService.getPublishedProjects] Supabase error:', error.message);
@@ -282,7 +286,9 @@ export class ProjectsService {
             throw new Error(`Database query failed: ${error.message}`);
           }
         } else if (data) {
-          return data.map(mapProjectRow);
+          return data.map((row) => mapProjectRow(directoryOnly
+            ? { ...row, main_image: `/api/projects/${encodeURIComponent(String(row.id))}/image` }
+            : row));
         }
       } catch (err) {
         console.error('[ProjectsService.getPublishedProjects] Exception:', err);
@@ -292,8 +298,20 @@ export class ProjectsService {
       }
     }
 
+    if (directoryOnly) throw new Error('Project directory is unavailable');
     requireFixtureMode();
     return inMemoryProjects.filter((p) => p.status === 'published');
+  }
+
+  /** Read one image on demand; never expose media belonging to private projects. */
+  static async getPublishedProjectImage(id: string): Promise<string | null> {
+    if (!isValidUuid(id)) return null;
+    const client = projectClient();
+    if (!client) throw new Error('Project storage is unavailable');
+    const { data, error } = await client.from('projects')
+      .select('main_image').eq('id', id).eq('status', 'published').maybeSingle();
+    if (error) throw new Error('Project image is temporarily unavailable');
+    return typeof data?.main_image === 'string' ? data.main_image : null;
   }
 
   static async getFeaturedPublishedProjects(limit = 3): Promise<Project[]> {

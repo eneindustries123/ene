@@ -81,6 +81,8 @@ export function ProjectsDirectory({ initialProjects }: ProjectsDirectoryProps) {
                   src={project.mainImage}
                   alt={project.title}
                   fill
+                  unoptimized={/\/api\/projects\/[^/]+\/image$/.test(project.mainImage)}
+                  loading="lazy"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
                 />
