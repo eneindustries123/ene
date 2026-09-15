@@ -109,7 +109,7 @@ export default function FabricationDesignPage() {
         {/* Background Image & Gradient Overlays */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/hero/fabrication-hero.jpg"
+            src="/hero/fabrication-hero.webp"
             alt="E&E Fabrication & Design Infrastructure"
             fill
             priority
@@ -259,7 +259,7 @@ export default function FabricationDesignPage() {
           <div className="lg:col-span-5 flex flex-col">
             <div className="relative w-full h-full min-h-[380px] rounded-3xl overflow-hidden shadow-solix-lg border border-solix-border bg-solix-bg">
               <Image
-                src="/images/service-fabrication.jpg"
+                src="/images/service-fabrication.webp"
                 alt="E&E Structural Steel Fabrication Facility"
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"

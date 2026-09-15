@@ -252,7 +252,7 @@ export default function SolarEnergyPage() {
         {/* Background Image & Cinematic Gradient Overlays */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/hero/solar-hero.jpg"
+            src="/hero/solar-hero.webp"
             alt="E&E Solar Energy Infrastructure"
             fill
             priority

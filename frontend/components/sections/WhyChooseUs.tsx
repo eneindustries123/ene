@@ -83,7 +83,7 @@ export function WhyChooseUs() {
       {/* Background Visual 5: Panoramic Solar Rooftop at Sunset */}
       <div className="relative w-full h-[260px] sm:h-[360px] rounded-3xl sm:rounded-4xl overflow-hidden shadow-solix border border-solix-border">
         <Image
-          src="/images/why-ee-panoramic.jpg"
+          src="/images/why-ee-panoramic.webp"
           alt="E&E Industrial Solar Infrastructure Panoramic Rooftop Array"
           fill
           sizes="100vw"

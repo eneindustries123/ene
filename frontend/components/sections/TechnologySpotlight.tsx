@@ -69,7 +69,7 @@ export function TechnologySpotlight() {
         >
           <div className="relative w-64 sm:w-72 h-[380px] sm:h-[420px] rounded-full overflow-hidden shadow-solix-lg border-4 border-white">
             <Image
-              src="/images/solar-engineer-tablet.jpg"
+              src="/images/solar-engineer-tablet.webp"
               alt="E&E Commercial Solar Engineer with Digital Tablet"
               fill
               sizes="(max-width: 1024px) 100vw, 33vw"

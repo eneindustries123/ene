@@ -52,12 +52,12 @@ export const HOMEPAGE_FEATURED_PROJECTS: HomepageShowcaseProject[] = [
   },
   {
     title: 'Chakdara Swat Site',
-    image: '/images/projects/p2-1.jpg',
+    image: '/images/projects/p2-1.webp',
     href: '/projects/chakdara-swat-25kw',
   },
   {
     title: 'Punjab Pharmacy Commercial Complex',
-    image: '/images/projects/p3-1.jpg',
+    image: '/images/projects/p3-1.webp',
     href: '/projects/punjab-pharmacy',
   },
 ];
@@ -166,13 +166,13 @@ export const COMMITTEE_MEMBERS: CommitteeMember[] = [
     name: 'Asjed Mehnood',
     role: 'CEO',
     bio: 'Steers corporate vision, strategic growth, and multi-divisional engineering execution across solar energy, procurement, and industrial contracting with a steadfast focus on quality delivery and long-term client relationships.',
-    imageUrl: '/images/asjed-mehnood.jpg',
+    imageUrl: '/images/asjed-mehnood.webp',
   },
   {
     name: 'Malik Waqar Ahmed',
     role: 'Managing Director',
     bio: 'Leads technical operations, project management, and business development across structural fabrication, PEB infrastructure, and client delivery, ensuring rigorous standards and operational excellence.',
-    imageUrl: '/images/malik-waqar.jpg',
+    imageUrl: '/images/malik-waqar.webp',
   },
 ];
 

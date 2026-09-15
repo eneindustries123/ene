@@ -119,7 +119,7 @@ export default function TradingContractingPage() {
         {/* Background Image & Gradient Overlays */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/hero/trading-hero.jpg"
+            src="/hero/trading-hero.webp"
             alt="E&E Trading & Contracting Operations"
             fill
             priority
@@ -350,7 +350,7 @@ export default function TradingContractingPage() {
           <div className="lg:col-span-5 flex flex-col">
             <div className="relative w-full h-full min-h-[380px] rounded-3xl overflow-hidden shadow-solix-lg border border-solix-border bg-solix-bg">
               <Image
-                src="/images/service-trading.jpg"
+                src="/images/service-trading.webp"
                 alt="E&E Technical Procurement & Sourcing Logistics"
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"

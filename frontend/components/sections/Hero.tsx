@@ -20,7 +20,7 @@ const HERO_SLIDES: HeroSlide[] = [
     serviceTitle: 'Solar Energy',
     description:
       'Full-lifecycle engineering, procurement, and construction (EPC) of high-yield commercial, industrial, and residential solar power systems with turnkey net metering.',
-    image: '/hero/solar-hero.jpg',
+    image: '/hero/solar-hero.webp',
     label: 'Solar Energy',
   },
   {
@@ -28,7 +28,7 @@ const HERO_SLIDES: HeroSlide[] = [
     serviceTitle: 'Trading & Contracting',
     description:
       'Reliable industrial procurement, global supply chain sourcing, electrical hardware supply, and turnkey contracting for enterprise developments.',
-    image: '/hero/trading-hero.jpg',
+    image: '/hero/trading-hero.webp',
     label: 'Trading & Contracting',
   },
   {
@@ -36,7 +36,7 @@ const HERO_SLIDES: HeroSlide[] = [
     serviceTitle: 'Fabrication & Design',
     description:
       'Precision structural steel fabrication, custom solar mounting systems, pre-engineered buildings (PEB), high-mast poles, and industrial cable trays.',
-    image: '/hero/fabrication-hero.jpg',
+    image: '/hero/fabrication-hero.webp',
     label: 'Fabrication & Design',
   },
 ];

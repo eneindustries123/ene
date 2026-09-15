@@ -85,13 +85,13 @@ describe('Admin Projects Store & CRUD Unit Tests', () => {
 
     expect(HOMEPAGE_FEATURED_PROJECTS[1]).toEqual({
       title: 'Chakdara Swat Site',
-      image: '/images/projects/p2-1.jpg',
+      image: '/images/projects/p2-1.webp',
       href: '/projects/chakdara-swat-25kw',
     });
 
     expect(HOMEPAGE_FEATURED_PROJECTS[2]).toEqual({
       title: 'Punjab Pharmacy Commercial Complex',
-      image: '/images/projects/p3-1.jpg',
+      image: '/images/projects/p3-1.webp',
       href: '/projects/punjab-pharmacy',
     });
 

@@ -39,7 +39,7 @@ const LEADERSHIP_MEMBERS: LeadershipMember[] = [
     designation: 'CEO',
     summary:
       'Steers corporate vision, strategic growth, and multi-divisional engineering execution across solar energy, procurement, and industrial contracting with a steadfast focus on quality delivery and long-term client relationships.',
-    imageUrl: '/images/asjed-mehnood.jpg',
+    imageUrl: '/images/asjed-mehnood.webp',
     expertise: ['Leadership', 'Engineering', 'Strategy', 'Project Execution'],
   },
   {
@@ -47,7 +47,7 @@ const LEADERSHIP_MEMBERS: LeadershipMember[] = [
     designation: 'Managing Director',
     summary:
       'Leads technical operations, project management, and business development across structural fabrication, PEB infrastructure, and client delivery, ensuring rigorous standards and operational excellence.',
-    imageUrl: '/images/malik-waqar.jpg',
+    imageUrl: '/images/malik-waqar.webp',
     expertise: ['Operations', 'Project Management', 'Business Growth', 'Client Relations'],
   },
 ];
@@ -138,7 +138,7 @@ export default function AboutPage() {
         {/* Background Image & Overlays */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/hero/solar-hero.jpg"
+            src="/hero/solar-hero.webp"
             alt="E&E Industries Infrastructure"
             fill
             priority
@@ -211,7 +211,7 @@ export default function AboutPage() {
           <div className="lg:col-span-5">
             <div className="relative rounded-3xl overflow-hidden shadow-solix-lg border border-solix-border aspect-[4/3] sm:aspect-[4/3] lg:aspect-[5/4] bg-solix-bg">
               <Image
-                src="/images/solar-engineer-tablet.jpg"
+                src="/images/solar-engineer-tablet.webp"
                 alt="E&E Engineering Specialist on Site"
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"
@@ -538,7 +538,7 @@ export default function AboutPage() {
           <div className="lg:col-span-5 flex flex-col">
             <div className="relative w-full h-full min-h-[380px] rounded-3xl overflow-hidden shadow-solix-lg border border-solix-border bg-solix-bg">
               <Image
-                src="/images/why-ee-panoramic.jpg"
+                src="/images/why-ee-panoramic.webp"
                 alt="E&E Solar Installation Infrastructure"
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"
